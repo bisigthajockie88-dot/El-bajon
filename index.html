@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>El Bajón · Punto de Venta</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+  :root {
+    --rojo:#e63946; --amarillo:#f4a261; --oscuro:#1a1a2e;
+    --medio:#16213e; --claro:#0f3460; --texto:#eaeaea;
+    --gris:#aaa; --verde:#2ec4b6; --morado:#9b5de5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--oscuro);color:var(--texto);font-family:'Inter',sans-serif;min-height:100vh;padding-bottom:100px;}
+  header{background:var(--medio);padding:14px 16px 10px;border-bottom:2px solid var(--rojo);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+  header h1{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--rojo);letter-spacing:2px;}
+  header .fecha{font-size:11px;color:var(--gris);text-align:right;line-height:1.4;}
+  .tabs{display:flex;background:var(--medio);border-bottom:1px solid #333;overflow-x:auto;}
+  .tab{flex:1;min-width:60px;padding:12px 4px;text-align:center;font-size:11px;font-weight:600;color:var(--gris);cursor:pointer;border-bottom:3px solid transparent;transition:all 0.2s;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;}
+  .tab.active{color:var(--amarillo);border-bottom-color:var(--amarillo);}
+  .seccion{display:none;padding:14px;}
+  .seccion.active{display:block;}
+  .cat-label{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--amarillo);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid #333;}
+  .productos-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;}
+  .btn-producto{background:var(--medio);border:1px solid #333;border-radius:10px;padding:14px 10px;color:var(--texto);cursor:pointer;text-align:center;transition:all 0.15s;}
+  .btn-producto:active{transform:scale(0.96);background:var(--claro);}
+  .btn-producto .nombre{font-size:13px;font-weight:600;line-height:1.3;margin-bottom:6px;}
+  .btn-producto .precio-ref{font-size:11px;color:var(--gris);}
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:flex-end;justify-content:center;}
+  .overlay.visible{display:flex;}
+  .modal{background:var(--medio);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;border-top:2px solid var(--rojo);}
+  .modal h2{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--amarillo);letter-spacing:1px;margin-bottom:4px;}
+  .modal .precio-sugerido{font-size:12px;color:var(--gris);margin-bottom:16px;}
+  .modal label{display:block;font-size:12px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;margin-top:14px;}
+  .modal input[type="number"]{width:100%;background:var(--oscuro);border:1px solid #444;border-radius:10px;padding:14px 16px;color:var(--texto);font-size:22px;font-weight:700;outline:none;text-align:center;}
+  .modal input[type="number"]:focus{border-color:var(--amarillo);}
+  .metodos-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;}
+  .btn-metodo{background:var(--oscuro);border:2px solid #444;border-radius:10px;padding:10px 6px;color:var(--gris);cursor:pointer;text-align:center;font-size:11px;font-weight:600;transition:all 0.15s;line-height:1.3;}
+  .btn-metodo.selected{border-color:var(--verde);color:var(--verde);background:rgba(46,196,182,0.1);}
+  .modal-btns{display:flex;gap:10px;margin-top:20px;}
+  .btn-cancelar{flex:1;background:transparent;border:1px solid #444;border-radius:10px;padding:14px;color:var(--gris);font-size:15px;font-weight:600;cursor:pointer;}
+  .btn-confirmar{flex:2;background:var(--rojo);border:none;border-radius:10px;padding:14px;color:white;font-size:15px;font-weight:700;cursor:pointer;}
+  .btn-confirmar:active{opacity:0.8;}
+  .totales-top{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .total-card{background:var(--medio);border-radius:10px;padding:12px;text-align:center;border:1px solid #333;}
+  .total-card .label{font-size:10px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+  .total-card .valor{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;}
+  .total-card.efectivo .valor{color:var(--verde);}
+  .total-card.plataformas .valor{color:var(--amarillo);}
+  .movimiento{background:var(--medio);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #444;}
+  .movimiento.efectivo{border-left-color:var(--verde);}
+  .movimiento.tarjeta{border-left-color:var(--morado);}
+  .movimiento.didi_efectivo{border-left-color:#ff6b35;}
+  .movimiento.didi_tarjeta{border-left-color:#ff9500;}
+  .movimiento.rappi{border-left-color:#ff3c38;}
+  .movimiento.uber{border-left-color:var(--gris);}
+  .movimiento.gasto{border-left-color:var(--rojo);opacity:0.85;}
+  .movimiento .info{flex:1;}
+  .movimiento .nombre-mov{font-size:14px;font-weight:600;}
+  .movimiento .detalle-mov{font-size:11px;color:var(--gris);margin-top:2px;}
+  .movimiento .monto-mov{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;}
+  .movimiento.gasto .monto-mov{color:var(--rojo);}
+  .btn-eliminar{background:transparent;border:none;color:#555;font-size:18px;cursor:pointer;padding:4px 8px;margin-left:8px;}
+  .btn-eliminar:active{color:var(--rojo);}
+  .gasto-form{background:var(--medio);border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid #333;}
+  .gasto-form h3{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--rojo);letter-spacing:1px;margin-bottom:12px;}
+  .input-row{display:flex;gap:10px;margin-bottom:10px;}
+  .input-row input{flex:1;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:12px 14px;color:var(--texto);font-size:14px;outline:none;}
+  .input-row input:focus{border-color:var(--rojo);}
+  .input-row input[type="number"]{max-width:130px;text-align:right;}
+  .btn-agregar-gasto{width:100%;background:var(--rojo);border:none;border-radius:8px;padding:13px;color:white;font-size:14px;font-weight:700;cursor:pointer;}
+  .resumen-box{background:var(--medio);border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid #333;}
+  .resumen-box h3{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--amarillo);letter-spacing:1px;margin-bottom:12px;}
+  .resumen-fila{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a3e;font-size:14px;}
+  .resumen-fila:last-child{border-bottom:none;}
+  .resumen-fila .concepto{color:var(--gris);}
+  .resumen-fila .monto{font-weight:700;}
+  .resumen-fila.total-final{font-size:16px;}
+  .resumen-fila.total-final .concepto{color:var(--texto);font-weight:700;}
+  .resumen-fila.total-final .monto{color:var(--verde);font-size:20px;}
+  .btn-copiar{width:100%;background:var(--claro);border:1px solid var(--verde);border-radius:10px;padding:15px;color:var(--verde);font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;letter-spacing:0.5px;}
+  .btn-cerrar-dia{width:100%;background:var(--rojo);border:none;border-radius:10px;padding:15px;color:white;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;letter-spacing:0.5px;}
+  /* HISTORIAL */
+  .dia-card{background:var(--medio);border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid #333;}
+  .dia-card .dia-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .dia-card .dia-fecha{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--amarillo);letter-spacing:1px;}
+  .dia-card .dia-total{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--verde);}
+  .dia-card .dia-detalle{font-size:12px;color:var(--gris);line-height:1.8;}
+  .dia-card .dia-detalle span{color:var(--texto);font-weight:600;}
+  .btn-ver-dia{background:transparent;border:1px solid #333;border-radius:8px;padding:8px 14px;color:var(--gris);font-size:12px;cursor:pointer;margin-top:10px;}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--gris);font-size:13px;}
+  .empty-state .icon{font-size:36px;margin-bottom:8px;}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--verde);color:var(--oscuro);padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:all 0.3s;z-index:300;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  /* MODAL HISTORIAL DETALLE */
+  .modal-hist{background:var(--medio);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;border-top:2px solid var(--amarillo);max-height:80vh;overflow-y:auto;}
+  .modal-hist h2{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--amarillo);letter-spacing:1px;margin-bottom:16px;}
+  .badge-dia{display:inline-block;background:rgba(244,162,97,0.15);border:1px solid var(--amarillo);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--amarillo);font-weight:600;margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌮 El Bajón</h1>
+  <div class="fecha" id="fechaHeader"></div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="cambiarTab('venta',this)">Venta</div>
+  <div class="tab" onclick="cambiarTab('movimientos',this)">Registro</div>
+  <div class="tab" onclick="cambiarTab('gastos',this)">Gastos</div>
+  <div class="tab" onclick="cambiarTab('resumen',this)">Resumen</div>
+  <div class="tab" onclick="cambiarTab('historial',this)">Historial</div>
+</div>
+
+<!-- TAB VENTA -->
+<div class="seccion active" id="tab-venta">
+  <div class="cat-label">🍔 Hamburguesas</div>
+  <div class="productos-grid">
+    <button class="btn-producto" onclick="abrirModal('Ham Sola',79)"><div class="nombre">Ham Sola</div><div class="precio-ref">Ref: $79</div></button>
+    <button class="btn-producto" onclick="abrirModal('Ham c/ Papas',99)"><div class="nombre">Ham c/ Papas</div><div class="precio-ref">Ref: $99</div></button>
+  </div>
+  <div class="cat-label">🌭 Hot Dogs</div>
+  <div class="productos-grid">
+    <button class="btn-producto" onclick="abrirModal('HD Sencillo',25)"><div class="nombre">HD Sencillo</div><div class="precio-ref">Ref: $25</div></button>
+    <button class="btn-producto" onclick="abrirModal('HD Preparado',39)"><div class="nombre">HD Preparado</div><div class="precio-ref">Ref: $39</div></button>
+  </div>
+  <div class="cat-label">🍟 Órdenes</div>
+  <div class="productos-grid">
+    <button class="btn-producto" onclick="abrirModal('Ord Sencilla',69)"><div class="nombre">Ord Sencilla</div><div class="precio-ref">Ref: $69</div></button>
+    <button class="btn-producto" onclick="abrirModal('Ord Preparada',99)"><div class="nombre">Ord Preparada</div><div class="precio-ref">Ref: $99</div></button>
+    <button class="btn-producto" onclick="abrirModal('Ord Papas',39)"><div class="nombre">Ord Papas</div><div class="precio-ref">Ref: $39</div></button>
+  </div>
+  <div class="cat-label">🥤 Refrescos</div>
+  <div class="productos-grid">
+    <button class="btn-producto" onclick="abrirModal('Coca Cola 600ml',25)"><div class="nombre">Coca Cola 600ml</div><div class="precio-ref">Ref: $25</div></button>
+    <button class="btn-producto" onclick="abrirModal('Pepsi 600ml',20)"><div class="nombre">Pepsi 600ml</div><div class="precio-ref">Ref: $20</div></button>
+    <button class="btn-producto" onclick="abrirModal('Fresca 600ml',23)"><div class="nombre">Fresca 600ml</div><div class="precio-ref">Ref: $23</div></button>
+  </div>
+  <div class="cat-label">➕ Otro</div>
+  <div class="productos-grid">
+    <button class="btn-producto" onclick="abrirModal('Otro',0)"><div class="nombre">Personalizado</div><div class="precio-ref">Tú pones precio</div></button>
+  </div>
+</div>
+
+<!-- TAB MOVIMIENTOS -->
+<div class="seccion" id="tab-movimientos">
+  <div class="totales-top">
+    <div class="total-card efectivo"><div class="label">💵 Efectivo</div><div class="valor" id="tot-efectivo">$0</div></div>
+    <div class="total-card plataformas"><div class="label">📱 Plataformas</div><div class="valor" id="tot-plataformas">$0</div></div>
+  </div>
+  <div id="lista-movimientos"><div class="empty-state"><div class="icon">📋</div>Aún no hay ventas registradas</div></div>
+</div>
+
+<!-- TAB GASTOS -->
+<div class="seccion" id="tab-gastos">
+  <div class="gasto-form">
+    <h3>Agregar Gasto</h3>
+    <div class="input-row"><input type="text" id="gasto-concepto" placeholder="Concepto (ej: gas, camión...)"></div>
+    <div class="input-row"><input type="number" id="gasto-monto" placeholder="$0.00" inputmode="decimal"></div>
+    <button class="btn-agregar-gasto" onclick="agregarGasto()">+ Agregar Gasto</button>
+  </div>
+  <div id="lista-gastos"><div class="empty-state"><div class="icon">💸</div>Sin gastos registrados</div></div>
+</div>
+
+<!-- TAB RESUMEN -->
+<div class="seccion" id="tab-resumen">
+  <div class="resumen-box">
+    <h3>📊 Resumen del Día</h3>
+    <div class="resumen-fila"><span class="concepto">💵 Efectivo</span><span class="monto" id="res-efectivo">$0.00</span></div>
+    <div class="resumen-fila"><span class="concepto">💳 Tarjeta</span><span class="monto" id="res-tarjeta">$0.00</span></div>
+    <div class="resumen-fila"><span class="concepto">🚗 Didi Efectivo</span><span class="monto" id="res-didi-ef">$0.00</span></div>
+    <div class="resumen-fila"><span class="concepto">🚗 Didi Tarjeta</span><span class="monto" id="res-didi-tar">$0.00</span></div>
+    <div class="resumen-fila"><span class="concepto">🛵 Rappi Tarjeta</span><span class="monto" id="res-rappi">$0.00</span></div>
+    <div class="resumen-fila"><span class="concepto">🚙 Uber Tarjeta</span><span class="monto" id="res-uber">$0.00</span></div>
+    <div class="resumen-fila"><span class="concepto">💸 Total Gastos</span><span class="monto" style="color:var(--rojo)" id="res-gastos">$0.00</span></div>
+    <div class="resumen-fila total-final"><span class="concepto">📊 Venta Total Día</span><span class="monto" id="res-total">$0.00</span></div>
+    <div class="resumen-fila total-final" style="margin-top:8px;padding-top:12px;border-top:2px solid var(--verde)"><span class="concepto">💵 Tienes en mano</span><span class="monto" id="res-en-mano">$0.00</span></div>
+  </div>
+  <button class="btn-copiar" onclick="copiarResumen()">📋 Copiar para Excel</button>
+  <button class="btn-cerrar-dia" onclick="cerrarDia()">🔒 Cerrar Día y Empezar Nuevo</button>
+</div>
+
+<!-- TAB HISTORIAL -->
+<div class="seccion" id="tab-historial">
+  <div id="lista-historial"><div class="empty-state"><div class="icon">📅</div>Aún no hay días cerrados</div></div>
+</div>
+
+<!-- MODAL VENTA -->
+<div class="overlay" id="overlay" onclick="cerrarModal(event)">
+  <div class="modal">
+    <h2 id="modal-titulo">Producto</h2>
+    <div class="precio-sugerido" id="modal-sugerido"></div>
+    <label>Precio ($)</label>
+    <input type="number" id="modal-precio" inputmode="decimal" placeholder="0.00">
+    <label>Forma de pago</label>
+    <div class="metodos-grid">
+      <div class="btn-metodo" onclick="selMetodo('efectivo')" id="m-efectivo">💵 Efectivo</div>
+      <div class="btn-metodo" onclick="selMetodo('tarjeta')" id="m-tarjeta">💳 Tarjeta</div>
+      <div class="btn-metodo" onclick="selMetodo('didi_efectivo')" id="m-didi_efectivo">🚗 Didi Ef.</div>
+      <div class="btn-metodo" onclick="selMetodo('didi_tarjeta')" id="m-didi_tarjeta">🚗 Didi Tar.</div>
+      <div class="btn-metodo" onclick="selMetodo('rappi')" id="m-rappi">🛵 Rappi</div>
+      <div class="btn-metodo" onclick="selMetodo('uber')" id="m-uber">🚙 Uber</div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="cerrarModalBtn()">Cancelar</button>
+      <button class="btn-confirmar" onclick="confirmarVenta()">✓ Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLE HISTORIAL -->
+<div class="overlay" id="overlay-hist" onclick="cerrarHistModal(event)">
+  <div class="modal-hist" id="modal-hist-content"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let movimientos = JSON.parse(localStorage.getItem('bajon_mov') || '[]');
+  let gastos = JSON.parse(localStorage.getItem('bajon_gastos') || '[]');
+  let historial = JSON.parse(localStorage.getItem('bajon_historial') || '[]');
+  let productoActual = '', precioRef = 0, metodoSeleccionado = '';
+
+  // Fecha header
+  const ahora = new Date();
+  document.getElementById('fechaHeader').innerHTML =
+    ahora.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}) + '<br>' +
+    ahora.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+
+  function guardarMov(){ localStorage.setItem('bajon_mov', JSON.stringify(movimientos)); }
+  function guardarGastos(){ localStorage.setItem('bajon_gastos', JSON.stringify(gastos)); }
+  function guardarHistorial(){ localStorage.setItem('bajon_historial', JSON.stringify(historial)); }
+
+  function cambiarTab(tab, el) {
+    document.querySelectorAll('.seccion').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    el.classList.add('active');
+    if(tab==='movimientos') renderMovimientos();
+    if(tab==='gastos') renderGastos();
+    if(tab==='resumen') renderResumen();
+    if(tab==='historial') renderHistorial();
+  }
+
+  function abrirModal(nombre, precio) {
+    productoActual=nombre; precioRef=precio; metodoSeleccionado='';
+    document.getElementById('modal-titulo').textContent=nombre;
+    document.getElementById('modal-sugerido').textContent=precio>0?'Precio sugerido: $'+precio:'Ingresa el precio';
+    document.getElementById('modal-precio').value=precio>0?precio:'';
+    document.querySelectorAll('.btn-metodo').forEach(b=>b.classList.remove('selected'));
+    document.getElementById('overlay').classList.add('visible');
+    setTimeout(()=>document.getElementById('modal-precio').focus(),300);
+  }
+
+  function cerrarModal(e){ if(e.target===document.getElementById('overlay')) cerrarModalBtn(); }
+  function cerrarModalBtn(){ document.getElementById('overlay').classList.remove('visible'); }
+  function cerrarHistModal(e){ if(e.target===document.getElementById('overlay-hist')) document.getElementById('overlay-hist').classList.remove('visible'); }
+
+  function selMetodo(metodo) {
+    metodoSeleccionado=metodo;
+    document.querySelectorAll('.btn-metodo').forEach(b=>b.classList.remove('selected'));
+    document.getElementById('m-'+metodo).classList.add('selected');
+  }
+
+  function confirmarVenta() {
+    const precio=parseFloat(document.getElementById('modal-precio').value);
+    if(!precio||precio<=0){ mostrarToast('⚠️ Ingresa un precio válido'); return; }
+    if(!metodoSeleccionado){ mostrarToast('⚠️ Selecciona forma de pago'); return; }
+    const hora=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    movimientos.push({id:Date.now(),producto:productoActual,precio,metodo:metodoSeleccionado,hora});
+    guardarMov(); cerrarModalBtn(); actualizarTotalesRapidos();
+    mostrarToast('✓ '+productoActual+' $'+precio);
+  }
+
+  function agregarGasto() {
+    const concepto=document.getElementById('gasto-concepto').value.trim();
+    const monto=parseFloat(document.getElementById('gasto-monto').value);
+    if(!concepto){ mostrarToast('⚠️ Escribe el concepto'); return; }
+    if(!monto||monto<=0){ mostrarToast('⚠️ Ingresa el monto'); return; }
+    const hora=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    gastos.push({id:Date.now(),concepto,monto,hora});
+    guardarGastos();
+    document.getElementById('gasto-concepto').value='';
+    document.getElementById('gasto-monto').value='';
+    renderGastos(); mostrarToast('💸 Gasto registrado');
+  }
+
+  function eliminarMov(id){ movimientos=movimientos.filter(m=>m.id!==id); guardarMov(); renderMovimientos(); actualizarTotalesRapidos(); }
+  function eliminarGasto(id){ gastos=gastos.filter(g=>g.id!==id); guardarGastos(); renderGastos(); }
+
+  function nombreMetodo(m){
+    return{efectivo:'💵 Efectivo',tarjeta:'💳 Tarjeta',didi_efectivo:'🚗 Didi Efectivo',didi_tarjeta:'🚗 Didi Tarjeta',rappi:'🛵 Rappi Tarjeta',uber:'🚙 Uber Tarjeta'}[m]||m;
+  }
+
+  function renderMovimientos() {
+    const cont=document.getElementById('lista-movimientos');
+    if(!movimientos.length){ cont.innerHTML='<div class="empty-state"><div class="icon">📋</div>Aún no hay ventas registradas</div>'; return; }
+    cont.innerHTML=[...movimientos].reverse().map(m=>`
+      <div class="movimiento ${m.metodo}">
+        <div class="info"><div class="nombre-mov">${m.producto}</div><div class="detalle-mov">${nombreMetodo(m.metodo)} · ${m.hora}</div></div>
+        <div class="monto-mov">$${m.precio.toFixed(2)}</div>
+        <button class="btn-eliminar" onclick="eliminarMov(${m.id})">✕</button>
+      </div>`).join('');
+    actualizarTotalesRapidos();
+  }
+
+  function actualizarTotalesRapidos() {
+    const ef=movimientos.filter(m=>m.metodo==='efectivo'||m.metodo==='didi_efectivo').reduce((s,m)=>s+m.precio,0);
+    const pl=movimientos.filter(m=>['tarjeta','didi_tarjeta','rappi','uber'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
+    document.getElementById('tot-efectivo').textContent='$'+ef.toFixed(0);
+    document.getElementById('tot-plataformas').textContent='$'+pl.toFixed(0);
+  }
+
+  function renderGastos() {
+    const cont=document.getElementById('lista-gastos');
+    if(!gastos.length){ cont.innerHTML='<div class="empty-state"><div class="icon">💸</div>Sin gastos registrados</div>'; return; }
+    cont.innerHTML=[...gastos].reverse().map(g=>`
+      <div class="movimiento gasto">
+        <div class="info"><div class="nombre-mov">${g.concepto}</div><div class="detalle-mov">${g.hora}</div></div>
+        <div class="monto-mov">$${g.monto.toFixed(2)}</div>
+        <button class="btn-eliminar" onclick="eliminarGasto(${g.id})">✕</button>
+      </div>`).join('');
+  }
+
+  function calcularTotales() {
+    const tots={efectivo:0,tarjeta:0,didi_efectivo:0,didi_tarjeta:0,rappi:0,uber:0};
+    movimientos.forEach(m=>{tots[m.metodo]=(tots[m.metodo]||0)+m.precio;});
+    return{...tots,totalGastos:gastos.reduce((s,g)=>s+g.monto,0),totalVenta:movimientos.reduce((s,m)=>s+m.precio,0)};
+  }
+
+  function renderResumen() {
+    const t=calcularTotales();
+    document.getElementById('res-efectivo').textContent='$'+t.efectivo.toFixed(2);
+    document.getElementById('res-tarjeta').textContent='$'+t.tarjeta.toFixed(2);
+    document.getElementById('res-didi-ef').textContent='$'+t.didi_efectivo.toFixed(2);
+    document.getElementById('res-didi-tar').textContent='$'+t.didi_tarjeta.toFixed(2);
+    document.getElementById('res-rappi').textContent='$'+t.rappi.toFixed(2);
+    document.getElementById('res-uber').textContent='$'+t.uber.toFixed(2);
+    document.getElementById('res-gastos').textContent='-$'+t.totalGastos.toFixed(2);
+    document.getElementById('res-total').textContent='$'+t.totalVenta.toFixed(2);
+    const enMano=t.efectivo+t.tarjeta+t.didi_efectivo-t.totalGastos;
+    const elMano=document.getElementById('res-en-mano');
+    elMano.textContent='$'+enMano.toFixed(2);
+    elMano.style.color=enMano>=0?'var(--verde)':'var(--rojo)';
+  }
+
+  function cerrarDia() {
+    if(!movimientos.length){ mostrarToast('⚠️ No hay ventas registradas hoy'); return; }
+    if(!confirm('¿Cerrar el día? Los datos se guardarán en el historial y empezará un día nuevo.')) return;
+
+    const t=calcularTotales();
+    const fechaHoy=new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    const diaGuardado={
+      id:Date.now(), fecha:fechaHoy,
+      totales:t, movimientos:[...movimientos], gastos:[...gastos]
+    };
+    historial.unshift(diaGuardado);
+    guardarHistorial();
+
+    // Limpiar día actual
+    movimientos=[]; gastos=[];
+    guardarMov(); guardarGastos();
+    renderResumen(); actualizarTotalesRapidos();
+    mostrarToast('✅ Día cerrado y guardado');
+  }
+
+  function renderHistorial() {
+    const cont=document.getElementById('lista-historial');
+    if(!historial.length){ cont.innerHTML='<div class="empty-state"><div class="icon">📅</div>Aún no hay días cerrados</div>'; return; }
+    cont.innerHTML=historial.map(d=>`
+      <div class="dia-card">
+        <div class="dia-header">
+          <div class="dia-fecha">${d.fecha}</div>
+          <div class="dia-total">$${d.totales.totalVenta.toFixed(0)}</div>
+        </div>
+        <div class="dia-detalle">
+          💵 Efectivo: <span>$${d.totales.efectivo.toFixed(2)}</span> &nbsp;
+          🚗 Didi Ef: <span>$${d.totales.didi_efectivo.toFixed(2)}</span><br>
+          💳 Tarjeta: <span>$${d.totales.tarjeta.toFixed(2)}</span> &nbsp;
+          🚗 Didi Tar: <span>$${d.totales.didi_tarjeta.toFixed(2)}</span><br>
+          🛵 Rappi: <span>$${d.totales.rappi.toFixed(2)}</span> &nbsp;
+          🚙 Uber: <span>$${d.totales.uber.toFixed(2)}</span><br>
+          💸 Gastos: <span>$${d.totales.totalGastos.toFixed(2)}</span>
+        </div>
+        <button class="btn-ver-dia" onclick="verDetalleDia(${d.id})">Ver detalle completo</button>
+      </div>`).join('');
+  }
+
+  function verDetalleDia(id) {
+    const dia=historial.find(d=>d.id===id);
+    if(!dia) return;
+    const movHtml=dia.movimientos.length
+      ? [...dia.movimientos].reverse().map(m=>`<div class="movimiento ${m.metodo}" style="margin-bottom:6px">
+          <div class="info"><div class="nombre-mov" style="font-size:13px">${m.producto}</div><div class="detalle-mov">${nombreMetodo(m.metodo)} · ${m.hora}</div></div>
+          <div class="monto-mov" style="font-size:18px">$${m.precio.toFixed(2)}</div>
+        </div>`).join('')
+      : '<div style="color:var(--gris);font-size:13px">Sin ventas</div>';
+    const gasHtml=dia.gastos.length
+      ? dia.gastos.map(g=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2a2a3e;font-size:13px"><span style="color:var(--gris)">${g.concepto}</span><span style="color:var(--rojo);font-weight:700">$${g.monto.toFixed(2)}</span></div>`).join('')
+      : '<div style="color:var(--gris);font-size:13px">Sin gastos</div>';
+    document.getElementById('modal-hist-content').innerHTML=`
+      <h2>📅 Detalle del Día</h2>
+      <div class="badge-dia">${dia.fecha}</div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Ventas</div>
+        ${movHtml}
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Gastos</div>
+        ${gasHtml}
+      </div>
+      <div style="margin-top:16px;padding:12px;background:var(--oscuro);border-radius:10px;text-align:center">
+        <div style="font-size:12px;color:var(--gris);margin-bottom:4px">VENTA TOTAL</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--verde)">$${dia.totales.totalVenta.toFixed(2)}</div>
+      </div>
+      <button class="btn-cancelar" onclick="document.getElementById('overlay-hist').classList.remove('visible')" style="width:100%;margin-top:16px">Cerrar</button>`;
+    document.getElementById('overlay-hist').classList.add('visible');
+  }
+
+  function copiarResumen() {
+    const t=calcularTotales();
+    const fecha=new Date().toLocaleDateString('es-MX');
+    const texto=`EL BAJÓN · ${fecha}
+──────────────────────
+💵 Efectivo:      $${t.efectivo.toFixed(2)}
+💳 Tarjeta:       $${t.tarjeta.toFixed(2)}
+🚗 Didi Efectivo: $${t.didi_efectivo.toFixed(2)}
+🚗 Didi Tarjeta:  $${t.didi_tarjeta.toFixed(2)}
+🛵 Rappi Tarjeta: $${t.rappi.toFixed(2)}
+🚙 Uber Tarjeta:  $${t.uber.toFixed(2)}
+──────────────────────
+💸 Gastos:        $${t.totalGastos.toFixed(2)}
+✅ VENTA TOTAL:   $${t.totalVenta.toFixed(2)}
+──────────────────────
+Detalle gastos:
+${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (sin gastos)'}`;
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(texto).then(()=>mostrarToast('✓ Copiado al portapapeles'));
+    } else {
+      const ta=document.createElement('textarea');
+      ta.value=texto; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      mostrarToast('✓ Copiado al portapapeles');
+    }
+  }
+
+  function mostrarToast(msg) {
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2000);
+  }
+
+  actualizarTotalesRapidos();
+</script>
+</body>
+</html>
