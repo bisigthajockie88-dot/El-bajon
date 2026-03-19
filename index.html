@@ -97,6 +97,36 @@
   .modal-hist{background:var(--medio);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;border-top:2px solid var(--amarillo);max-height:80vh;overflow-y:auto;}
   .modal-hist h2{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--amarillo);letter-spacing:1px;margin-bottom:16px;}
   .badge-dia{display:inline-block;background:rgba(244,162,97,0.15);border:1px solid var(--amarillo);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--amarillo);font-weight:600;margin-bottom:12px;}
+
+  /* DISTRIBUCIÓN */
+  .dist-header{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--amarillo);text-align:center;margin-bottom:4px;}
+  .dist-sub{font-size:11px;color:var(--gris);text-align:center;margin-bottom:18px;}
+  .dist-config{background:var(--medio);border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid #333;}
+  .dist-config h3{font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--gris);letter-spacing:1px;margin-bottom:12px;}
+  .dist-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;}
+  .dist-row label{font-size:12px;color:var(--gris);flex:1;}
+  .dist-row input{width:60px;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:8px;color:var(--texto);font-size:15px;font-weight:700;text-align:center;outline:none;}
+  .dist-row input:focus{border-color:var(--amarillo);}
+  .dist-pct{font-size:13px;color:var(--amarillo);font-weight:700;width:36px;text-align:right;}
+  .dist-card{border-radius:14px;padding:18px;margin-bottom:12px;text-align:center;}
+  .dist-titulo{font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600;}
+  .dist-monto{font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:2px;}
+  .dist-detalle{font-size:11px;margin-top:4px;opacity:0.75;}
+  .card-verde{background:rgba(46,196,182,0.1);border:2px solid var(--verde);}
+  .card-verde .dist-titulo{color:var(--verde);}
+  .card-verde .dist-monto{color:var(--verde);}
+  .card-morado{background:rgba(155,93,229,0.15);border:2px solid var(--morado);}
+  .card-morado .dist-titulo{color:var(--morado);}
+  .card-morado .dist-monto{color:var(--morado);}
+  .card-amarillo{background:rgba(244,162,97,0.1);border:2px solid var(--amarillo);}
+  .card-amarillo .dist-titulo{color:var(--amarillo);}
+  .card-amarillo .dist-monto{color:var(--amarillo);}
+  .card-rojo{background:rgba(230,57,70,0.1);border:2px solid var(--rojo);}
+  .card-rojo .dist-titulo{color:var(--rojo);}
+  .card-rojo .dist-monto{color:var(--rojo);}
+  .dist-alerta{background:rgba(230,57,70,0.15);border:1px solid var(--rojo);border-radius:10px;padding:10px;text-align:center;font-size:12px;color:var(--rojo);margin-bottom:12px;display:none;}
+  .dist-nota{font-size:11px;color:var(--gris);text-align:center;margin-top:4px;font-style:italic;}
+
 </style>
 </head>
 <body>
@@ -112,6 +142,7 @@
   <div class="tab" onclick="cambiarTab('gastos',this)">Gastos</div>
   <div class="tab" onclick="cambiarTab('resumen',this)">Resumen</div>
   <div class="tab" onclick="cambiarTab('historial',this)">Historial</div>
+  <div class="tab" onclick="cambiarTab('distribucion',this)">💰 Dist.</div>
 </div>
 
 <!-- TAB VENTA -->
@@ -187,6 +218,60 @@
   <div id="lista-historial"><div class="empty-state"><div class="icon">📅</div>Aún no hay días cerrados</div></div>
 </div>
 
+
+<!-- TAB DISTRIBUCIÓN -->
+<div class="seccion" id="tab-distribucion">
+  <div class="dist-header">💰 Distribución del Día</div>
+  <div class="dist-sub">Solo efectivo en mano · Tarjeta · Didi Efectivo</div>
+
+  <div class="dist-config">
+    <h3>⚙️ Porcentajes (editables)</h3>
+    <div class="dist-row">
+      <label>🧍 Tu sueldo</label>
+      <input type="number" id="pct-sueldo" value="40" min="0" max="100" oninput="renderDistribucion()">
+      <span class="dist-pct" id="lbl-sueldo">40%</span>
+    </div>
+    <div class="dist-row">
+      <label>📦 Inversión negocio</label>
+      <input type="number" id="pct-inv" value="45" min="0" max="100" oninput="renderDistribucion()">
+      <span class="dist-pct" id="lbl-inv">45%</span>
+    </div>
+    <div class="dist-row">
+      <label>🛡️ Colchón negocio</label>
+      <input type="number" id="pct-colchon" value="15" min="0" max="100" oninput="renderDistribucion()">
+      <span class="dist-pct" id="lbl-colchon">15%</span>
+    </div>
+    <div class="dist-alerta" id="dist-alerta">⚠️ Los porcentajes suman más del 100% — ajústalos</div>
+  </div>
+
+  <div class="dist-card card-verde">
+    <div class="dist-titulo">💵 Tienes en mano</div>
+    <div class="dist-monto" id="dist-en-mano">$0</div>
+    <div class="dist-detalle">Efectivo + Tarjeta + Didi Efectivo − Gastos del día</div>
+  </div>
+
+  <div class="dist-card card-morado">
+    <div class="dist-titulo">🧍 Para ti (sueldo)</div>
+    <div class="dist-monto" id="dist-sueldo">$0</div>
+    <div class="dist-detalle" id="dist-sueldo-det"></div>
+  </div>
+
+  <div class="dist-card card-amarillo">
+    <div class="dist-titulo">📦 Para inversión del negocio</div>
+    <div class="dist-monto" id="dist-inv">$0</div>
+    <div class="dist-detalle" id="dist-inv-det"></div>
+  </div>
+
+  <div class="dist-card card-rojo">
+    <div class="dist-titulo">🛡️ Colchón del negocio</div>
+    <div class="dist-monto" id="dist-colchon">$0</div>
+    <div class="dist-detalle" id="dist-colchon-det"></div>
+  </div>
+
+  <div class="dist-nota">* Las ventas de Didi TAR, Rappi y Uber no se incluyen — ese dinero aún no está en tu mano</div>
+</div>
+
+
 <!-- MODAL VENTA -->
 <div class="overlay" id="overlay" onclick="cerrarModal(event)">
   <div class="modal">
@@ -242,6 +327,7 @@
     if(tab==='gastos') renderGastos();
     if(tab==='resumen') renderResumen();
     if(tab==='historial') renderHistorial();
+    if(tab==='distribucion') renderDistribucion();
   }
 
   function abrirModal(nombre, precio) {
@@ -452,6 +538,40 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
   }
 
   actualizarTotalesRapidos();
+
+  function renderDistribucion() {
+    const t = calcularTotales();
+    // Solo lo que está físicamente en mano
+    const enMano = t.efectivo + t.tarjeta + t.didi_efectivo - t.totalGastos;
+    const ventas  = t.efectivo + t.tarjeta + t.didi_efectivo;
+
+    // Porcentajes editables (sobre ventas brutas en mano)
+    const pctSueldo  = (parseFloat(document.getElementById('pct-sueldo').value)  || 0) / 100;
+    const pctInv     = (parseFloat(document.getElementById('pct-inv').value)     || 0) / 100;
+    const pctColchon = (parseFloat(document.getElementById('pct-colchon').value) || 0) / 100;
+
+    document.getElementById('lbl-sueldo').textContent  = Math.round(pctSueldo*100)  + '%';
+    document.getElementById('lbl-inv').textContent     = Math.round(pctInv*100)     + '%';
+    document.getElementById('lbl-colchon').textContent = Math.round(pctColchon*100) + '%';
+
+    const total = pctSueldo + pctInv + pctColchon;
+    const alerta = document.getElementById('dist-alerta');
+    alerta.style.display = total > 1.001 ? 'block' : 'none';
+
+    const sueldo  = ventas * pctSueldo;
+    const inv     = ventas * pctInv;
+    const colchon = ventas * pctColchon;
+
+    document.getElementById('dist-en-mano').textContent = '$' + Math.max(0, enMano).toFixed(2);
+    document.getElementById('dist-sueldo').textContent  = '$' + sueldo.toFixed(2);
+    document.getElementById('dist-inv').textContent     = '$' + inv.toFixed(2);
+    document.getElementById('dist-colchon').textContent = '$' + colchon.toFixed(2);
+
+    document.getElementById('dist-sueldo-det').textContent  = Math.round(pctSueldo*100)  + '% de $' + ventas.toFixed(2) + ' en mano';
+    document.getElementById('dist-inv-det').textContent     = Math.round(pctInv*100)     + '% de $' + ventas.toFixed(2) + ' en mano';
+    document.getElementById('dist-colchon-det').textContent = Math.round(pctColchon*100) + '% de $' + ventas.toFixed(2) + ' en mano';
+  }
+
 </script>
 </body>
 </html>
