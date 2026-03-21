@@ -127,6 +127,30 @@
   .dist-alerta{background:rgba(230,57,70,0.15);border:1px solid var(--rojo);border-radius:10px;padding:10px;text-align:center;font-size:12px;color:var(--rojo);margin-bottom:12px;display:none;}
   .dist-nota{font-size:11px;color:var(--gris);text-align:center;margin-top:4px;font-style:italic;}
 
+
+  /* TICKET */
+  .ticket-preview{background:var(--oscuro);border:1px solid #333;border-radius:12px;padding:12px;margin-bottom:14px;display:none;}
+  .ticket-preview.visible{display:block;}
+  .ticket-header{font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;justify-content:space-between;}
+  .ticket-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3e;font-size:13px;}
+  .ticket-item:last-child{border-bottom:none;}
+  .ticket-item .ti-nombre{flex:1;color:var(--texto);}
+  .ticket-item .ti-cant{color:var(--gris);font-size:11px;margin:0 8px;}
+  .ticket-item .ti-precio{font-weight:700;color:var(--verde);}
+  .ticket-item .ti-del{background:none;border:none;color:#555;font-size:14px;cursor:pointer;padding:2px 6px;}
+  .ticket-total{display:flex;justify-content:space-between;padding-top:10px;margin-top:4px;border-top:1px solid #444;}
+  .ticket-total span{font-family:'Bebas Neue',sans-serif;font-size:20px;}
+  .ticket-total .tt-label{color:var(--gris);font-size:13px;font-family:'Inter',sans-serif;font-weight:600;}
+  .ticket-total .tt-monto{color:var(--verde);}
+  .btn-cobrar{width:100%;background:var(--verde);border:none;border-radius:10px;padding:15px;color:var(--oscuro);font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;letter-spacing:0.5px;}
+  .btn-cobrar:active{opacity:0.8;}
+  .modal-qty{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .modal-qty label{font-size:12px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;}
+  .modal-qty input{width:70px;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px;color:var(--texto);font-size:18px;font-weight:700;text-align:center;outline:none;}
+  .modal-qty input:focus{border-color:var(--amarillo);}
+  .btn-agregar-ticket{flex:2;background:var(--amarillo);border:none;border-radius:10px;padding:14px;color:var(--oscuro);font-size:15px;font-weight:700;cursor:pointer;}
+  .btn-agregar-ticket:active{opacity:0.8;}
+
 </style>
 </head>
 <body>
@@ -277,22 +301,43 @@
   <div class="modal">
     <h2 id="modal-titulo">Producto</h2>
     <div class="precio-sugerido" id="modal-sugerido"></div>
-    <label>Precio ($)</label>
-    <input type="number" id="modal-precio" inputmode="decimal" placeholder="0.00">
-    <label>Forma de pago</label>
-    <div class="metodos-grid">
-      <div class="btn-metodo" onclick="selMetodo('efectivo')" id="m-efectivo">💵 Efectivo</div>
-      <div class="btn-metodo" onclick="selMetodo('tarjeta')" id="m-tarjeta">💳 Tarjeta</div>
-      <div class="btn-metodo" onclick="selMetodo('didi_efectivo')" id="m-didi_efectivo">🚗 Didi Ef.</div>
-      <div class="btn-metodo" onclick="selMetodo('didi_tarjeta')" id="m-didi_tarjeta">🚗 Didi Tar.</div>
-      <div class="btn-metodo" onclick="selMetodo('rappi')" id="m-rappi">🛵 Rappi</div>
-      <div class="btn-metodo" onclick="selMetodo('uber')" id="m-uber">🚙 Uber</div>
+    <div class="modal-qty">
+      <label>Cant.</label>
+      <input type="number" id="modal-cant" inputmode="numeric" value="1" min="1">
+      <div style="flex:1">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Precio ($)</label>
+        <input type="number" id="modal-precio" inputmode="decimal" placeholder="0.00" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:10px;padding:14px 16px;color:var(--texto);font-size:22px;font-weight:700;outline:none;text-align:center;">
+      </div>
     </div>
-    <div class="modal-btns">
+    <div class="modal-btns" style="margin-bottom:10px;">
       <button class="btn-cancelar" onclick="cerrarModalBtn()">Cancelar</button>
-      <button class="btn-confirmar" onclick="confirmarVenta()">✓ Registrar</button>
+      <button class="btn-agregar-ticket" onclick="agregarAlTicket()">+ Al Ticket</button>
     </div>
   </div>
+</div>
+
+<!-- TICKET FLOTANTE -->
+<div class="ticket-preview" id="ticket-preview">
+  <div class="ticket-header">
+    <span>🧾 TICKET</span>
+    <span id="ticket-count">0 productos</span>
+  </div>
+  <div id="ticket-items"></div>
+  <div class="ticket-total">
+    <span class="tt-label">TOTAL</span>
+    <span class="tt-monto" id="ticket-total-monto">$0</span>
+  </div>
+  <label style="display:block;font-size:12px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;">Forma de pago</label>
+  <div class="metodos-grid">
+    <div class="btn-metodo" onclick="selMetodo('efectivo')" id="m-efectivo">💵 Efectivo</div>
+    <div class="btn-metodo" onclick="selMetodo('tarjeta')" id="m-tarjeta">💳 Tarjeta</div>
+    <div class="btn-metodo" onclick="selMetodo('didi_efectivo')" id="m-didi_efectivo">🚗 Didi Ef.</div>
+    <div class="btn-metodo" onclick="selMetodo('didi_tarjeta')" id="m-didi_tarjeta">🚗 Didi Tar.</div>
+    <div class="btn-metodo" onclick="selMetodo('rappi')" id="m-rappi">🛵 Rappi</div>
+    <div class="btn-metodo" onclick="selMetodo('uber')" id="m-uber">🚙 Uber</div>
+  </div>
+  <button class="btn-cobrar" onclick="cobrarTicket()">💰 COBRAR TICKET</button>
+  <button class="btn-cancelar" onclick="cancelarTicket()" style="width:100%;margin-top:8px;">✕ Cancelar ticket</button>
 </div>
 
 <!-- MODAL DETALLE HISTORIAL -->
@@ -307,6 +352,14 @@
   let gastos = JSON.parse(localStorage.getItem('bajon_gastos') || '[]');
   let historial = JSON.parse(localStorage.getItem('bajon_historial') || '[]');
   let productoActual = '', precioRef = 0, metodoSeleccionado = '';
+  let ticketItems = []; // productos en el ticket actual
+  
+  // Guardar fecha de apertura del día (primer uso del día)
+  const HOY = new Date().toLocaleDateString('es-MX', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if (!localStorage.getItem('bajon_fecha_apertura')) {
+    localStorage.setItem('bajon_fecha_apertura', HOY);
+  }
+  let fechaApertura = localStorage.getItem('bajon_fecha_apertura') || HOY;
 
   // Fecha header
   const ahora = new Date();
@@ -331,11 +384,11 @@
   }
 
   function abrirModal(nombre, precio) {
-    productoActual=nombre; precioRef=precio; metodoSeleccionado='';
+    productoActual=nombre; precioRef=precio;
     document.getElementById('modal-titulo').textContent=nombre;
     document.getElementById('modal-sugerido').textContent=precio>0?'Precio sugerido: $'+precio:'Ingresa el precio';
     document.getElementById('modal-precio').value=precio>0?precio:'';
-    document.querySelectorAll('.btn-metodo').forEach(b=>b.classList.remove('selected'));
+    document.getElementById('modal-cant').value=1;
     document.getElementById('overlay').classList.add('visible');
     setTimeout(()=>document.getElementById('modal-precio').focus(),300);
   }
@@ -350,14 +403,73 @@
     document.getElementById('m-'+metodo).classList.add('selected');
   }
 
+  function agregarAlTicket() {
+    const precio = parseFloat(document.getElementById('modal-precio').value);
+    const cant = parseInt(document.getElementById('modal-cant').value) || 1;
+    if (!precio || precio <= 0) { mostrarToast('⚠️ Ingresa un precio válido'); return; }
+    ticketItems.push({ id: Date.now(), producto: productoActual, precio, cant });
+    cerrarModalBtn();
+    renderTicket();
+    mostrarToast('✓ ' + (cant > 1 ? cant + 'x ' : '') + productoActual + ' agregado');
+  }
+
+  function renderTicket() {
+    const preview = document.getElementById('ticket-preview');
+    if (!ticketItems.length) { preview.classList.remove('visible'); return; }
+    preview.classList.add('visible');
+    document.getElementById('ticket-count').textContent = ticketItems.length + ' producto' + (ticketItems.length > 1 ? 's' : '');
+    const total = ticketItems.reduce((s, i) => s + i.precio * i.cant, 0);
+    document.getElementById('ticket-total-monto').textContent = '$' + total.toFixed(2);
+    document.getElementById('ticket-items').innerHTML = ticketItems.map(item => `
+      <div class="ticket-item">
+        <span class="ti-nombre">${item.producto}</span>
+        <span class="ti-cant">${item.cant > 1 ? item.cant + 'x' : ''}</span>
+        <span class="ti-precio">$${(item.precio * item.cant).toFixed(2)}</span>
+        <button class="ti-del" onclick="quitarDelTicket(${item.id})">✕</button>
+      </div>`).join('');
+    // Limpiar selección de método
+    document.querySelectorAll('.btn-metodo').forEach(b => b.classList.remove('selected'));
+    metodoSeleccionado = '';
+  }
+
+  function quitarDelTicket(id) {
+    ticketItems = ticketItems.filter(i => i.id !== id);
+    renderTicket();
+  }
+
+  function cancelarTicket() {
+    ticketItems = [];
+    metodoSeleccionado = '';
+    renderTicket();
+  }
+
+  function cobrarTicket() {
+    if (!ticketItems.length) { mostrarToast('⚠️ El ticket está vacío'); return; }
+    if (!metodoSeleccionado) { mostrarToast('⚠️ Selecciona forma de pago'); return; }
+    const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+    const ticketId = Date.now();
+    ticketItems.forEach((item, idx) => {
+      movimientos.push({
+        id: ticketId + idx,
+        producto: item.producto,
+        precio: item.precio * item.cant,
+        metodo: metodoSeleccionado,
+        hora,
+        ticketId  // agrupar items del mismo ticket
+      });
+    });
+    guardarMov();
+    actualizarTotalesRapidos();
+    const total = ticketItems.reduce((s, i) => s + i.precio * i.cant, 0);
+    mostrarToast('✅ Cobrado $' + total.toFixed(2));
+    ticketItems = [];
+    metodoSeleccionado = '';
+    renderTicket();
+  }
+
   function confirmarVenta() {
-    const precio=parseFloat(document.getElementById('modal-precio').value);
-    if(!precio||precio<=0){ mostrarToast('⚠️ Ingresa un precio válido'); return; }
-    if(!metodoSeleccionado){ mostrarToast('⚠️ Selecciona forma de pago'); return; }
-    const hora=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-    movimientos.push({id:Date.now(),producto:productoActual,precio,metodo:metodoSeleccionado,hora});
-    guardarMov(); cerrarModalBtn(); actualizarTotalesRapidos();
-    mostrarToast('✓ '+productoActual+' $'+precio);
+    // Mantener compatibilidad — ya no se usa directo
+    agregarAlTicket();
   }
 
   function agregarGasto() {
@@ -437,18 +549,18 @@
     if(!confirm('¿Cerrar el día? Los datos se guardarán en el historial y empezará un día nuevo.')) return;
 
     const t=calcularTotales();
-    const fechaHoy=new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
     const diaGuardado={
-      id:Date.now(), fecha:fechaHoy,
+      id:Date.now(), fecha:fechaApertura,
       totales:t, movimientos:[...movimientos], gastos:[...gastos]
     };
     historial.unshift(diaGuardado);
     guardarHistorial();
 
     // Limpiar día actual
-    movimientos=[]; gastos=[];
+    movimientos=[]; gastos=[]; ticketItems=[];
     guardarMov(); guardarGastos();
-    renderResumen(); actualizarTotalesRapidos();
+    localStorage.removeItem('bajon_fecha_apertura'); // nueva fecha cuando abra mañana
+    renderResumen(); actualizarTotalesRapidos(); renderTicket();
     mostrarToast('✅ Día cerrado y guardado');
   }
 
