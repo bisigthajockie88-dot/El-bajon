@@ -670,18 +670,19 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     const alerta = document.getElementById('dist-alerta');
     alerta.style.display = total > 1.001 ? 'block' : 'none';
 
-    const sueldo  = ventas * pctSueldo;
-    const inv     = ventas * pctInv;
-    const colchon = ventas * pctColchon;
+    const enManoReal = Math.max(0, enMano);
+    const sueldo  = enManoReal * pctSueldo;
+    const inv     = enManoReal * pctInv;
+    const colchon = enManoReal * pctColchon;
 
-    document.getElementById('dist-en-mano').textContent = '$' + Math.max(0, enMano).toFixed(2);
+    document.getElementById('dist-en-mano').textContent = '$' + enManoReal.toFixed(2);
     document.getElementById('dist-sueldo').textContent  = '$' + sueldo.toFixed(2);
     document.getElementById('dist-inv').textContent     = '$' + inv.toFixed(2);
     document.getElementById('dist-colchon').textContent = '$' + colchon.toFixed(2);
 
-    document.getElementById('dist-sueldo-det').textContent  = Math.round(pctSueldo*100)  + '% de $' + ventas.toFixed(2) + ' en mano';
-    document.getElementById('dist-inv-det').textContent     = Math.round(pctInv*100)     + '% de $' + ventas.toFixed(2) + ' en mano';
-    document.getElementById('dist-colchon-det').textContent = Math.round(pctColchon*100) + '% de $' + ventas.toFixed(2) + ' en mano';
+    document.getElementById('dist-sueldo-det').textContent  = Math.round(pctSueldo*100)  + '% de $' + enManoReal.toFixed(2) + ' en mano';
+    document.getElementById('dist-inv-det').textContent     = Math.round(pctInv*100)     + '% de $' + enManoReal.toFixed(2) + ' en mano';
+    document.getElementById('dist-colchon-det').textContent = Math.round(pctColchon*100) + '% de $' + enManoReal.toFixed(2) + ' en mano';
   }
 
 </script>
