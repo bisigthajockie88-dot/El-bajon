@@ -152,6 +152,7 @@
   .btn-agregar-ticket:active{opacity:0.8;}
 
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -167,6 +168,7 @@
   <div class="tab" onclick="cambiarTab('resumen',this)">Resumen</div>
   <div class="tab" onclick="cambiarTab('historial',this)">Historial</div>
   <div class="tab" onclick="cambiarTab('distribucion',this)">💰 Dist.</div>
+  <div class="tab" onclick="cambiarTab('graficas',this)">📈 Gráficas</div>
 </div>
 
 <!-- TAB VENTA -->
@@ -296,6 +298,49 @@
 </div>
 
 
+<!-- TAB GRÁFICAS -->
+<div class="seccion" id="tab-graficas">
+  <div class="dist-header">📈 Gráficas Semanales</div>
+  <div class="dist-sub" id="graf-semana-label">Semana actual</div>
+
+  <!-- Navegación de semanas -->
+  <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:18px;">
+    <button onclick="semanaAnterior()" style="background:var(--medio);border:1px solid #444;border-radius:8px;padding:8px 16px;color:var(--texto);font-size:16px;cursor:pointer;">◀</button>
+    <span id="graf-semana-rango" style="font-size:12px;color:var(--gris);text-align:center;min-width:160px;"></span>
+    <button onclick="semanaSiguiente()" id="btn-semana-sig" style="background:var(--medio);border:1px solid #444;border-radius:8px;padding:8px 16px;color:var(--texto);font-size:16px;cursor:pointer;">▶</button>
+  </div>
+
+  <!-- Gráfica 1: Ventas por método de pago -->
+  <div class="resumen-box">
+    <h3>💳 Ventas por Método de Pago</h3>
+    <canvas id="chart-metodos" height="220"></canvas>
+  </div>
+
+  <!-- Gráfica 2: Plataformas -->
+  <div class="resumen-box">
+    <h3>📱 Ventas por Plataforma</h3>
+    <canvas id="chart-plataformas" height="200"></canvas>
+  </div>
+
+  <!-- Gráfica 3: Productos más vendidos -->
+  <div class="resumen-box">
+    <h3>🏆 Top Productos Más Vendidos</h3>
+    <canvas id="chart-productos" height="260"></canvas>
+  </div>
+
+  <!-- Gráfica 4a: Por hora -->
+  <div class="resumen-box">
+    <h3>🕐 Ventas por Hora del Día</h3>
+    <canvas id="chart-horas" height="200"></canvas>
+  </div>
+
+  <!-- Gráfica 4b: Por día de la semana -->
+  <div class="resumen-box">
+    <h3>📅 Ventas por Día de la Semana</h3>
+    <canvas id="chart-dias" height="200"></canvas>
+  </div>
+</div>
+
 <!-- MODAL VENTA -->
 <div class="overlay" id="overlay" onclick="cerrarModal(event)">
   <div class="modal">
@@ -381,6 +426,7 @@
     if(tab==='resumen') renderResumen();
     if(tab==='historial') renderHistorial();
     if(tab==='distribucion') renderDistribucion();
+    if(tab==='graficas') { semanaOffset=0; renderGraficas(); }
   }
 
   function abrirModal(nombre, precio) {
@@ -650,6 +696,208 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
   }
 
   actualizarTotalesRapidos();
+
+  // ─── GRÁFICAS ────────────────────────────────────────────────────────────────
+  // Semana = lunes a domingo. semanaOffset: 0 = semana actual, -1 = semana anterior, etc.
+  let semanaOffset = 0;
+  let grafCharts = {};
+
+  function getLunesDomingo(offset) {
+    const hoy = new Date();
+    const diaSemana = hoy.getDay(); // 0=dom, 1=lun...
+    const diffLunes = (diaSemana === 0 ? -6 : 1 - diaSemana);
+    const lunes = new Date(hoy);
+    lunes.setDate(hoy.getDate() + diffLunes + offset * 7);
+    lunes.setHours(0, 0, 0, 0);
+    const domingo = new Date(lunes);
+    domingo.setDate(lunes.getDate() + 6);
+    domingo.setHours(23, 59, 59, 999);
+    return { lunes, domingo };
+  }
+
+  function parseFechaHistorial(fechaStr) {
+    // formato: "lunes, 14 de julio de 2025" -> Date
+    const meses = {enero:0,febrero:1,marzo:2,abril:3,mayo:4,junio:5,julio:6,agosto:7,septiembre:8,octubre:9,noviembre:10,diciembre:11};
+    const m = fechaStr.match(/(\d+)\s+de\s+(\w+)\s+de\s+(\d+)/);
+    if (!m) return null;
+    return new Date(parseInt(m[3]), meses[m[2].toLowerCase()] ?? 0, parseInt(m[1]));
+  }
+
+  function getMovimientosSemana(offset) {
+    const { lunes, domingo } = getLunesDomingo(offset);
+    const movSemana = [];
+
+    // Día actual (si entra en el rango)
+    const hoyDate = new Date();
+    if (hoyDate >= lunes && hoyDate <= domingo) {
+      movimientos.forEach(m => movSemana.push({ ...m, _fecha: hoyDate }));
+    }
+
+    // Historial cerrado
+    historial.forEach(dia => {
+      const fecha = parseFechaHistorial(dia.fecha);
+      if (fecha && fecha >= lunes && fecha <= domingo) {
+        dia.movimientos.forEach(m => movSemana.push({ ...m, _fecha: fecha }));
+      }
+    });
+
+    return { movs: movSemana, lunes, domingo };
+  }
+
+  function semanaAnterior() {
+    semanaOffset--;
+    renderGraficas();
+  }
+
+  function semanaSiguiente() {
+    if (semanaOffset < 0) { semanaOffset++; renderGraficas(); }
+  }
+
+  function fmtFecha(d) {
+    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+  }
+
+  function destroyChart(id) {
+    if (grafCharts[id]) { grafCharts[id].destroy(); delete grafCharts[id]; }
+  }
+
+  function renderGraficas() {
+    const { movs, lunes, domingo } = getMovimientosSemana(semanaOffset);
+
+    // Labels de semana
+    const esActual = semanaOffset === 0;
+    document.getElementById('graf-semana-label').textContent = esActual ? 'Semana actual' : `Hace ${Math.abs(semanaOffset)} semana${Math.abs(semanaOffset) > 1 ? 's' : ''}`;
+    document.getElementById('graf-semana-rango').textContent = fmtFecha(lunes) + ' – ' + fmtFecha(domingo);
+    document.getElementById('btn-semana-sig').style.opacity = semanaOffset < 0 ? '1' : '0.3';
+    document.getElementById('btn-semana-sig').style.pointerEvents = semanaOffset < 0 ? 'auto' : 'none';
+
+    const cf = { color: '#eaeaea', gridColor: 'rgba(255,255,255,0.07)' };
+
+    // ── 1. VENTAS POR MÉTODO DE PAGO (barras) ──
+    const metodos = { efectivo:0, tarjeta:0, didi_efectivo:0 };
+    movs.forEach(m => { if (metodos[m.metodo] !== undefined) metodos[m.metodo] += m.precio; });
+    destroyChart('metodos');
+    grafCharts['metodos'] = new Chart(document.getElementById('chart-metodos'), {
+      type: 'bar',
+      data: {
+        labels: ['💵 Efectivo', '💳 Tarjeta', '🚗 Didi Ef.'],
+        datasets: [{
+          data: [metodos.efectivo, metodos.tarjeta, metodos.didi_efectivo],
+          backgroundColor: ['rgba(46,196,182,0.7)', 'rgba(155,93,229,0.7)', 'rgba(255,107,53,0.7)'],
+          borderColor: ['#2ec4b6', '#9b5de5', '#ff6b35'],
+          borderWidth: 2, borderRadius: 8
+        }]
+      },
+      options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
+        scales: { x:{ ticks:{ color:cf.color, font:{size:11} }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
+    });
+
+    // ── 2. PLATAFORMAS (dona) ──
+    const plat = { didi_tarjeta:0, rappi:0, uber:0 };
+    movs.forEach(m => { if (plat[m.metodo] !== undefined) plat[m.metodo] += m.precio; });
+    destroyChart('plataformas');
+    grafCharts['plataformas'] = new Chart(document.getElementById('chart-plataformas'), {
+      type: 'doughnut',
+      data: {
+        labels: ['🚗 Didi TAR', '🛵 Rappi TAR', '🚙 Uber TAR'],
+        datasets: [{
+          data: [plat.didi_tarjeta, plat.rappi, plat.uber],
+          backgroundColor: ['rgba(255,149,0,0.75)', 'rgba(255,60,56,0.75)', 'rgba(170,170,170,0.75)'],
+          borderColor: ['#ff9500', '#ff3c38', '#aaa'],
+          borderWidth: 2
+        }]
+      },
+      options: { responsive:true, cutout:'60%',
+        plugins:{ legend:{ position:'bottom', labels:{ color:cf.color, font:{size:11}, padding:10 } },
+          tooltip:{ callbacks:{ label: ctx => ctx.label + ': $' + ctx.raw.toFixed(2) } } } }
+    });
+
+    // ── 3. PRODUCTOS MÁS VENDIDOS (barras horizontales) ──
+    const prodMap = {};
+    movs.forEach(m => {
+      const key = m.producto || 'Otro';
+      if (!prodMap[key]) prodMap[key] = { monto: 0, cant: 0 };
+      prodMap[key].monto += m.precio;
+      prodMap[key].cant++;
+    });
+    const prodSorted = Object.entries(prodMap).sort((a,b) => b[1].monto - a[1].monto).slice(0, 8);
+    destroyChart('productos');
+    grafCharts['productos'] = new Chart(document.getElementById('chart-productos'), {
+      type: 'bar',
+      data: {
+        labels: prodSorted.map(([k]) => k),
+        datasets: [{
+          label: 'Ventas $',
+          data: prodSorted.map(([,v]) => v.monto),
+          backgroundColor: 'rgba(244,162,97,0.7)',
+          borderColor: '#f4a261',
+          borderWidth: 2, borderRadius: 6
+        }]
+      },
+      options: { indexAxis:'y', responsive:true,
+        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
+        scales: { x:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, font:{size:11} }, grid:{color:cf.gridColor} } } }
+    });
+
+    // ── 4a. POR HORA ──
+    const horaMap = {};
+    for (let h = 0; h < 24; h++) horaMap[h] = 0;
+    movs.forEach(m => {
+      if (!m.hora) return;
+      const h = parseInt(m.hora.split(':')[0]);
+      if (!isNaN(h)) horaMap[h] = (horaMap[h] || 0) + m.precio;
+    });
+    const horasConVentas = Object.entries(horaMap).filter(([,v]) => v > 0);
+    const hMin = horasConVentas.length ? Math.min(...horasConVentas.map(([h]) => parseInt(h))) : 0;
+    const hMax = horasConVentas.length ? Math.max(...horasConVentas.map(([h]) => parseInt(h))) : 23;
+    const horasLabels = [], horasData = [];
+    for (let h = Math.max(0, hMin-1); h <= Math.min(23, hMax+1); h++) {
+      horasLabels.push(h + ':00');
+      horasData.push(horaMap[h] || 0);
+    }
+    destroyChart('horas');
+    grafCharts['horas'] = new Chart(document.getElementById('chart-horas'), {
+      type: 'line',
+      data: {
+        labels: horasLabels,
+        datasets: [{
+          data: horasData,
+          borderColor: '#e63946',
+          backgroundColor: 'rgba(230,57,70,0.15)',
+          fill: true, tension: 0.4, pointRadius: 4,
+          pointBackgroundColor: '#e63946'
+        }]
+      },
+      options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
+        scales: { x:{ ticks:{ color:cf.color, font:{size:10} }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
+    });
+
+    // ── 4b. POR DÍA DE LA SEMANA ──
+    const diasNom = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    const diasMap = [0,0,0,0,0,0,0];
+    movs.forEach(m => {
+      if (!m._fecha) return;
+      const d = new Date(m._fecha);
+      const idx = (d.getDay() + 6) % 7; // lun=0, dom=6
+      diasMap[idx] += m.precio;
+    });
+    destroyChart('dias');
+    grafCharts['dias'] = new Chart(document.getElementById('chart-dias'), {
+      type: 'bar',
+      data: {
+        labels: diasNom,
+        datasets: [{
+          data: diasMap,
+          backgroundColor: diasMap.map(v => v === Math.max(...diasMap) && v > 0 ? 'rgba(46,196,182,0.85)' : 'rgba(15,52,96,0.85)'),
+          borderColor: diasMap.map(v => v === Math.max(...diasMap) && v > 0 ? '#2ec4b6' : '#0f3460'),
+          borderWidth: 2, borderRadius: 8
+        }]
+      },
+      options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
+        scales: { x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
+    });
+  }
+  // ─── FIN GRÁFICAS ─────────────────────────────────────────────────────────────
 
   function renderDistribucion() {
     const t = calcularTotales();
