@@ -616,8 +616,20 @@
     cont.innerHTML=historial.map(d=>`
       <div class="dia-card">
         <div class="dia-header">
-          <div class="dia-fecha">${d.fecha}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex:1;">
+            <div class="dia-fecha" id="fecha-txt-${d.id}">${d.fecha}</div>
+            <button onclick="editarFecha(${d.id})" title="Editar fecha" style="background:transparent;border:none;color:var(--gris);font-size:14px;cursor:pointer;padding:2px 4px;">✏️</button>
+          </div>
           <div class="dia-total">$${d.totales.totalVenta.toFixed(0)}</div>
+        </div>
+        <div id="fecha-edit-${d.id}" style="display:none;margin-bottom:10px;">
+          <input type="text" id="fecha-input-${d.id}" value="${d.fecha}"
+            style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:10px 12px;color:var(--texto);font-size:13px;outline:none;margin-bottom:8px;"
+            placeholder="ej: lunes, 14 de julio de 2025">
+          <div style="display:flex;gap:8px;">
+            <button onclick="guardarFecha(${d.id})" style="flex:1;background:var(--verde);border:none;border-radius:8px;padding:9px;color:var(--oscuro);font-weight:700;font-size:13px;cursor:pointer;">✓ Guardar</button>
+            <button onclick="cancelarFecha(${d.id})" style="flex:1;background:transparent;border:1px solid #444;border-radius:8px;padding:9px;color:var(--gris);font-size:13px;cursor:pointer;">Cancelar</button>
+          </div>
         </div>
         <div class="dia-detalle">
           💵 Efectivo: <span>$${d.totales.efectivo.toFixed(2)}</span> &nbsp;
@@ -630,6 +642,28 @@
         </div>
         <button class="btn-ver-dia" onclick="verDetalleDia(${d.id})">Ver detalle completo</button>
       </div>`).join('');
+  }
+
+  function editarFecha(id) {
+    document.getElementById('fecha-txt-'+id).style.display='none';
+    document.getElementById('fecha-edit-'+id).style.display='block';
+    document.getElementById('fecha-input-'+id).focus();
+  }
+
+  function cancelarFecha(id) {
+    document.getElementById('fecha-txt-'+id).style.display='';
+    document.getElementById('fecha-edit-'+id).style.display='none';
+  }
+
+  function guardarFecha(id) {
+    const nuevaFecha = document.getElementById('fecha-input-'+id).value.trim();
+    if (!nuevaFecha) { mostrarToast('\u26a0\ufe0f Escribe una fecha'); return; }
+    const idx = historial.findIndex(d=>d.id===id);
+    if (idx === -1) return;
+    historial[idx].fecha = nuevaFecha;
+    guardarHistorial();
+    mostrarToast('\u2705 Fecha actualizada');
+    renderHistorial();
   }
 
   function verDetalleDia(id) {
