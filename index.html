@@ -216,6 +216,10 @@
     <h3>Agregar Gasto</h3>
     <div class="input-row"><input type="text" id="gasto-concepto" placeholder="Concepto (ej: gas, camión...)"></div>
     <div class="input-row"><input type="number" id="gasto-monto" placeholder="$0.00" inputmode="decimal"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <button id="btn-tipo-negocio" onclick="selTipoGasto('negocio')" style="flex:1;padding:11px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(244,162,97,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">📦 Gasto del Negocio<br><span style="font-size:10px;font-weight:400;opacity:0.8;">Descuenta de Inversión</span></button>
+      <button id="btn-tipo-personal" onclick="selTipoGasto('personal')" style="flex:1;padding:11px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">🧍 Gasto Personal<br><span style="font-size:10px;font-weight:400;opacity:0.8;">Descuenta de tu Sueldo</span></button>
+    </div>
     <button class="btn-agregar-gasto" onclick="agregarGasto()">+ Agregar Gasto</button>
   </div>
   <div id="lista-gastos"><div class="empty-state"><div class="icon">💸</div>Sin gastos registrados</div></div>
@@ -280,18 +284,21 @@
     <div class="dist-titulo">🧍 Para ti (sueldo)</div>
     <div class="dist-monto" id="dist-sueldo">$0</div>
     <div class="dist-detalle" id="dist-sueldo-det"></div>
+    <div id="dist-sueldo-gastos" style="margin-top:8px;font-size:10px;color:rgba(155,93,229,0.85);text-align:left;padding:0 4px;"></div>
   </div>
 
   <div class="dist-card card-amarillo">
     <div class="dist-titulo">📦 Para inversión del negocio</div>
     <div class="dist-monto" id="dist-inv">$0</div>
     <div class="dist-detalle" id="dist-inv-det"></div>
+    <div id="dist-inv-gastos" style="margin-top:8px;font-size:10px;color:rgba(244,162,97,0.85);text-align:left;padding:0 4px;"></div>
   </div>
 
   <div class="dist-card card-rojo">
     <div class="dist-titulo">🛡️ Colchón del negocio</div>
     <div class="dist-monto" id="dist-colchon">$0</div>
     <div class="dist-detalle" id="dist-colchon-det"></div>
+    <div id="dist-colchon-gastos" style="margin-top:8px;font-size:10px;color:rgba(230,57,70,0.85);text-align:left;padding:0 4px;"></div>
   </div>
 
   <div class="dist-nota">* Las ventas de Didi TAR, Rappi y Uber no se incluyen — ese dinero aún no está en tu mano</div>
@@ -313,13 +320,19 @@
   <!-- Gráfica 1: Ventas por método de pago -->
   <div class="resumen-box">
     <h3>💳 Ventas por Método de Pago</h3>
-    <canvas id="chart-metodos" height="220"></canvas>
+    <canvas id="chart-metodos" height="260"></canvas>
   </div>
 
   <!-- Gráfica 2: Plataformas -->
   <div class="resumen-box">
     <h3>📱 Ventas por Plataforma</h3>
     <canvas id="chart-plataformas" height="200"></canvas>
+  </div>
+
+  <!-- Gráfica NUEVA: Total vendido por día -->
+  <div class="resumen-box">
+    <h3>📆 Total Vendido por Día (Bruto)</h3>
+    <canvas id="chart-total-dia" height="200"></canvas>
   </div>
 
   <!-- Gráfica 3: Productos más vendidos -->
@@ -338,6 +351,17 @@
   <div class="resumen-box">
     <h3>📅 Ventas por Día de la Semana</h3>
     <canvas id="chart-dias" height="200"></canvas>
+  </div>
+
+  <!-- Gráfica 5: Gastos semanales -->
+  <div class="resumen-box">
+    <h3>💸 Gastos de la Semana</h3>
+    <canvas id="chart-gastos-semana" height="220"></canvas>
+    <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;">
+      <span style="color:#f4a261;">■ Negocio (Inversión)</span>
+      <span style="color:#9b5de5;">■ Personal (Sueldo)</span>
+    </div>
+    <div id="resumen-gastos-semana" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div>
   </div>
 </div>
 
@@ -397,7 +421,8 @@
   let gastos = JSON.parse(localStorage.getItem('bajon_gastos') || '[]');
   let historial = JSON.parse(localStorage.getItem('bajon_historial') || '[]');
   let productoActual = '', precioRef = 0, metodoSeleccionado = '';
-  let ticketItems = []; // productos en el ticket actual
+  let ticketItems = [];
+  let tipoGastoSeleccionado = 'negocio';
   
   // Guardar fecha de apertura del día (primer uso del día)
   const HOY = new Date().toLocaleDateString('es-MX', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -524,7 +549,7 @@
     if(!concepto){ mostrarToast('⚠️ Escribe el concepto'); return; }
     if(!monto||monto<=0){ mostrarToast('⚠️ Ingresa el monto'); return; }
     const hora=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-    gastos.push({id:Date.now(),concepto,monto,hora});
+    gastos.push({id:Date.now(),concepto,monto,hora,tipo:tipoGastoSeleccionado});
     guardarGastos();
     document.getElementById('gasto-concepto').value='';
     document.getElementById('gasto-monto').value='';
@@ -562,7 +587,14 @@
     if(!gastos.length){ cont.innerHTML='<div class="empty-state"><div class="icon">💸</div>Sin gastos registrados</div>'; return; }
     cont.innerHTML=[...gastos].reverse().map(g=>`
       <div class="movimiento gasto">
-        <div class="info"><div class="nombre-mov">${g.concepto}</div><div class="detalle-mov">${g.hora}</div></div>
+        <div class="info">
+          <div class="nombre-mov">${g.concepto}
+            <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin-left:6px;${g.tipo==='personal'?'background:rgba(155,93,229,0.2);color:#9b5de5;':'background:rgba(244,162,97,0.2);color:#f4a261;'}">
+              ${g.tipo==='personal'?'🧍 Personal':'📦 Negocio'}
+            </span>
+          </div>
+          <div class="detalle-mov">${g.hora}</div>
+        </div>
         <div class="monto-mov">$${g.monto.toFixed(2)}</div>
         <button class="btn-eliminar" onclick="eliminarGasto(${g.id})">✕</button>
       </div>`).join('');
@@ -730,6 +762,7 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
   }
 
   actualizarTotalesRapidos();
+  selTipoGasto('negocio');
 
   // ─── GRÁFICAS ────────────────────────────────────────────────────────────────
   // Semana = lunes a domingo. semanaOffset: 0 = semana actual, -1 = semana anterior, etc.
@@ -795,6 +828,20 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     if (grafCharts[id]) { grafCharts[id].destroy(); delete grafCharts[id]; }
   }
 
+  // ── TIPO DE GASTO ──
+  function selTipoGasto(tipo) {
+    tipoGastoSeleccionado = tipo;
+    const btnNeg = document.getElementById('btn-tipo-negocio');
+    const btnPer = document.getElementById('btn-tipo-personal');
+    if (tipo === 'negocio') {
+      btnNeg.style.borderColor = 'var(--amarillo)'; btnNeg.style.background = 'rgba(244,162,97,0.15)'; btnNeg.style.color = 'var(--amarillo)';
+      btnPer.style.borderColor = '#444'; btnPer.style.background = 'transparent'; btnPer.style.color = 'var(--gris)';
+    } else {
+      btnPer.style.borderColor = 'var(--morado)'; btnPer.style.background = 'rgba(155,93,229,0.15)'; btnPer.style.color = 'var(--morado)';
+      btnNeg.style.borderColor = '#444'; btnNeg.style.background = 'transparent'; btnNeg.style.color = 'var(--gris)';
+    }
+  }
+
   function renderGraficas() {
     const { movs, lunes, domingo } = getMovimientosSemana(semanaOffset);
 
@@ -807,23 +854,23 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
 
     const cf = { color: '#eaeaea', gridColor: 'rgba(255,255,255,0.07)' };
 
-    // ── 1. VENTAS POR MÉTODO DE PAGO (barras) ──
-    const metodos = { efectivo:0, tarjeta:0, didi_efectivo:0 };
+    // ── 1. VENTAS POR MÉTODO DE PAGO (todos los métodos) ──
+    const metodos = { efectivo:0, tarjeta:0, didi_efectivo:0, didi_tarjeta:0, rappi:0, uber:0 };
     movs.forEach(m => { if (metodos[m.metodo] !== undefined) metodos[m.metodo] += m.precio; });
     destroyChart('metodos');
     grafCharts['metodos'] = new Chart(document.getElementById('chart-metodos'), {
       type: 'bar',
       data: {
-        labels: ['💵 Efectivo', '💳 Tarjeta', '🚗 Didi Ef.'],
+        labels: ['💵 Efectivo', '💳 Tarjeta', '🚗 DiDi Ef.', '🚗 DiDi TAR', '🛵 Rappi TAR', '🚙 Uber TAR'],
         datasets: [{
-          data: [metodos.efectivo, metodos.tarjeta, metodos.didi_efectivo],
-          backgroundColor: ['rgba(46,196,182,0.7)', 'rgba(155,93,229,0.7)', 'rgba(255,107,53,0.7)'],
-          borderColor: ['#2ec4b6', '#9b5de5', '#ff6b35'],
+          data: [metodos.efectivo, metodos.tarjeta, metodos.didi_efectivo, metodos.didi_tarjeta, metodos.rappi, metodos.uber],
+          backgroundColor: ['rgba(46,196,182,0.7)','rgba(155,93,229,0.7)','rgba(255,107,53,0.7)','rgba(255,149,0,0.7)','rgba(255,60,56,0.7)','rgba(170,170,170,0.7)'],
+          borderColor: ['#2ec4b6','#9b5de5','#ff6b35','#ff9500','#ff3c38','#aaa'],
           borderWidth: 2, borderRadius: 8
         }]
       },
       options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
-        scales: { x:{ ticks:{ color:cf.color, font:{size:11} }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
+        scales: { x:{ ticks:{ color:cf.color, font:{size:10} }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
     });
 
     // ── 2. PLATAFORMAS (dona) ──
@@ -844,6 +891,35 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
       options: { responsive:true, cutout:'60%',
         plugins:{ legend:{ position:'bottom', labels:{ color:cf.color, font:{size:11}, padding:10 } },
           tooltip:{ callbacks:{ label: ctx => ctx.label + ': $' + ctx.raw.toFixed(2) } } } }
+    });
+
+    // ── NUEVA: Total vendido por día (bruto) ──
+    const diasNom = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    const totalDiaMap = [0,0,0,0,0,0,0];
+    movs.forEach(m => {
+      if (!m._fecha) return;
+      const d = new Date(m._fecha);
+      const idx = (d.getDay() + 6) % 7;
+      totalDiaMap[idx] += m.precio;
+    });
+    destroyChart('total-dia');
+    grafCharts['total-dia'] = new Chart(document.getElementById('chart-total-dia'), {
+      type: 'bar',
+      data: {
+        labels: diasNom,
+        datasets: [{
+          label: 'Total Bruto',
+          data: totalDiaMap,
+          backgroundColor: totalDiaMap.map(v => v === Math.max(...totalDiaMap) && v > 0 ? 'rgba(244,162,97,0.85)' : 'rgba(244,162,97,0.35)'),
+          borderColor: '#f4a261',
+          borderWidth: 2, borderRadius: 8
+        }]
+      },
+      options: { responsive:true,
+        plugins:{ legend:{display:false},
+          tooltip:{ callbacks:{ label: ctx => 'Total: $' + ctx.raw.toFixed(2) } } },
+        scales: { x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
+          y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
     });
 
     // ── 3. PRODUCTOS MÁS VENDIDOS (barras horizontales) ──
@@ -907,12 +983,11 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     });
 
     // ── 4b. POR DÍA DE LA SEMANA ──
-    const diasNom = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
     const diasMap = [0,0,0,0,0,0,0];
     movs.forEach(m => {
       if (!m._fecha) return;
       const d = new Date(m._fecha);
-      const idx = (d.getDay() + 6) % 7; // lun=0, dom=6
+      const idx = (d.getDay() + 6) % 7;
       diasMap[idx] += m.precio;
     });
     destroyChart('dias');
@@ -930,16 +1005,94 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
       options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
         scales: { x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
     });
+
+    // ── 5. GASTOS SEMANALES: negocio vs personal por día ──
+    // Recolectar gastos del historial + día actual en el rango de semana
+    const gastosDiaNeg = [0,0,0,0,0,0,0];
+    const gastosDiaPer = [0,0,0,0,0,0,0];
+
+    // Gastos día actual
+    const hoyDate = new Date();
+    if (hoyDate >= lunes && hoyDate <= domingo) {
+      const idxHoy = (hoyDate.getDay() + 6) % 7;
+      gastos.forEach(g => {
+        if (g.tipo === 'personal') gastosDiaPer[idxHoy] += g.monto;
+        else gastosDiaNeg[idxHoy] += g.monto;
+      });
+    }
+    // Gastos en historial cerrado
+    historial.forEach(dia => {
+      const fecha = parseFechaHistorial(dia.fecha);
+      if (fecha && fecha >= lunes && fecha <= domingo) {
+        const idx = (fecha.getDay() + 6) % 7;
+        (dia.gastos || []).forEach(g => {
+          if (g.tipo === 'personal') gastosDiaPer[idx] += g.monto;
+          else gastosDiaNeg[idx] += g.monto;
+        });
+      }
+    });
+
+    const totalNeg = gastosDiaNeg.reduce((a,b)=>a+b,0);
+    const totalPer = gastosDiaPer.reduce((a,b)=>a+b,0);
+
+    destroyChart('gastos-semana');
+    grafCharts['gastos-semana'] = new Chart(document.getElementById('chart-gastos-semana'), {
+      type: 'bar',
+      data: {
+        labels: diasNom,
+        datasets: [
+          {
+            label: '📦 Negocio',
+            data: gastosDiaNeg,
+            backgroundColor: 'rgba(244,162,97,0.75)',
+            borderColor: '#f4a261',
+            borderWidth: 2, borderRadius: 6
+          },
+          {
+            label: '🧍 Personal',
+            data: gastosDiaPer,
+            backgroundColor: 'rgba(155,93,229,0.75)',
+            borderColor: '#9b5de5',
+            borderWidth: 2, borderRadius: 6
+          }
+        ]
+      },
+      options: { responsive:true,
+        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:12 } },
+          tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
+        scales: {
+          x:{ stacked:false, ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
+          y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} }
+        }
+      }
+    });
+
+    // Resumen texto bajo la gráfica
+    const resEl = document.getElementById('resumen-gastos-semana');
+    if (totalNeg === 0 && totalPer === 0) {
+      resEl.innerHTML = '<span style="color:var(--gris)">Sin gastos registrados esta semana</span>';
+    } else {
+      resEl.innerHTML = `
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3e;">
+          <span style="color:#f4a261;">📦 Total gastos negocio</span>
+          <span style="color:#f4a261;font-weight:700;">$${totalNeg.toFixed(2)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3e;">
+          <span style="color:#9b5de5;">🧍 Total gastos personales</span>
+          <span style="color:#9b5de5;font-weight:700;">$${totalPer.toFixed(2)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:2px;">
+          <span style="color:var(--texto);font-weight:600;">💸 Total semana</span>
+          <span style="color:var(--rojo);font-weight:700;font-size:15px;">$${(totalNeg+totalPer).toFixed(2)}</span>
+        </div>`;
+    }
   }
   // ─── FIN GRÁFICAS ─────────────────────────────────────────────────────────────
 
   function renderDistribucion() {
     const t = calcularTotales();
-    // Solo lo que está físicamente en mano
     const enMano = t.efectivo + t.tarjeta + t.didi_efectivo - t.totalGastos;
-    const ventas  = t.efectivo + t.tarjeta + t.didi_efectivo;
 
-    // Porcentajes editables (sobre ventas brutas en mano)
     const pctSueldo  = (parseFloat(document.getElementById('pct-sueldo').value)  || 0) / 100;
     const pctInv     = (parseFloat(document.getElementById('pct-inv').value)     || 0) / 100;
     const pctColchon = (parseFloat(document.getElementById('pct-colchon').value) || 0) / 100;
@@ -948,23 +1101,64 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     document.getElementById('lbl-inv').textContent     = Math.round(pctInv*100)     + '%';
     document.getElementById('lbl-colchon').textContent = Math.round(pctColchon*100) + '%';
 
-    const total = pctSueldo + pctInv + pctColchon;
-    const alerta = document.getElementById('dist-alerta');
-    alerta.style.display = total > 1.001 ? 'block' : 'none';
+    const totalPct = pctSueldo + pctInv + pctColchon;
+    document.getElementById('dist-alerta').style.display = totalPct > 1.001 ? 'block' : 'none';
 
     const enManoReal = Math.max(0, enMano);
-    const sueldo  = enManoReal * pctSueldo;
-    const inv     = enManoReal * pctInv;
-    const colchon = enManoReal * pctColchon;
+
+    // Gastos separados por tipo
+    const gastosNegocio  = gastos.filter(g => !g.tipo || g.tipo === 'negocio');
+    const gastosPersonal = gastos.filter(g => g.tipo === 'personal');
+    const totalGasNeg = gastosNegocio.reduce((s,g)=>s+g.monto,0);
+    const totalGasPer = gastosPersonal.reduce((s,g)=>s+g.monto,0);
+
+    // Montos base según porcentaje
+    const sueldoBase = enManoReal * pctSueldo;
+    const invBase    = enManoReal * pctInv;
+    const colchonBase= enManoReal * pctColchon;
+
+    // Descontar gastos personales del sueldo
+    const sueldoFinal = Math.max(0, sueldoBase - totalGasPer);
+
+    // Descontar gastos de negocio de inversión; si excede, lo resta del colchón
+    let invFinal = invBase - totalGasNeg;
+    let colchonAjuste = 0;
+    if (invFinal < 0) {
+      colchonAjuste = invFinal; // negativo
+      invFinal = 0;
+    }
+    const colchonFinal = Math.max(0, colchonBase + colchonAjuste);
 
     document.getElementById('dist-en-mano').textContent = '$' + enManoReal.toFixed(2);
-    document.getElementById('dist-sueldo').textContent  = '$' + sueldo.toFixed(2);
-    document.getElementById('dist-inv').textContent     = '$' + inv.toFixed(2);
-    document.getElementById('dist-colchon').textContent = '$' + colchon.toFixed(2);
+    document.getElementById('dist-sueldo').textContent  = '$' + sueldoFinal.toFixed(2);
+    document.getElementById('dist-inv').textContent     = '$' + invFinal.toFixed(2);
+    document.getElementById('dist-colchon').textContent = '$' + colchonFinal.toFixed(2);
 
-    document.getElementById('dist-sueldo-det').textContent  = Math.round(pctSueldo*100)  + '% de $' + enManoReal.toFixed(2) + ' en mano';
-    document.getElementById('dist-inv-det').textContent     = Math.round(pctInv*100)     + '% de $' + enManoReal.toFixed(2) + ' en mano';
-    document.getElementById('dist-colchon-det').textContent = Math.round(pctColchon*100) + '% de $' + enManoReal.toFixed(2) + ' en mano';
+    document.getElementById('dist-sueldo-det').textContent = Math.round(pctSueldo*100) + '% de $' + enManoReal.toFixed(2) + ' en mano';
+    document.getElementById('dist-inv-det').textContent    = Math.round(pctInv*100)    + '% de $' + enManoReal.toFixed(2) + ' en mano';
+    document.getElementById('dist-colchon-det').textContent= Math.round(pctColchon*100)+ '% de $' + enManoReal.toFixed(2) + ' en mano';
+
+    // Detalle gastos por bolsillo
+    const elSueldoG = document.getElementById('dist-sueldo-gastos');
+    if (elSueldoG) {
+      elSueldoG.innerHTML = gastosPersonal.length
+        ? gastosPersonal.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('') +
+          (sueldoBase - totalGasPer < 0 ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ Gastos exceden tu sueldo</div>` : '')
+        : '';
+    }
+    const elInvG = document.getElementById('dist-inv-gastos');
+    if (elInvG) {
+      elInvG.innerHTML = gastosNegocio.length
+        ? gastosNegocio.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('') +
+          (colchonAjuste < 0 ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ $${Math.abs(colchonAjuste).toFixed(2)} extra descontado del Colchón</div>` : '')
+        : '';
+    }
+    const elColchonG = document.getElementById('dist-colchon-gastos');
+    if (elColchonG) {
+      elColchonG.innerHTML = colchonAjuste < 0
+        ? `<div style="color:var(--rojo);">· Cubrió faltante de inversión: <b>-$${Math.abs(colchonAjuste).toFixed(2)}</b></div>`
+        : '';
+    }
   }
 
 </script>
