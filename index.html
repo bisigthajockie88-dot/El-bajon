@@ -603,7 +603,13 @@
   function calcularTotales() {
     const tots={efectivo:0,tarjeta:0,didi_efectivo:0,didi_tarjeta:0,rappi:0,uber:0};
     movimientos.forEach(m=>{tots[m.metodo]=(tots[m.metodo]||0)+m.precio;});
-    return{...tots,totalGastos:gastos.reduce((s,g)=>s+g.monto,0),totalVenta:movimientos.reduce((s,m)=>s+m.precio,0)};
+    const totalGasNeg = gastos.filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
+    const totalGasPer = gastos.filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
+    return{...tots,
+      totalGastos: totalGasNeg + totalGasPer, // total informativo
+      totalGastosNegocio: totalGasNeg,
+      totalGastosPersonal: totalGasPer,
+      totalVenta:movimientos.reduce((s,m)=>s+m.precio,0)};
   }
 
   function renderResumen() {
@@ -616,10 +622,11 @@
     document.getElementById('res-uber').textContent='$'+t.uber.toFixed(2);
     document.getElementById('res-gastos').textContent='-$'+t.totalGastos.toFixed(2);
     document.getElementById('res-total').textContent='$'+t.totalVenta.toFixed(2);
-    const enMano=t.efectivo+t.tarjeta+t.didi_efectivo-t.totalGastos;
+    // En mano = bruto sin descontar gastos (los gastos se manejan en distribución)
+    const enMano=t.efectivo+t.tarjeta+t.didi_efectivo;
     const elMano=document.getElementById('res-en-mano');
     elMano.textContent='$'+enMano.toFixed(2);
-    elMano.style.color=enMano>=0?'var(--verde)':'var(--rojo)';
+    elMano.style.color='var(--verde)';
   }
 
   function cerrarDia() {
@@ -1091,7 +1098,9 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
 
   function renderDistribucion() {
     const t = calcularTotales();
-    const enMano = t.efectivo + t.tarjeta + t.didi_efectivo - t.totalGastos;
+
+    // Bruto físico en mano — los gastos NO se restan aquí, solo se aplican por bolsillo
+    const bruto = t.efectivo + t.tarjeta + t.didi_efectivo;
 
     const pctSueldo  = (parseFloat(document.getElementById('pct-sueldo').value)  || 0) / 100;
     const pctInv     = (parseFloat(document.getElementById('pct-inv').value)     || 0) / 100;
@@ -1104,60 +1113,64 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     const totalPct = pctSueldo + pctInv + pctColchon;
     document.getElementById('dist-alerta').style.display = totalPct > 1.001 ? 'block' : 'none';
 
-    const enManoReal = Math.max(0, enMano);
-
-    // Gastos separados por tipo
+    // Gastos por tipo
     const gastosNegocio  = gastos.filter(g => !g.tipo || g.tipo === 'negocio');
     const gastosPersonal = gastos.filter(g => g.tipo === 'personal');
     const totalGasNeg = gastosNegocio.reduce((s,g)=>s+g.monto,0);
     const totalGasPer = gastosPersonal.reduce((s,g)=>s+g.monto,0);
 
-    // Montos base según porcentaje
-    const sueldoBase = enManoReal * pctSueldo;
-    const invBase    = enManoReal * pctInv;
-    const colchonBase= enManoReal * pctColchon;
+    // Bolsillos base sobre el bruto
+    const sueldoBase  = bruto * pctSueldo;
+    const invBase     = bruto * pctInv;
+    const colchonBase = bruto * pctColchon;
 
-    // Descontar gastos personales del sueldo
+    // Gastos personales → salen del sueldo
     const sueldoFinal = Math.max(0, sueldoBase - totalGasPer);
 
-    // Descontar gastos de negocio de inversión; si excede, lo resta del colchón
+    // Gastos de negocio → salen de inversión; si no alcanza, toma del colchón
     let invFinal = invBase - totalGasNeg;
-    let colchonAjuste = 0;
+    let descontadoDeColchon = 0;
     if (invFinal < 0) {
-      colchonAjuste = invFinal; // negativo
+      descontadoDeColchon = Math.abs(invFinal);
       invFinal = 0;
     }
-    const colchonFinal = Math.max(0, colchonBase + colchonAjuste);
+    const colchonFinal = Math.max(0, colchonBase - descontadoDeColchon);
 
-    document.getElementById('dist-en-mano').textContent = '$' + enManoReal.toFixed(2);
+    document.getElementById('dist-en-mano').textContent = '$' + bruto.toFixed(2);
     document.getElementById('dist-sueldo').textContent  = '$' + sueldoFinal.toFixed(2);
     document.getElementById('dist-inv').textContent     = '$' + invFinal.toFixed(2);
     document.getElementById('dist-colchon').textContent = '$' + colchonFinal.toFixed(2);
 
-    document.getElementById('dist-sueldo-det').textContent = Math.round(pctSueldo*100) + '% de $' + enManoReal.toFixed(2) + ' en mano';
-    document.getElementById('dist-inv-det').textContent    = Math.round(pctInv*100)    + '% de $' + enManoReal.toFixed(2) + ' en mano';
-    document.getElementById('dist-colchon-det').textContent= Math.round(pctColchon*100)+ '% de $' + enManoReal.toFixed(2) + ' en mano';
+    document.getElementById('dist-sueldo-det').textContent  = Math.round(pctSueldo*100)  + '% de $' + bruto.toFixed(2) + ' bruto';
+    document.getElementById('dist-inv-det').textContent     = Math.round(pctInv*100)     + '% de $' + bruto.toFixed(2) + ' bruto';
+    document.getElementById('dist-colchon-det').textContent = Math.round(pctColchon*100) + '% de $' + bruto.toFixed(2) + ' bruto';
 
-    // Detalle gastos por bolsillo
+    // Detalle de gastos en cada bolsillo
     const elSueldoG = document.getElementById('dist-sueldo-gastos');
     if (elSueldoG) {
       elSueldoG.innerHTML = gastosPersonal.length
         ? gastosPersonal.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('') +
-          (sueldoBase - totalGasPer < 0 ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ Gastos exceden tu sueldo</div>` : '')
+          (totalGasPer > sueldoBase ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ Gastos personales exceden tu sueldo en $${(totalGasPer-sueldoBase).toFixed(2)}</div>` : '')
         : '';
     }
+
     const elInvG = document.getElementById('dist-inv-gastos');
     if (elInvG) {
       elInvG.innerHTML = gastosNegocio.length
         ? gastosNegocio.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('') +
-          (colchonAjuste < 0 ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ $${Math.abs(colchonAjuste).toFixed(2)} extra descontado del Colchón</div>` : '')
+          (descontadoDeColchon > 0 ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ $${descontadoDeColchon.toFixed(2)} tomado del Colchón</div>` : '')
         : '';
     }
+
     const elColchonG = document.getElementById('dist-colchon-gastos');
     if (elColchonG) {
-      elColchonG.innerHTML = colchonAjuste < 0
-        ? `<div style="color:var(--rojo);">· Cubrió faltante de inversión: <b>-$${Math.abs(colchonAjuste).toFixed(2)}</b></div>`
-        : '';
+      if (descontadoDeColchon > 0) {
+        const faltante = descontadoDeColchon - colchonBase;
+        elColchonG.innerHTML = `<div style="color:var(--rojo);">· Cubrió faltante de inversión: <b>-$${descontadoDeColchon.toFixed(2)}</b></div>` +
+          (faltante > 0 ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ Colchón insuficiente, faltan $${faltante.toFixed(2)}</div>` : '');
+      } else {
+        elColchonG.innerHTML = '';
+      }
     }
   }
 
