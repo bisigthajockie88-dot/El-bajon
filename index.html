@@ -54,6 +54,8 @@
   .movimiento.didi_efectivo{border-left-color:#ff6b35;}
   .movimiento.didi_tarjeta{border-left-color:#ff9500;}
   .movimiento.rappi{border-left-color:#ff3c38;}
+  .movimiento.facebook{border-left-color:#1877f2;}
+  .movimiento.whatsapp{border-left-color:#25d366;}
   .movimiento.uber{border-left-color:var(--gris);}
   .movimiento.gasto{border-left-color:var(--rojo);opacity:0.85;}
   .movimiento .info{flex:1;}
@@ -128,6 +130,30 @@
   .dist-nota{font-size:11px;color:var(--gris);text-align:center;margin-top:4px;font-style:italic;}
 
 
+  /* MESAS */
+  .mesas-bar{padding:10px 14px 0;display:none;}
+  .mesas-bar.visible{display:block;}
+  .mesas-bar-label{font-size:10px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;}
+  .mesas-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;}
+  .mesa-chip{flex-shrink:0;background:var(--medio);border:2px solid var(--amarillo);border-radius:12px;padding:8px 12px;cursor:pointer;text-align:center;min-width:80px;transition:all 0.15s;}
+  .mesa-chip:active{transform:scale(0.95);}
+  .mesa-chip .mc-nombre{font-size:12px;font-weight:700;color:var(--amarillo);}
+  .mesa-chip .mc-total{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--verde);}
+  .mesa-chip .mc-items{font-size:10px;color:var(--gris);}
+
+  /* TECLADO NUMÉRICO */
+  .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+  .numpad-btn{background:var(--oscuro);border:1px solid #444;border-radius:10px;padding:16px 8px;color:var(--texto);font-size:20px;font-weight:700;cursor:pointer;text-align:center;transition:all 0.1s;user-select:none;}
+  .numpad-btn:active{background:var(--claro);transform:scale(0.94);}
+  .numpad-btn.btn-borrar{color:var(--rojo);font-size:16px;}
+  .numpad-btn.btn-enter{background:var(--verde);color:var(--oscuro);grid-column:span 1;font-size:15px;font-weight:800;}
+  .numpad-btn.btn-enter:active{opacity:0.8;}
+  .numpad-display{background:var(--oscuro);border:2px solid #444;border-radius:10px;padding:14px 16px;color:var(--texto);font-size:28px;font-weight:700;text-align:center;margin-bottom:4px;min-height:58px;transition:border-color 0.2s;}
+  .numpad-display.active{border-color:var(--amarillo);}
+  .numpad-display.precio-display{font-size:28px;color:var(--verde);}
+  .numpad-field-label{font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;margin-top:12px;}
+  .numpad-field-active .numpad-display{border-color:var(--amarillo);}
+
   /* TICKET */
   .ticket-preview{background:var(--oscuro);border:1px solid #333;border-radius:12px;padding:12px;margin-bottom:14px;display:none;}
   .ticket-preview.visible{display:block;}
@@ -173,6 +199,13 @@
 
 <!-- TAB VENTA -->
 <div class="seccion active" id="tab-venta">
+
+  <!-- Mesas abiertas -->
+  <div class="mesas-bar" id="mesas-bar">
+    <div class="mesas-bar-label">🪑 Mesas abiertas — toca para retomar</div>
+    <div class="mesas-scroll" id="mesas-scroll"></div>
+  </div>
+
   <div class="cat-label">🍔 Hamburguesas</div>
   <div class="productos-grid">
     <button class="btn-producto" onclick="abrirModal('Ham Sola',79)"><div class="nombre">Ham Sola</div><div class="precio-ref">Ref: $79</div></button>
@@ -235,9 +268,14 @@
     <div class="resumen-fila"><span class="concepto">🚗 Didi Tarjeta</span><span class="monto" id="res-didi-tar">$0.00</span></div>
     <div class="resumen-fila"><span class="concepto">🛵 Rappi Tarjeta</span><span class="monto" id="res-rappi">$0.00</span></div>
     <div class="resumen-fila"><span class="concepto">🚙 Uber Tarjeta</span><span class="monto" id="res-uber">$0.00</span></div>
+    <div class="resumen-fila"><span class="concepto">📘 Facebook</span><span class="monto" id="res-facebook">$0.00</span></div>
+    <div class="resumen-fila"><span class="concepto">💬 WhatsApp</span><span class="monto" id="res-whatsapp">$0.00</span></div>
     <div class="resumen-fila"><span class="concepto">💸 Total Gastos</span><span class="monto" style="color:var(--rojo)" id="res-gastos">$0.00</span></div>
     <div class="resumen-fila total-final"><span class="concepto">📊 Venta Total Día</span><span class="monto" id="res-total">$0.00</span></div>
-    <div class="resumen-fila total-final" style="margin-top:8px;padding-top:12px;border-top:2px solid var(--verde)"><span class="concepto">💵 Tienes en mano</span><span class="monto" id="res-en-mano">$0.00</span></div>
+    <div class="resumen-fila total-final" style="margin-top:8px;padding-top:12px;border-top:2px solid var(--verde)">
+      <span class="concepto">💵 Tienes en mano</span><span class="monto" id="res-en-mano">$0.00</span>
+    </div>
+    <div style="font-size:10px;color:var(--gris);text-align:right;margin-top:2px;" id="res-en-mano-det"></div>
   </div>
   <button class="btn-copiar" onclick="copiarResumen()">📋 Copiar para Excel</button>
   <button class="btn-cerrar-dia" onclick="cerrarDia()">🔒 Cerrar Día y Empezar Nuevo</button>
@@ -325,8 +363,21 @@
 
   <!-- Gráfica 2: Plataformas -->
   <div class="resumen-box">
-    <h3>📱 Ventas por Plataforma</h3>
+    <h3>📱 Ventas por Plataforma / Redes</h3>
     <canvas id="chart-plataformas" height="200"></canvas>
+  </div>
+
+  <!-- Gráfica CANAL: Efectivo negocio vs Plataformas vs Redes Sociales -->
+  <div class="resumen-box">
+    <h3>📊 Ventas por Canal de Venta</h3>
+    <canvas id="chart-canal" height="200"></canvas>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:10px;font-size:11px;flex-wrap:wrap;">
+      <span style="color:#2ec4b6;">■ Negocio Efectivo</span>
+      <span style="color:#9b5de5;">■ Negocio Tarjeta</span>
+      <span style="color:#f4a261;">■ Plataformas</span>
+      <span style="color:#1877f2;">■ Redes Sociales</span>
+    </div>
+    <div id="resumen-canal" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div>
   </div>
 
   <!-- Gráfica NUEVA: Total vendido por día -->
@@ -370,15 +421,32 @@
   <div class="modal">
     <h2 id="modal-titulo">Producto</h2>
     <div class="precio-sugerido" id="modal-sugerido"></div>
-    <div class="modal-qty">
-      <label>Cant.</label>
-      <input type="number" id="modal-cant" inputmode="numeric" value="1" min="1">
-      <div style="flex:1">
-        <label style="display:block;font-size:12px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Precio ($)</label>
-        <input type="number" id="modal-precio" inputmode="decimal" placeholder="0.00" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:10px;padding:14px 16px;color:var(--texto);font-size:22px;font-weight:700;outline:none;text-align:center;">
-      </div>
+    
+    <!-- Campo cantidad -->
+    <div class="numpad-field-label">Cantidad</div>
+    <div class="numpad-display" id="numpad-cant-display" onclick="setNumpadFocus('cant')">1</div>
+    
+    <!-- Campo precio -->
+    <div class="numpad-field-label">Precio ($)</div>
+    <div class="numpad-display precio-display" id="numpad-precio-display" onclick="setNumpadFocus('precio')">0</div>
+
+    <!-- Teclado numérico -->
+    <div class="numpad">
+      <div class="numpad-btn" onclick="numpadPress('7')">7</div>
+      <div class="numpad-btn" onclick="numpadPress('8')">8</div>
+      <div class="numpad-btn" onclick="numpadPress('9')">9</div>
+      <div class="numpad-btn" onclick="numpadPress('4')">4</div>
+      <div class="numpad-btn" onclick="numpadPress('5')">5</div>
+      <div class="numpad-btn" onclick="numpadPress('6')">6</div>
+      <div class="numpad-btn" onclick="numpadPress('1')">1</div>
+      <div class="numpad-btn" onclick="numpadPress('2')">2</div>
+      <div class="numpad-btn" onclick="numpadPress('3')">3</div>
+      <div class="numpad-btn" onclick="numpadPress('.')">.</div>
+      <div class="numpad-btn" onclick="numpadPress('0')">0</div>
+      <div class="numpad-btn btn-borrar" onclick="numpadPress('DEL')">⌫</div>
     </div>
-    <div class="modal-btns" style="margin-bottom:10px;">
+
+    <div class="modal-btns" style="margin-top:14px;">
       <button class="btn-cancelar" onclick="cerrarModalBtn()">Cancelar</button>
       <button class="btn-agregar-ticket" onclick="agregarAlTicket()">+ Al Ticket</button>
     </div>
@@ -404,8 +472,11 @@
     <div class="btn-metodo" onclick="selMetodo('didi_tarjeta')" id="m-didi_tarjeta">🚗 Didi Tar.</div>
     <div class="btn-metodo" onclick="selMetodo('rappi')" id="m-rappi">🛵 Rappi</div>
     <div class="btn-metodo" onclick="selMetodo('uber')" id="m-uber">🚙 Uber</div>
+    <div class="btn-metodo" onclick="selMetodo('facebook')" id="m-facebook" style="color:#1877f2;border-color:#1877f2;">📘 Facebook</div>
+    <div class="btn-metodo" onclick="selMetodo('whatsapp')" id="m-whatsapp" style="color:#25d366;border-color:#25d366;">💬 WhatsApp</div>
   </div>
   <button class="btn-cobrar" onclick="cobrarTicket()">💰 COBRAR TICKET</button>
+  <button onclick="abrirGuardarMesa()" style="width:100%;margin-top:8px;background:var(--medio);border:2px solid var(--amarillo);border-radius:10px;padding:13px;color:var(--amarillo);font-size:14px;font-weight:700;cursor:pointer;">🪑 Guardar como Mesa (cliente come aquí)</button>
   <button class="btn-cancelar" onclick="cancelarTicket()" style="width:100%;margin-top:8px;">✕ Cancelar ticket</button>
 </div>
 
@@ -414,15 +485,32 @@
   <div class="modal-hist" id="modal-hist-content"></div>
 </div>
 
+<!-- MODAL NOMBRAR MESA -->
+<div class="overlay" id="overlay-mesa" onclick="cerrarModalMesa(event)">
+  <div class="modal" style="border-top-color:var(--amarillo);">
+    <h2 style="color:var(--amarillo);">🪑 Guardar Mesa</h2>
+    <div class="precio-sugerido">El ticket quedará abierto hasta que cobres</div>
+    <div class="numpad-field-label" style="margin-top:14px;">Nombre de la mesa</div>
+    <input id="mesa-nombre-input" type="text" placeholder="ej: Mesa 1, Terraza, Barra..."
+      style="width:100%;background:var(--oscuro);border:2px solid var(--amarillo);border-radius:10px;padding:14px 16px;color:var(--texto);font-size:18px;font-weight:700;outline:none;text-align:center;margin-top:6px;">
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn-cancelar" onclick="cerrarModalMesaBtn()">Cancelar</button>
+      <button class="btn-confirmar" style="background:var(--amarillo);color:var(--oscuro);" onclick="guardarMesa()">🪑 Guardar Mesa</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
   let movimientos = JSON.parse(localStorage.getItem('bajon_mov') || '[]');
   let gastos = JSON.parse(localStorage.getItem('bajon_gastos') || '[]');
   let historial = JSON.parse(localStorage.getItem('bajon_historial') || '[]');
+  let mesas = JSON.parse(localStorage.getItem('bajon_mesas') || '[]');
   let productoActual = '', precioRef = 0, metodoSeleccionado = '';
   let ticketItems = [];
   let tipoGastoSeleccionado = 'negocio';
+  let mesaActiva = null; // id de la mesa que se está editando, o null si es ticket rápido
   
   // Guardar fecha de apertura del día (primer uso del día)
   const HOY = new Date().toLocaleDateString('es-MX', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -440,6 +528,7 @@
   function guardarMov(){ localStorage.setItem('bajon_mov', JSON.stringify(movimientos)); }
   function guardarGastos(){ localStorage.setItem('bajon_gastos', JSON.stringify(gastos)); }
   function guardarHistorial(){ localStorage.setItem('bajon_historial', JSON.stringify(historial)); }
+  function guardarMesas(){ localStorage.setItem('bajon_mesas', JSON.stringify(mesas)); }
 
   function cambiarTab(tab, el) {
     document.querySelectorAll('.seccion').forEach(s=>s.classList.remove('active'));
@@ -454,14 +543,45 @@
     if(tab==='graficas') { semanaOffset=0; renderGraficas(); }
   }
 
+  // ── TECLADO NUMÉRICO ──
+  let numpadFoco = 'precio'; // 'cant' o 'precio'
+  let numpadCantStr = '1';
+  let numpadPrecioStr = '';
+
+  function setNumpadFocus(campo) {
+    numpadFoco = campo;
+    document.getElementById('numpad-cant-display').style.borderColor = campo === 'cant' ? 'var(--amarillo)' : '#444';
+    document.getElementById('numpad-precio-display').style.borderColor = campo === 'precio' ? 'var(--amarillo)' : '#444';
+  }
+
+  function numpadPress(key) {
+    const isCant = numpadFoco === 'cant';
+    let str = isCant ? numpadCantStr : numpadPrecioStr;
+    if (key === 'DEL') {
+      str = str.length > 1 ? str.slice(0, -1) : (isCant ? '1' : '');
+    } else if (key === '.') {
+      if (!str.includes('.')) str += '.';
+    } else {
+      if (str === '0' || str === '') str = key;
+      else if (str === '1' && isCant && key !== '.') str = key; // reemplaza el 1 inicial en cant
+      else str += key;
+    }
+    if (isCant) { numpadCantStr = str; document.getElementById('numpad-cant-display').textContent = str || '0'; }
+    else { numpadPrecioStr = str; document.getElementById('numpad-precio-display').textContent = str ? '$' + str : '0'; }
+  }
+
   function abrirModal(nombre, precio) {
-    productoActual=nombre; precioRef=precio;
-    document.getElementById('modal-titulo').textContent=nombre;
-    document.getElementById('modal-sugerido').textContent=precio>0?'Precio sugerido: $'+precio:'Ingresa el precio';
-    document.getElementById('modal-precio').value=precio>0?precio:'';
-    document.getElementById('modal-cant').value=1;
+    productoActual = nombre; precioRef = precio;
+    document.getElementById('modal-titulo').textContent = nombre;
+    document.getElementById('modal-sugerido').textContent = precio > 0 ? 'Precio sugerido: $' + precio : 'Ingresa el precio';
+    numpadCantStr = '1';
+    numpadPrecioStr = precio > 0 ? String(precio) : '';
+    document.getElementById('numpad-cant-display').textContent = '1';
+    document.getElementById('numpad-precio-display').textContent = precio > 0 ? '$' + precio : '0';
+    numpadFoco = 'precio';
+    document.getElementById('numpad-cant-display').style.borderColor = '#444';
+    document.getElementById('numpad-precio-display').style.borderColor = 'var(--amarillo)';
     document.getElementById('overlay').classList.add('visible');
-    setTimeout(()=>document.getElementById('modal-precio').focus(),300);
   }
 
   function cerrarModal(e){ if(e.target===document.getElementById('overlay')) cerrarModalBtn(); }
@@ -471,12 +591,18 @@
   function selMetodo(metodo) {
     metodoSeleccionado=metodo;
     document.querySelectorAll('.btn-metodo').forEach(b=>b.classList.remove('selected'));
-    document.getElementById('m-'+metodo).classList.add('selected');
+    const el=document.getElementById('m-'+metodo);
+    if(el){
+      el.classList.add('selected');
+      // Colores especiales para redes sociales
+      if(metodo==='facebook') { el.style.borderColor='#1877f2'; el.style.color='#1877f2'; el.style.background='rgba(24,119,242,0.15)'; }
+      else if(metodo==='whatsapp') { el.style.borderColor='#25d366'; el.style.color='#25d366'; el.style.background='rgba(37,211,102,0.15)'; }
+    }
   }
 
   function agregarAlTicket() {
-    const precio = parseFloat(document.getElementById('modal-precio').value);
-    const cant = parseInt(document.getElementById('modal-cant').value) || 1;
+    const precio = parseFloat(numpadPrecioStr);
+    const cant = parseInt(numpadCantStr) || 1;
     if (!precio || precio <= 0) { mostrarToast('⚠️ Ingresa un precio válido'); return; }
     ticketItems.push({ id: Date.now(), producto: productoActual, precio, cant });
     cerrarModalBtn();
@@ -486,9 +612,13 @@
 
   function renderTicket() {
     const preview = document.getElementById('ticket-preview');
-    if (!ticketItems.length) { preview.classList.remove('visible'); return; }
+    if (!ticketItems.length) { preview.classList.remove('visible'); renderMesas(); return; }
     preview.classList.add('visible');
-    document.getElementById('ticket-count').textContent = ticketItems.length + ' producto' + (ticketItems.length > 1 ? 's' : '');
+    // Mostrar nombre de mesa si hay una activa
+    const mesaNombre = mesaActiva !== null ? (mesas.find(m=>m.id===mesaActiva)||{}).nombre : null;
+    document.getElementById('ticket-count').textContent = mesaNombre
+      ? '🪑 ' + mesaNombre
+      : ticketItems.length + ' producto' + (ticketItems.length > 1 ? 's' : '');
     const total = ticketItems.reduce((s, i) => s + i.precio * i.cant, 0);
     document.getElementById('ticket-total-monto').textContent = '$' + total.toFixed(2);
     document.getElementById('ticket-items').innerHTML = ticketItems.map(item => `
@@ -501,6 +631,7 @@
     // Limpiar selección de método
     document.querySelectorAll('.btn-metodo').forEach(b => b.classList.remove('selected'));
     metodoSeleccionado = '';
+    renderMesas();
   }
 
   function quitarDelTicket(id) {
@@ -511,7 +642,78 @@
   function cancelarTicket() {
     ticketItems = [];
     metodoSeleccionado = '';
+    mesaActiva = null;
     renderTicket();
+  }
+
+  // ── MESAS ──
+  function abrirGuardarMesa() {
+    if (!ticketItems.length) { mostrarToast('⚠️ El ticket está vacío'); return; }
+    // Sugerir nombre automático
+    const siguiente = mesas.length + 1;
+    document.getElementById('mesa-nombre-input').value = 'Mesa ' + siguiente;
+    document.getElementById('overlay-mesa').classList.add('visible');
+    setTimeout(() => document.getElementById('mesa-nombre-input').select(), 200);
+  }
+
+  function cerrarModalMesa(e) { if(e.target===document.getElementById('overlay-mesa')) cerrarModalMesaBtn(); }
+  function cerrarModalMesaBtn() { document.getElementById('overlay-mesa').classList.remove('visible'); }
+
+  function guardarMesa() {
+    const nombre = document.getElementById('mesa-nombre-input').value.trim();
+    if (!nombre) { mostrarToast('⚠️ Ponle un nombre a la mesa'); return; }
+    if (mesaActiva !== null) {
+      // Actualizando mesa existente
+      const idx = mesas.findIndex(m => m.id === mesaActiva);
+      if (idx !== -1) { mesas[idx].items = [...ticketItems]; mesas[idx].nombre = nombre; }
+    } else {
+      mesas.push({ id: Date.now(), nombre, items: [...ticketItems] });
+    }
+    guardarMesas();
+    ticketItems = [];
+    metodoSeleccionado = '';
+    mesaActiva = null;
+    cerrarModalMesaBtn();
+    renderTicket();
+    renderMesas();
+    mostrarToast('🪑 Mesa guardada: ' + nombre);
+  }
+
+  function abrirMesa(id) {
+    // Si hay ticket activo en curso, preguntar
+    if (ticketItems.length > 0 && mesaActiva !== id) {
+      if (!confirm('Tienes un ticket en curso. ¿Guardar la mesa actual primero?')) return;
+      // guardar ticket actual como mesa temporal
+      const tmpNombre = 'Mesa (sin nombre)';
+      mesas.push({ id: Date.now(), nombre: tmpNombre, items: [...ticketItems] });
+      guardarMesas();
+    }
+    const mesa = mesas.find(m => m.id === id);
+    if (!mesa) return;
+    ticketItems = [...mesa.items];
+    mesaActiva = id;
+    metodoSeleccionado = '';
+    renderTicket();
+    renderMesas();
+    mostrarToast('🪑 Retomando: ' + mesa.nombre);
+    // Scroll suave al ticket
+    document.getElementById('ticket-preview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function renderMesas() {
+    const bar = document.getElementById('mesas-bar');
+    const scroll = document.getElementById('mesas-scroll');
+    if (!mesas.length) { bar.classList.remove('visible'); return; }
+    bar.classList.add('visible');
+    scroll.innerHTML = mesas.map(m => {
+      const total = m.items.reduce((s, i) => s + i.precio * i.cant, 0);
+      const activa = mesaActiva === m.id;
+      return `<div class="mesa-chip" onclick="abrirMesa(${m.id})" style="${activa ? 'border-color:var(--verde);background:rgba(46,196,182,0.1);' : ''}">
+        <div class="mc-nombre" style="${activa ? 'color:var(--verde)' : ''}">${m.nombre}${activa ? ' ✏️' : ''}</div>
+        <div class="mc-total">$${total.toFixed(0)}</div>
+        <div class="mc-items">${m.items.reduce((s,i)=>s+i.cant,0)} producto${m.items.reduce((s,i)=>s+i.cant,0)!==1?'s':''}</div>
+      </div>`;
+    }).join('');
   }
 
   function cobrarTicket() {
@@ -526,9 +728,15 @@
         precio: item.precio * item.cant,
         metodo: metodoSeleccionado,
         hora,
-        ticketId  // agrupar items del mismo ticket
+        ticketId
       });
     });
+    // Si era una mesa, eliminarla
+    if (mesaActiva !== null) {
+      mesas = mesas.filter(m => m.id !== mesaActiva);
+      guardarMesas();
+      mesaActiva = null;
+    }
     guardarMov();
     actualizarTotalesRapidos();
     const total = ticketItems.reduce((s, i) => s + i.precio * i.cant, 0);
@@ -536,6 +744,7 @@
     ticketItems = [];
     metodoSeleccionado = '';
     renderTicket();
+    renderMesas();
   }
 
   function confirmarVenta() {
@@ -560,7 +769,7 @@
   function eliminarGasto(id){ gastos=gastos.filter(g=>g.id!==id); guardarGastos(); renderGastos(); }
 
   function nombreMetodo(m){
-    return{efectivo:'💵 Efectivo',tarjeta:'💳 Tarjeta',didi_efectivo:'🚗 Didi Efectivo',didi_tarjeta:'🚗 Didi Tarjeta',rappi:'🛵 Rappi Tarjeta',uber:'🚙 Uber Tarjeta'}[m]||m;
+    return{efectivo:'💵 Efectivo',tarjeta:'💳 Tarjeta',didi_efectivo:'🚗 Didi Efectivo',didi_tarjeta:'🚗 Didi Tarjeta',rappi:'🛵 Rappi Tarjeta',uber:'🚙 Uber Tarjeta',facebook:'📘 Facebook',whatsapp:'💬 WhatsApp'}[m]||m;
   }
 
   function renderMovimientos() {
@@ -576,7 +785,7 @@
   }
 
   function actualizarTotalesRapidos() {
-    const ef=movimientos.filter(m=>m.metodo==='efectivo'||m.metodo==='didi_efectivo').reduce((s,m)=>s+m.precio,0);
+    const ef=movimientos.filter(m=>['efectivo','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
     const pl=movimientos.filter(m=>['tarjeta','didi_tarjeta','rappi','uber'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
     document.getElementById('tot-efectivo').textContent='$'+ef.toFixed(0);
     document.getElementById('tot-plataformas').textContent='$'+pl.toFixed(0);
@@ -601,15 +810,21 @@
   }
 
   function calcularTotales() {
-    const tots={efectivo:0,tarjeta:0,didi_efectivo:0,didi_tarjeta:0,rappi:0,uber:0};
-    movimientos.forEach(m=>{tots[m.metodo]=(tots[m.metodo]||0)+m.precio;});
+    const tots={efectivo:0,tarjeta:0,didi_efectivo:0,didi_tarjeta:0,rappi:0,uber:0,facebook:0,whatsapp:0};
+    movimientos.forEach(m=>{
+      const k = (m.metodo==='facebook'||m.metodo==='whatsapp') ? m.metodo : m.metodo;
+      tots[k]=(tots[k]||0)+m.precio;
+    });
+    // facebook y whatsapp cuentan como efectivo para distribución/resumen en mano
     const totalGasNeg = gastos.filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
     const totalGasPer = gastos.filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
+    const totalGastos = totalGasNeg + totalGasPer;
+    const totalVenta = movimientos.reduce((s,m)=>s+m.precio,0);
     return{...tots,
-      totalGastos: totalGasNeg + totalGasPer, // total informativo
+      totalGastos,
       totalGastosNegocio: totalGasNeg,
       totalGastosPersonal: totalGasPer,
-      totalVenta:movimientos.reduce((s,m)=>s+m.precio,0)};
+      totalVenta};
   }
 
   function renderResumen() {
@@ -620,13 +835,24 @@
     document.getElementById('res-didi-tar').textContent='$'+t.didi_tarjeta.toFixed(2);
     document.getElementById('res-rappi').textContent='$'+t.rappi.toFixed(2);
     document.getElementById('res-uber').textContent='$'+t.uber.toFixed(2);
+    // Mostrar Facebook y WhatsApp si existen
+    const fbEl=document.getElementById('res-facebook');
+    if(fbEl) fbEl.textContent='$'+t.facebook.toFixed(2);
+    const waEl=document.getElementById('res-whatsapp');
+    if(waEl) waEl.textContent='$'+t.whatsapp.toFixed(2);
     document.getElementById('res-gastos').textContent='-$'+t.totalGastos.toFixed(2);
     document.getElementById('res-total').textContent='$'+t.totalVenta.toFixed(2);
-    // En mano = bruto sin descontar gastos (los gastos se manejan en distribución)
-    const enMano=t.efectivo+t.tarjeta+t.didi_efectivo;
+    // En mano = efectivo físico (efectivo + didi_efectivo + facebook + whatsapp) MENOS gastos
+    const brutoFisico = t.efectivo + t.didi_efectivo + t.facebook + t.whatsapp;
+    const enMano = Math.max(0, brutoFisico - t.totalGastos);
     const elMano=document.getElementById('res-en-mano');
     elMano.textContent='$'+enMano.toFixed(2);
-    elMano.style.color='var(--verde)';
+    elMano.style.color = enMano > 0 ? 'var(--verde)' : 'var(--rojo)';
+    // Detalle adicional
+    const detEl=document.getElementById('res-en-mano-det');
+    if(detEl){
+      detEl.textContent = `(Efectivo $${brutoFisico.toFixed(2)} − Gastos $${t.totalGastos.toFixed(2)})`;
+    }
   }
 
   function cerrarDia() {
@@ -677,10 +903,147 @@
           🚗 Didi Tar: <span>$${d.totales.didi_tarjeta.toFixed(2)}</span><br>
           🛵 Rappi: <span>$${d.totales.rappi.toFixed(2)}</span> &nbsp;
           🚙 Uber: <span>$${d.totales.uber.toFixed(2)}</span><br>
+          📘 Facebook: <span>$${(d.totales.facebook||0).toFixed(2)}</span> &nbsp;
+          💬 WhatsApp: <span>$${(d.totales.whatsapp||0).toFixed(2)}</span><br>
           💸 Gastos: <span>$${d.totales.totalGastos.toFixed(2)}</span>
         </div>
-        <button class="btn-ver-dia" onclick="verDetalleDia(${d.id})">Ver detalle completo</button>
+        <button class="btn-ver-dia" onclick="verDetalleDia(${d.id})">✏️ Ver y editar detalle</button>
       </div>`).join('');
+  }
+
+  function recalcularTotalesDia(dia) {
+    const tots={efectivo:0,tarjeta:0,didi_efectivo:0,didi_tarjeta:0,rappi:0,uber:0,facebook:0,whatsapp:0};
+    dia.movimientos.forEach(m=>{ tots[m.metodo]=(tots[m.metodo]||0)+m.precio; });
+    const totalGasNeg=(dia.gastos||[]).filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
+    const totalGasPer=(dia.gastos||[]).filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
+    dia.totales={...tots,totalGastos:totalGasNeg+totalGasPer,totalGastosNegocio:totalGasNeg,totalGastosPersonal:totalGasPer,totalVenta:dia.movimientos.reduce((s,m)=>s+m.precio,0)};
+  }
+
+  function verDetalleDia(id) {
+    const dia=historial.find(d=>d.id===id);
+    if(!dia) return;
+    renderModalDetalleDia(dia);
+    document.getElementById('overlay-hist').classList.add('visible');
+  }
+
+  function renderModalDetalleDia(dia) {
+    const movHtml=dia.movimientos.length
+      ? [...dia.movimientos].reverse().map(m=>`
+        <div class="movimiento ${m.metodo}" style="margin-bottom:6px">
+          <div class="info"><div class="nombre-mov" style="font-size:13px">${m.producto}</div><div class="detalle-mov">${nombreMetodo(m.metodo)} · ${m.hora}</div></div>
+          <div class="monto-mov" style="font-size:18px">$${m.precio.toFixed(2)}</div>
+          <button class="btn-eliminar" onclick="eliminarMovHist(${dia.id},${m.id})">✕</button>
+        </div>`).join('')
+      : '<div style="color:var(--gris);font-size:13px">Sin ventas</div>';
+
+    const gasHtml=(dia.gastos||[]).map(g=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3e;font-size:13px">
+        <span style="color:var(--gris);flex:1">${g.concepto} <span style="font-size:10px;padding:1px 6px;border-radius:8px;${g.tipo==='personal'?'background:rgba(155,93,229,0.2);color:#9b5de5':'background:rgba(244,162,97,0.2);color:#f4a261'}">${g.tipo==='personal'?'Personal':'Negocio'}</span></span>
+        <span style="color:var(--rojo);font-weight:700;margin-right:8px">$${g.monto.toFixed(2)}</span>
+        <button class="btn-eliminar" onclick="eliminarGastoHist(${dia.id},${g.id})">✕</button>
+      </div>`).join('')||'<div style="color:var(--gris);font-size:13px">Sin gastos</div>';
+
+    document.getElementById('modal-hist-content').innerHTML=`
+      <h2>📅 Detalle del Día</h2>
+      <div class="badge-dia">${dia.fecha}</div>
+
+      <div style="margin-bottom:12px">
+        <div style="font-size:12px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Ventas <span style="color:var(--gris);font-size:10px">(toca ✕ para borrar)</span></div>
+        ${movHtml}
+        <div style="margin-top:10px;background:var(--oscuro);border-radius:8px;padding:10px;">
+          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">+ Agregar venta</div>
+          <input id="hist-add-prod" placeholder="Producto" style="width:100%;background:var(--medio);border:1px solid #444;border-radius:8px;padding:9px 12px;color:var(--texto);font-size:13px;outline:none;margin-bottom:6px;">
+          <div style="display:flex;gap:6px;margin-bottom:6px;">
+            <input id="hist-add-precio" type="number" placeholder="Precio $" inputmode="decimal" style="flex:1;background:var(--medio);border:1px solid #444;border-radius:8px;padding:9px;color:var(--texto);font-size:13px;outline:none;text-align:center;">
+            <select id="hist-add-metodo" style="flex:1;background:var(--medio);border:1px solid #444;border-radius:8px;padding:9px;color:var(--texto);font-size:12px;outline:none;">
+              <option value="efectivo">💵 Efectivo</option>
+              <option value="tarjeta">💳 Tarjeta</option>
+              <option value="didi_efectivo">🚗 Didi Ef.</option>
+              <option value="didi_tarjeta">🚗 Didi Tar.</option>
+              <option value="rappi">🛵 Rappi</option>
+              <option value="uber">🚙 Uber</option>
+              <option value="facebook">📘 Facebook</option>
+              <option value="whatsapp">💬 WhatsApp</option>
+            </select>
+          </div>
+          <button onclick="agregarVentaHist(${dia.id})" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:10px;color:var(--oscuro);font-weight:700;font-size:13px;cursor:pointer;">+ Agregar Venta</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Gastos <span style="color:var(--gris);font-size:10px">(toca ✕ para borrar)</span></div>
+        ${gasHtml}
+        <div style="margin-top:10px;background:var(--oscuro);border-radius:8px;padding:10px;">
+          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">+ Agregar gasto</div>
+          <input id="hist-add-gconcepto" placeholder="Concepto" style="width:100%;background:var(--medio);border:1px solid #444;border-radius:8px;padding:9px 12px;color:var(--texto);font-size:13px;outline:none;margin-bottom:6px;">
+          <div style="display:flex;gap:6px;margin-bottom:6px;">
+            <input id="hist-add-gmonto" type="number" placeholder="Monto $" inputmode="decimal" style="flex:1;background:var(--medio);border:1px solid #444;border-radius:8px;padding:9px;color:var(--texto);font-size:13px;outline:none;text-align:center;">
+            <select id="hist-add-gtipo" style="flex:1;background:var(--medio);border:1px solid #444;border-radius:8px;padding:9px;color:var(--texto);font-size:12px;outline:none;">
+              <option value="negocio">📦 Negocio</option>
+              <option value="personal">🧍 Personal</option>
+            </select>
+          </div>
+          <button onclick="agregarGastoHist(${dia.id})" style="width:100%;background:var(--rojo);border:none;border-radius:8px;padding:10px;color:white;font-weight:700;font-size:13px;cursor:pointer;">+ Agregar Gasto</button>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;padding:12px;background:var(--oscuro);border-radius:10px;text-align:center">
+        <div style="font-size:12px;color:var(--gris);margin-bottom:4px">VENTA TOTAL</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--verde)">$${dia.totales.totalVenta.toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--rojo);margin-top:2px;">Gastos: -$${dia.totales.totalGastos.toFixed(2)}</div>
+      </div>
+      <button class="btn-cancelar" onclick="document.getElementById('overlay-hist').classList.remove('visible');renderHistorial();" style="width:100%;margin-top:16px">Cerrar</button>`;
+  }
+
+  function eliminarMovHist(diaId, movId) {
+    const idx=historial.findIndex(d=>d.id===diaId);
+    if(idx===-1) return;
+    historial[idx].movimientos=historial[idx].movimientos.filter(m=>m.id!==movId);
+    recalcularTotalesDia(historial[idx]);
+    guardarHistorial();
+    renderModalDetalleDia(historial[idx]);
+    mostrarToast('✓ Venta eliminada');
+  }
+
+  function eliminarGastoHist(diaId, gastoId) {
+    const idx=historial.findIndex(d=>d.id===diaId);
+    if(idx===-1) return;
+    historial[idx].gastos=(historial[idx].gastos||[]).filter(g=>g.id!==gastoId);
+    recalcularTotalesDia(historial[idx]);
+    guardarHistorial();
+    renderModalDetalleDia(historial[idx]);
+    mostrarToast('✓ Gasto eliminado');
+  }
+
+  function agregarVentaHist(diaId) {
+    const prod=document.getElementById('hist-add-prod').value.trim();
+    const precio=parseFloat(document.getElementById('hist-add-precio').value);
+    const metodo=document.getElementById('hist-add-metodo').value;
+    if(!prod){mostrarToast('⚠️ Escribe el producto');return;}
+    if(!precio||precio<=0){mostrarToast('⚠️ Ingresa precio válido');return;}
+    const idx=historial.findIndex(d=>d.id===diaId);
+    if(idx===-1) return;
+    historial[idx].movimientos.push({id:Date.now(),producto:prod,precio,metodo,hora:'(manual)'});
+    recalcularTotalesDia(historial[idx]);
+    guardarHistorial();
+    renderModalDetalleDia(historial[idx]);
+    mostrarToast('✅ Venta agregada');
+  }
+
+  function agregarGastoHist(diaId) {
+    const concepto=document.getElementById('hist-add-gconcepto').value.trim();
+    const monto=parseFloat(document.getElementById('hist-add-gmonto').value);
+    const tipo=document.getElementById('hist-add-gtipo').value;
+    if(!concepto){mostrarToast('⚠️ Escribe el concepto');return;}
+    if(!monto||monto<=0){mostrarToast('⚠️ Ingresa monto válido');return;}
+    const idx=historial.findIndex(d=>d.id===diaId);
+    if(idx===-1) return;
+    if(!historial[idx].gastos) historial[idx].gastos=[];
+    historial[idx].gastos.push({id:Date.now(),concepto,monto,hora:'(manual)',tipo});
+    recalcularTotalesDia(historial[idx]);
+    guardarHistorial();
+    renderModalDetalleDia(historial[idx]);
+    mostrarToast('✅ Gasto agregado');
   }
 
   function editarFecha(id) {
@@ -696,44 +1059,13 @@
 
   function guardarFecha(id) {
     const nuevaFecha = document.getElementById('fecha-input-'+id).value.trim();
-    if (!nuevaFecha) { mostrarToast('\u26a0\ufe0f Escribe una fecha'); return; }
+    if (!nuevaFecha) { mostrarToast('⚠️ Escribe una fecha'); return; }
     const idx = historial.findIndex(d=>d.id===id);
     if (idx === -1) return;
     historial[idx].fecha = nuevaFecha;
     guardarHistorial();
-    mostrarToast('\u2705 Fecha actualizada');
+    mostrarToast('✅ Fecha actualizada');
     renderHistorial();
-  }
-
-  function verDetalleDia(id) {
-    const dia=historial.find(d=>d.id===id);
-    if(!dia) return;
-    const movHtml=dia.movimientos.length
-      ? [...dia.movimientos].reverse().map(m=>`<div class="movimiento ${m.metodo}" style="margin-bottom:6px">
-          <div class="info"><div class="nombre-mov" style="font-size:13px">${m.producto}</div><div class="detalle-mov">${nombreMetodo(m.metodo)} · ${m.hora}</div></div>
-          <div class="monto-mov" style="font-size:18px">$${m.precio.toFixed(2)}</div>
-        </div>`).join('')
-      : '<div style="color:var(--gris);font-size:13px">Sin ventas</div>';
-    const gasHtml=dia.gastos.length
-      ? dia.gastos.map(g=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2a2a3e;font-size:13px"><span style="color:var(--gris)">${g.concepto}</span><span style="color:var(--rojo);font-weight:700">$${g.monto.toFixed(2)}</span></div>`).join('')
-      : '<div style="color:var(--gris);font-size:13px">Sin gastos</div>';
-    document.getElementById('modal-hist-content').innerHTML=`
-      <h2>📅 Detalle del Día</h2>
-      <div class="badge-dia">${dia.fecha}</div>
-      <div style="margin-bottom:16px">
-        <div style="font-size:12px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Ventas</div>
-        ${movHtml}
-      </div>
-      <div>
-        <div style="font-size:12px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Gastos</div>
-        ${gasHtml}
-      </div>
-      <div style="margin-top:16px;padding:12px;background:var(--oscuro);border-radius:10px;text-align:center">
-        <div style="font-size:12px;color:var(--gris);margin-bottom:4px">VENTA TOTAL</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--verde)">$${dia.totales.totalVenta.toFixed(2)}</div>
-      </div>
-      <button class="btn-cancelar" onclick="document.getElementById('overlay-hist').classList.remove('visible')" style="width:100%;margin-top:16px">Cerrar</button>`;
-    document.getElementById('overlay-hist').classList.add('visible');
   }
 
   function copiarResumen() {
@@ -770,6 +1102,7 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
 
   actualizarTotalesRapidos();
   selTipoGasto('negocio');
+  renderMesas();
 
   // ─── GRÁFICAS ────────────────────────────────────────────────────────────────
   // Semana = lunes a domingo. semanaOffset: 0 = semana actual, -1 = semana anterior, etc.
@@ -861,18 +1194,18 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
 
     const cf = { color: '#eaeaea', gridColor: 'rgba(255,255,255,0.07)' };
 
-    // ── 1. VENTAS POR MÉTODO DE PAGO (todos los métodos) ──
-    const metodos = { efectivo:0, tarjeta:0, didi_efectivo:0, didi_tarjeta:0, rappi:0, uber:0 };
+    // ── 1. VENTAS POR MÉTODO DE PAGO (todos los métodos incluyendo redes) ──
+    const metodos = { efectivo:0, tarjeta:0, didi_efectivo:0, didi_tarjeta:0, rappi:0, uber:0, facebook:0, whatsapp:0 };
     movs.forEach(m => { if (metodos[m.metodo] !== undefined) metodos[m.metodo] += m.precio; });
     destroyChart('metodos');
     grafCharts['metodos'] = new Chart(document.getElementById('chart-metodos'), {
       type: 'bar',
       data: {
-        labels: ['💵 Efectivo', '💳 Tarjeta', '🚗 DiDi Ef.', '🚗 DiDi TAR', '🛵 Rappi TAR', '🚙 Uber TAR'],
+        labels: ['💵 Efectivo', '💳 Tarjeta', '🚗 DiDi Ef.', '🚗 DiDi TAR', '🛵 Rappi', '🚙 Uber', '📘 Facebook', '💬 WhatsApp'],
         datasets: [{
-          data: [metodos.efectivo, metodos.tarjeta, metodos.didi_efectivo, metodos.didi_tarjeta, metodos.rappi, metodos.uber],
-          backgroundColor: ['rgba(46,196,182,0.7)','rgba(155,93,229,0.7)','rgba(255,107,53,0.7)','rgba(255,149,0,0.7)','rgba(255,60,56,0.7)','rgba(170,170,170,0.7)'],
-          borderColor: ['#2ec4b6','#9b5de5','#ff6b35','#ff9500','#ff3c38','#aaa'],
+          data: [metodos.efectivo, metodos.tarjeta, metodos.didi_efectivo, metodos.didi_tarjeta, metodos.rappi, metodos.uber, metodos.facebook, metodos.whatsapp],
+          backgroundColor: ['rgba(46,196,182,0.7)','rgba(155,93,229,0.7)','rgba(255,107,53,0.7)','rgba(255,149,0,0.7)','rgba(255,60,56,0.7)','rgba(170,170,170,0.7)','rgba(24,119,242,0.7)','rgba(37,211,102,0.7)'],
+          borderColor: ['#2ec4b6','#9b5de5','#ff6b35','#ff9500','#ff3c38','#aaa','#1877f2','#25d366'],
           borderWidth: 2, borderRadius: 8
         }]
       },
@@ -880,18 +1213,18 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
         scales: { x:{ ticks:{ color:cf.color, font:{size:10} }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
     });
 
-    // ── 2. PLATAFORMAS (dona) ──
-    const plat = { didi_tarjeta:0, rappi:0, uber:0 };
+    // ── 2. PLATAFORMAS (dona) — incluye FB y WA como redes sociales ──
+    const plat = { didi_tarjeta:0, rappi:0, uber:0, facebook:0, whatsapp:0 };
     movs.forEach(m => { if (plat[m.metodo] !== undefined) plat[m.metodo] += m.precio; });
     destroyChart('plataformas');
     grafCharts['plataformas'] = new Chart(document.getElementById('chart-plataformas'), {
       type: 'doughnut',
       data: {
-        labels: ['🚗 Didi TAR', '🛵 Rappi TAR', '🚙 Uber TAR'],
+        labels: ['🚗 Didi TAR', '🛵 Rappi TAR', '🚙 Uber TAR', '📘 Facebook', '💬 WhatsApp'],
         datasets: [{
-          data: [plat.didi_tarjeta, plat.rappi, plat.uber],
-          backgroundColor: ['rgba(255,149,0,0.75)', 'rgba(255,60,56,0.75)', 'rgba(170,170,170,0.75)'],
-          borderColor: ['#ff9500', '#ff3c38', '#aaa'],
+          data: [plat.didi_tarjeta, plat.rappi, plat.uber, plat.facebook, plat.whatsapp],
+          backgroundColor: ['rgba(255,149,0,0.75)', 'rgba(255,60,56,0.75)', 'rgba(170,170,170,0.75)', 'rgba(24,119,242,0.75)', 'rgba(37,211,102,0.75)'],
+          borderColor: ['#ff9500', '#ff3c38', '#aaa', '#1877f2', '#25d366'],
           borderWidth: 2
         }]
       },
@@ -899,6 +1232,39 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
         plugins:{ legend:{ position:'bottom', labels:{ color:cf.color, font:{size:11}, padding:10 } },
           tooltip:{ callbacks:{ label: ctx => ctx.label + ': $' + ctx.raw.toFixed(2) } } } }
     });
+
+    // ── NUEVA: Ventas por Canal (presencial ef, presencial tar, plataformas, redes sociales) ──
+    const canalEfectivo   = movs.filter(m=>m.metodo==='efectivo'||m.metodo==='didi_efectivo').reduce((s,m)=>s+m.precio,0);
+    const canalTarjeta    = movs.filter(m=>m.metodo==='tarjeta').reduce((s,m)=>s+m.precio,0);
+    const canalPlataforma = movs.filter(m=>['didi_tarjeta','rappi','uber'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
+    const canalRedes      = movs.filter(m=>m.metodo==='facebook'||m.metodo==='whatsapp').reduce((s,m)=>s+m.precio,0);
+    const canalTotal      = canalEfectivo + canalTarjeta + canalPlataforma + canalRedes;
+    destroyChart('canal');
+    grafCharts['canal'] = new Chart(document.getElementById('chart-canal'), {
+      type: 'doughnut',
+      data: {
+        labels: ['💵 Negocio Efectivo', '💳 Negocio Tarjeta', '📱 Plataformas (Didi/Rappi/Uber)', '📲 Redes (FB/WA)'],
+        datasets: [{
+          data: [canalEfectivo, canalTarjeta, canalPlataforma, canalRedes],
+          backgroundColor: ['rgba(46,196,182,0.8)','rgba(155,93,229,0.8)','rgba(244,162,97,0.8)','rgba(24,119,242,0.8)'],
+          borderColor: ['#2ec4b6','#9b5de5','#f4a261','#1877f2'],
+          borderWidth: 2
+        }]
+      },
+      options: { responsive:true, cutout:'55%',
+        plugins:{ legend:{ position:'bottom', labels:{ color:cf.color, font:{size:11}, padding:8, boxWidth:12 } },
+          tooltip:{ callbacks:{ label: ctx => ctx.label + ': $' + ctx.raw.toFixed(2) + (canalTotal>0?' ('+Math.round(ctx.raw/canalTotal*100)+'%)':'') } } } }
+    });
+    // Resumen canal
+    const rCan=document.getElementById('resumen-canal');
+    if(rCan && canalTotal > 0){
+      const pct=(v)=>Math.round(v/canalTotal*100)+'%';
+      rCan.innerHTML=`
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2a2a3e;"><span style="color:#2ec4b6;">💵 Efectivo presencial</span><span style="color:#2ec4b6;font-weight:700;">$${canalEfectivo.toFixed(2)} <span style="opacity:.6;font-size:10px">${pct(canalEfectivo)}</span></span></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2a2a3e;"><span style="color:#9b5de5;">💳 Tarjeta presencial</span><span style="color:#9b5de5;font-weight:700;">$${canalTarjeta.toFixed(2)} <span style="opacity:.6;font-size:10px">${pct(canalTarjeta)}</span></span></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2a2a3e;"><span style="color:#f4a261;">📱 Plataformas</span><span style="color:#f4a261;font-weight:700;">$${canalPlataforma.toFixed(2)} <span style="opacity:.6;font-size:10px">${pct(canalPlataforma)}</span></span></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:#1877f2;">📲 Redes Sociales</span><span style="color:#1877f2;font-weight:700;">$${canalRedes.toFixed(2)} <span style="opacity:.6;font-size:10px">${pct(canalRedes)}</span></span></div>`;
+    } else if(rCan){ rCan.innerHTML='<span style="color:var(--gris)">Sin ventas esta semana</span>'; }
 
     // ── NUEVA: Total vendido por día (bruto) ──
     const diasNom = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
@@ -956,21 +1322,41 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
         scales: { x:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, font:{size:11} }, grid:{color:cf.gridColor} } } }
     });
 
-    // ── 4a. POR HORA ──
+    // ── 4a. POR HORA — horario de negocio: 15:00 a 02:00 (orden natural nocturno) ──
+    // El negocio abre ~3pm y puede cerrar hasta ~2am. Ordenar horas de forma lógica.
     const horaMap = {};
-    for (let h = 0; h < 24; h++) horaMap[h] = 0;
     movs.forEach(m => {
       if (!m.hora) return;
       const h = parseInt(m.hora.split(':')[0]);
       if (!isNaN(h)) horaMap[h] = (horaMap[h] || 0) + m.precio;
     });
-    const horasConVentas = Object.entries(horaMap).filter(([,v]) => v > 0);
-    const hMin = horasConVentas.length ? Math.min(...horasConVentas.map(([h]) => parseInt(h))) : 0;
-    const hMax = horasConVentas.length ? Math.max(...horasConVentas.map(([h]) => parseInt(h))) : 23;
-    const horasLabels = [], horasData = [];
-    for (let h = Math.max(0, hMin-1); h <= Math.min(23, hMax+1); h++) {
-      horasLabels.push(h + ':00');
-      horasData.push(horaMap[h] || 0);
+    // Construir rango lógico: apertura ~15 (3pm), cierre posible 2am (hora 2)
+    // Orden: 15,16,17,18,19,20,21,22,23,0,1,2
+    const horasConVentas = Object.keys(horaMap).map(Number).filter(h => horaMap[h] > 0);
+    let horasLabels = [], horasData = [];
+    if (horasConVentas.length > 0) {
+      // Determinar rango dinámico dentro del horario de negocio
+      // Separar horas "tarde" (>=3) y "madrugada" (<3)
+      const horasTarde = horasConVentas.filter(h => h >= 3).sort((a,b)=>a-b);
+      const horasMadrugada = horasConVentas.filter(h => h < 3).sort((a,b)=>a-b);
+      // Expandir rango una hora en cada extremo
+      const minTarde = horasTarde.length ? Math.max(3, horasTarde[0]-1) : 15;
+      const maxTarde = horasTarde.length ? Math.min(23, horasTarde[horasTarde.length-1]+1) : 23;
+      const maxMadrugada = horasMadrugada.length ? Math.min(2, horasMadrugada[horasMadrugada.length-1]+1) : (horasMadrugada.length ? 2 : -1);
+      for (let h = minTarde; h <= maxTarde; h++) {
+        horasLabels.push(h + ':00');
+        horasData.push(horaMap[h] || 0);
+      }
+      if (maxMadrugada >= 0) {
+        for (let h = 0; h <= maxMadrugada; h++) {
+          horasLabels.push(h + ':00');
+          horasData.push(horaMap[h] || 0);
+        }
+      }
+    } else {
+      // Sin datos: mostrar rango por defecto del negocio
+      for (let h = 15; h <= 23; h++) { horasLabels.push(h+':00'); horasData.push(0); }
+      for (let h = 0; h <= 2; h++) { horasLabels.push(h+':00'); horasData.push(0); }
     }
     destroyChart('horas');
     grafCharts['horas'] = new Chart(document.getElementById('chart-horas'), {
@@ -989,28 +1375,37 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
         scales: { x:{ ticks:{ color:cf.color, font:{size:10} }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
     });
 
-    // ── 4b. POR DÍA DE LA SEMANA ──
-    const diasMap = [0,0,0,0,0,0,0];
+    // ── 4b. POR DÍA DE LA SEMANA — desglosado por tipo con colores ──
+    const diasEfectivo   = [0,0,0,0,0,0,0]; // efectivo + didi_efectivo + facebook + whatsapp
+    const diasTarjeta    = [0,0,0,0,0,0,0]; // tarjeta
+    const diasPlataforma = [0,0,0,0,0,0,0]; // didi_tarjeta + rappi + uber
+    const diasRedesS     = [0,0,0,0,0,0,0]; // facebook + whatsapp
     movs.forEach(m => {
       if (!m._fecha) return;
       const d = new Date(m._fecha);
       const idx = (d.getDay() + 6) % 7;
-      diasMap[idx] += m.precio;
+      if (m.metodo==='efectivo'||m.metodo==='didi_efectivo') diasEfectivo[idx]+=m.precio;
+      else if (m.metodo==='tarjeta') diasTarjeta[idx]+=m.precio;
+      else if (m.metodo==='didi_tarjeta'||m.metodo==='rappi'||m.metodo==='uber') diasPlataforma[idx]+=m.precio;
+      else if (m.metodo==='facebook'||m.metodo==='whatsapp') diasRedesS[idx]+=m.precio;
     });
     destroyChart('dias');
     grafCharts['dias'] = new Chart(document.getElementById('chart-dias'), {
       type: 'bar',
       data: {
         labels: diasNom,
-        datasets: [{
-          data: diasMap,
-          backgroundColor: diasMap.map(v => v === Math.max(...diasMap) && v > 0 ? 'rgba(46,196,182,0.85)' : 'rgba(15,52,96,0.85)'),
-          borderColor: diasMap.map(v => v === Math.max(...diasMap) && v > 0 ? '#2ec4b6' : '#0f3460'),
-          borderWidth: 2, borderRadius: 8
-        }]
+        datasets: [
+          { label:'💵 Efectivo', data: diasEfectivo, backgroundColor:'rgba(46,196,182,0.8)', borderColor:'#2ec4b6', borderWidth:2, borderRadius:4 },
+          { label:'💳 Tarjeta',  data: diasTarjeta,  backgroundColor:'rgba(155,93,229,0.8)', borderColor:'#9b5de5', borderWidth:2, borderRadius:4 },
+          { label:'📱 Plataforma', data: diasPlataforma, backgroundColor:'rgba(255,149,0,0.8)', borderColor:'#ff9500', borderWidth:2, borderRadius:4 },
+          { label:'📲 Redes Soc.', data: diasRedesS, backgroundColor:'rgba(24,119,242,0.8)', borderColor:'#1877f2', borderWidth:2, borderRadius:4 },
+        ]
       },
-      options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
-        scales: { x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
+      options: { responsive:true, plugins:{
+        legend:{ display:true, position:'bottom', labels:{ color:cf.color, font:{size:10}, padding:8 } },
+        tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } }
+      },
+        scales: { x:{ stacked:true, ticks:{ color:cf.color }, grid:{color:cf.gridColor} }, y:{ stacked:true, ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
     });
 
     // ── 5. GASTOS SEMANALES: negocio vs personal por día ──
@@ -1099,8 +1494,8 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
   function renderDistribucion() {
     const t = calcularTotales();
 
-    // Bruto físico en mano — los gastos NO se restan aquí, solo se aplican por bolsillo
-    const bruto = t.efectivo + t.tarjeta + t.didi_efectivo;
+    // Bruto físico en mano — efectivo + didi_efectivo + facebook + whatsapp (redes sociales = efectivo)
+    const bruto = t.efectivo + t.tarjeta + t.didi_efectivo + t.facebook + t.whatsapp;
 
     const pctSueldo  = (parseFloat(document.getElementById('pct-sueldo').value)  || 0) / 100;
     const pctInv     = (parseFloat(document.getElementById('pct-inv').value)     || 0) / 100;
@@ -1127,17 +1522,30 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     // Gastos personales → salen del sueldo
     const sueldoFinal = Math.max(0, sueldoBase - totalGasPer);
 
-    // Gastos de negocio → salen de inversión; si no alcanza, toma del colchón
+    // Gastos de negocio → salen de inversión
     let invFinal = invBase - totalGasNeg;
     let descontadoDeColchon = 0;
+    let descontadoDeSueldo = 0;
+
     if (invFinal < 0) {
+      // No alcanzó la inversión → tomar del colchón
       descontadoDeColchon = Math.abs(invFinal);
       invFinal = 0;
     }
-    const colchonFinal = Math.max(0, colchonBase - descontadoDeColchon);
+
+    let colchonFinal = colchonBase - descontadoDeColchon;
+
+    if (colchonFinal < 0) {
+      // No alcanzó el colchón → tomar del sueldo
+      descontadoDeSueldo = Math.abs(colchonFinal);
+      colchonFinal = 0;
+    }
+
+    // Sueldo final: ya descontados gastos personales, y si hubo que cubrir faltante
+    const sueldoFinalReal = Math.max(0, sueldoBase - totalGasPer - descontadoDeSueldo);
 
     document.getElementById('dist-en-mano').textContent = '$' + bruto.toFixed(2);
-    document.getElementById('dist-sueldo').textContent  = '$' + sueldoFinal.toFixed(2);
+    document.getElementById('dist-sueldo').textContent  = '$' + sueldoFinalReal.toFixed(2);
     document.getElementById('dist-inv').textContent     = '$' + invFinal.toFixed(2);
     document.getElementById('dist-colchon').textContent = '$' + colchonFinal.toFixed(2);
 
@@ -1148,10 +1556,16 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     // Detalle de gastos en cada bolsillo
     const elSueldoG = document.getElementById('dist-sueldo-gastos');
     if (elSueldoG) {
-      elSueldoG.innerHTML = gastosPersonal.length
-        ? gastosPersonal.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('') +
-          (totalGasPer > sueldoBase ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ Gastos personales exceden tu sueldo en $${(totalGasPer-sueldoBase).toFixed(2)}</div>` : '')
+      let html = gastosPersonal.length
+        ? gastosPersonal.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('')
         : '';
+      if (totalGasPer > sueldoBase) {
+        html += `<div style="color:var(--rojo);margin-top:4px;">⚠️ Gastos personales exceden tu sueldo en $${(totalGasPer-sueldoBase).toFixed(2)}</div>`;
+      }
+      if (descontadoDeSueldo > 0) {
+        html += `<div style="color:var(--rojo);margin-top:4px;">⚠️ $${descontadoDeSueldo.toFixed(2)} tomado de tu sueldo para cubrir gastos de negocio</div>`;
+      }
+      elSueldoG.innerHTML = html;
     }
 
     const elInvG = document.getElementById('dist-inv-gastos');
@@ -1165,9 +1579,8 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     const elColchonG = document.getElementById('dist-colchon-gastos');
     if (elColchonG) {
       if (descontadoDeColchon > 0) {
-        const faltante = descontadoDeColchon - colchonBase;
         elColchonG.innerHTML = `<div style="color:var(--rojo);">· Cubrió faltante de inversión: <b>-$${descontadoDeColchon.toFixed(2)}</b></div>` +
-          (faltante > 0 ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ Colchón insuficiente, faltan $${faltante.toFixed(2)}</div>` : '');
+          (descontadoDeSueldo > 0 ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ Colchón insuficiente. $${descontadoDeSueldo.toFixed(2)} tomados de tu Sueldo</div>` : '');
       } else {
         elColchonG.innerHTML = '';
       }
