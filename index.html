@@ -179,6 +179,7 @@
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -195,6 +196,7 @@
   <div class="tab" onclick="cambiarTab('historial',this)">Historial</div>
   <div class="tab" onclick="cambiarTab('distribucion',this)">💰 Dist.</div>
   <div class="tab" onclick="cambiarTab('graficas',this)">📈 Gráficas</div>
+  <div class="tab" onclick="cambiarTab('backup',this)">💾 Backup</div>
 </div>
 
 <!-- TAB VENTA -->
@@ -414,6 +416,33 @@
     </div>
     <div id="resumen-gastos-semana" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div>
   </div>
+
+  <!-- Gráfica 6: Inversión por semana (histórico) -->
+  <div class="resumen-box">
+    <h3>📦 Inversión por Semana</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Lo que se juntó vs lo que se gastó de inversión (incluyendo lo tomado del colchón, sueldo o extra)</p>
+    <canvas id="chart-inversion-semanas" height="220"></canvas>
+    <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;flex-wrap:wrap;">
+      <span style="color:#f4a261;">■ Juntado</span>
+      <span style="color:#e63946;">■ Gastado</span>
+      <span style="color:#2ec4b6;">■ Neto (sobrante)</span>
+    </div>
+    <div id="resumen-inversion-semanas" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
+  </div>
+
+  <!-- Gráfica 7: Sueldo por semana (histórico) -->
+  <div class="resumen-box">
+    <h3>💵 Sueldo por Semana</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Lo que se juntó de sueldo vs lo que se gastó en personal (lo que te quedó de bolsillo)</p>
+    <canvas id="chart-sueldo-semanas" height="220"></canvas>
+    <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;flex-wrap:wrap;">
+      <span style="color:#9b5de5;">■ Sueldo juntado</span>
+      <span style="color:#e63946;">■ Gastos personales</span>
+      <span style="color:#2ec4b6;">■ Lo que te quedó</span>
+    </div>
+    <div id="resumen-sueldo-semanas" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
+  </div>
+
 </div>
 
 <!-- MODAL VENTA -->
@@ -480,6 +509,57 @@
   <button class="btn-cancelar" onclick="cancelarTicket()" style="width:100%;margin-top:8px;">✕ Cancelar ticket</button>
 </div>
 
+<!-- TAB BACKUP -->
+<div class="seccion" id="tab-backup">
+  <div class="dist-header">💾 Respaldo de Datos</div>
+  <div class="dist-sub">Exporta e importa tus datos para no perderlos</div>
+
+  <!-- EXPORTAR -->
+  <div class="resumen-box" style="margin-bottom:14px;">
+    <h3 style="color:var(--verde);">📤 Exportar a Excel</h3>
+    <p style="font-size:12px;color:var(--gris);margin-bottom:14px;line-height:1.6;">Selecciona el rango de fechas que quieres exportar. Se descargará un archivo .xlsx con todas tus ventas, gastos e historial.</p>
+
+    <div style="display:flex;gap:10px;margin-bottom:10px;">
+      <div style="flex:1;">
+        <div style="font-size:11px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Desde</div>
+        <input type="date" id="backup-fecha-desde"
+          style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:11px 12px;color:var(--texto);font-size:14px;outline:none;">
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:11px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Hasta</div>
+        <input type="date" id="backup-fecha-hasta"
+          style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:11px 12px;color:var(--texto);font-size:14px;outline:none;">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <button onclick="setRangoHoy()" style="flex:1;min-width:80px;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:9px 6px;color:var(--gris);font-size:12px;cursor:pointer;">Hoy</button>
+      <button onclick="setRangoSemana()" style="flex:1;min-width:80px;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:9px 6px;color:var(--gris);font-size:12px;cursor:pointer;">Esta semana</button>
+      <button onclick="setRangoMes()" style="flex:1;min-width:80px;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:9px 6px;color:var(--gris);font-size:12px;cursor:pointer;">Este mes</button>
+      <button onclick="setRangoTodo()" style="flex:1;min-width:80px;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:9px 6px;color:var(--amarillo);font-size:12px;font-weight:700;border-color:var(--amarillo);cursor:pointer;">Todo</button>
+    </div>
+
+    <button onclick="exportarExcel()" style="width:100%;background:var(--verde);border:none;border-radius:10px;padding:15px;color:var(--oscuro);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">📥 Descargar Excel</button>
+    <div id="backup-export-info" style="font-size:11px;color:var(--gris);text-align:center;margin-top:8px;"></div>
+  </div>
+
+  <!-- IMPORTAR -->
+  <div class="resumen-box">
+    <h3 style="color:var(--amarillo);">📂 Importar desde Excel</h3>
+    <p style="font-size:12px;color:var(--gris);margin-bottom:6px;line-height:1.6;">Sube el archivo .xlsx que exportaste antes para restaurar tus datos.</p>
+    <p style="font-size:11px;color:var(--rojo);margin-bottom:14px;line-height:1.5;">⚠️ Esto <b>agrega</b> los datos del archivo a los que ya tienes. No borra lo actual.</p>
+
+    <label style="display:block;width:100%;background:var(--oscuro);border:2px dashed #444;border-radius:10px;padding:20px;text-align:center;cursor:pointer;color:var(--gris);font-size:14px;" id="backup-drop-zone">
+      <div style="font-size:32px;margin-bottom:6px;">📂</div>
+      <div>Toca aquí para seleccionar el archivo</div>
+      <div style="font-size:11px;margin-top:4px;">.xlsx exportado por El Bajón</div>
+      <input type="file" id="backup-file-input" accept=".xlsx" style="display:none;" onchange="importarExcel(this)">
+    </label>
+
+    <div id="backup-import-info" style="font-size:12px;color:var(--gris);text-align:center;margin-top:10px;line-height:1.6;"></div>
+  </div>
+</div>
+
 <!-- MODAL DETALLE HISTORIAL -->
 <div class="overlay" id="overlay-hist" onclick="cerrarHistModal(event)">
   <div class="modal-hist" id="modal-hist-content"></div>
@@ -540,7 +620,7 @@
     if(tab==='resumen') renderResumen();
     if(tab==='historial') renderHistorial();
     if(tab==='distribucion') renderDistribucion();
-    if(tab==='graficas') { semanaOffset=0; renderGraficas(); }
+    if(tab==='graficas') { semanaOffset=0; renderGraficas(); renderGraficasHistoricas(); }
   }
 
   // ── TECLADO NUMÉRICO ──
@@ -1489,103 +1569,450 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
         </div>`;
     }
   }
-  // ─── FIN GRÁFICAS ─────────────────────────────────────────────────────────────
 
+  // ── HELPER: obtener lunes de la semana de una fecha ──
+  function lunesDe(fecha) {
+    const d = new Date(fecha);
+    const dia = d.getDay();
+    d.setDate(d.getDate() - (dia === 0 ? 6 : dia - 1));
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function labelSemana(lunes) {
+    const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+    const fmt = d => d.toLocaleDateString('es-MX', {day:'numeric', month:'short'});
+    return fmt(lunes) + ' - ' + fmt(domingo);
+  }
+
+  // ── Agrupa días del historial por semana y calcula inversión/sueldo ──
+  function calcularSemanasHistoricas() {
+    const pctSueldo  = (parseFloat(document.getElementById('pct-sueldo').value)  || 0) / 100;
+    const pctInv     = (parseFloat(document.getElementById('pct-inv').value)     || 0) / 100;
+
+    const semanasMap = {}; // clave: timestamp del lunes
+
+    // Incluir día actual
+    const hoyLunes = lunesDe(new Date());
+    const keyHoy = hoyLunes.getTime();
+    const tHoy = calcularTotales();
+    const brutoHoy = tHoy.efectivo + tHoy.tarjeta + tHoy.didi_efectivo + tHoy.facebook + tHoy.whatsapp;
+    if (!semanasMap[keyHoy]) semanasMap[keyHoy] = { lunes: hoyLunes, invJuntado:0, invGastado:0, sueldoJuntado:0, sueldoGastado:0 };
+    semanasMap[keyHoy].invJuntado    += brutoHoy * pctInv;
+    semanasMap[keyHoy].sueldoJuntado += brutoHoy * pctSueldo;
+    semanasMap[keyHoy].invGastado    += tHoy.totalGastosNegocio;
+    semanasMap[keyHoy].sueldoGastado += tHoy.totalGastosPersonal;
+
+    // Historial
+    historial.forEach(dia => {
+      const fecha = parseFechaHistorial(dia.fecha);
+      if (!fecha) return;
+      const lunes = lunesDe(fecha);
+      const key = lunes.getTime();
+      if (!semanasMap[key]) semanasMap[key] = { lunes, invJuntado:0, invGastado:0, sueldoJuntado:0, sueldoGastado:0 };
+      const t = dia.totales;
+      const bruto = (t.efectivo||0) + (t.tarjeta||0) + (t.didi_efectivo||0) + (t.facebook||0) + (t.whatsapp||0);
+      semanasMap[key].invJuntado    += bruto * pctInv;
+      semanasMap[key].sueldoJuntado += bruto * pctSueldo;
+      semanasMap[key].invGastado    += (t.totalGastosNegocio||0);
+      semanasMap[key].sueldoGastado += (t.totalGastosPersonal||0);
+    });
+
+    // Ordenar por fecha
+    return Object.values(semanasMap).sort((a,b) => a.lunes - b.lunes);
+  }
+
+  function renderGraficasHistoricas() {
+    const semanas = calcularSemanasHistoricas();
+    const cf = { color:'#a0a0b8', gridColor:'rgba(255,255,255,0.05)' };
+
+    if (!semanas.length) return;
+
+    const labels      = semanas.map(s => labelSemana(s.lunes));
+    const invJuntado  = semanas.map(s => parseFloat(s.invJuntado.toFixed(2)));
+    const invGastado  = semanas.map(s => parseFloat(s.invGastado.toFixed(2)));
+    const invNeto     = semanas.map(s => parseFloat((s.invJuntado - s.invGastado).toFixed(2)));
+    const sueldoJunt  = semanas.map(s => parseFloat(s.sueldoJuntado.toFixed(2)));
+    const sueldoGast  = semanas.map(s => parseFloat(s.sueldoGastado.toFixed(2)));
+    const sueldoNeto  = semanas.map(s => parseFloat((s.sueldoJuntado - s.sueldoGastado).toFixed(2)));
+
+    // ── Gráfica Inversión ──
+    destroyChart('inversion-semanas');
+    grafCharts['inversion-semanas'] = new Chart(document.getElementById('chart-inversion-semanas'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label:'📦 Juntado', data: invJuntado, backgroundColor:'rgba(244,162,97,0.75)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 },
+          { label:'💸 Gastado', data: invGastado, backgroundColor:'rgba(230,57,70,0.75)',  borderColor:'#e63946', borderWidth:2, borderRadius:5 },
+          { label:'✅ Neto',    data: invNeto,    type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
+        ]
+      },
+      options: { responsive:true,
+        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
+          tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
+        scales: {
+          x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:40 }, grid:{color:cf.gridColor} },
+          y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
+        }
+      }
+    });
+
+    // Resumen inversión
+    const resInv = document.getElementById('resumen-inversion-semanas');
+    const ultima = semanas[semanas.length-1];
+    const netoUlt = ultima.invJuntado - ultima.invGastado;
+    resInv.innerHTML = semanas.map((s,i) => {
+      const neto = s.invJuntado - s.invGastado;
+      const color = neto >= 0 ? 'var(--verde)' : 'var(--rojo)';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #2a2a3e;font-size:11px;">
+        <span style="color:var(--gris);flex:2">${labelSemana(s.lunes)}</span>
+        <span style="color:#f4a261;flex:1;text-align:right">$${s.invJuntado.toFixed(0)}</span>
+        <span style="color:#e63946;flex:1;text-align:right">-$${s.invGastado.toFixed(0)}</span>
+        <span style="color:${color};flex:1;text-align:right;font-weight:700">${neto>=0?'+':''} $${neto.toFixed(0)}</span>
+      </div>`;
+    }).join('') + `<div style="display:flex;justify-content:flex-end;gap:16px;padding-top:6px;font-size:10px;color:var(--gris);">
+      <span style="color:#f4a261">■ Juntado</span><span style="color:#e63946">■ Gastado</span><span style="color:#2ec4b6">■ Neto</span></div>`;
+
+    // ── Gráfica Sueldo ──
+    destroyChart('sueldo-semanas');
+    grafCharts['sueldo-semanas'] = new Chart(document.getElementById('chart-sueldo-semanas'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label:'💵 Sueldo juntado', data: sueldoJunt, backgroundColor:'rgba(155,93,229,0.75)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 },
+          { label:'🧍 Gastos personales', data: sueldoGast, backgroundColor:'rgba(230,57,70,0.75)', borderColor:'#e63946', borderWidth:2, borderRadius:5 },
+          { label:'✅ Lo que te quedó', data: sueldoNeto, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
+        ]
+      },
+      options: { responsive:true,
+        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
+          tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
+        scales: {
+          x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:40 }, grid:{color:cf.gridColor} },
+          y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
+        }
+      }
+    });
+
+    // Resumen sueldo
+    const resSueldo = document.getElementById('resumen-sueldo-semanas');
+    resSueldo.innerHTML = semanas.map(s => {
+      const neto = s.sueldoJuntado - s.sueldoGastado;
+      const color = neto >= 0 ? 'var(--verde)' : 'var(--rojo)';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #2a2a3e;font-size:11px;">
+        <span style="color:var(--gris);flex:2">${labelSemana(s.lunes)}</span>
+        <span style="color:#9b5de5;flex:1;text-align:right">$${s.sueldoJuntado.toFixed(0)}</span>
+        <span style="color:#e63946;flex:1;text-align:right">-$${s.sueldoGastado.toFixed(0)}</span>
+        <span style="color:${color};flex:1;text-align:right;font-weight:700">${neto>=0?'+':''} $${neto.toFixed(0)}</span>
+      </div>`;
+    }).join('') + `<div style="display:flex;justify-content:flex-end;gap:16px;padding-top:6px;font-size:10px;color:var(--gris);">
+      <span style="color:#9b5de5">■ Sueldo</span><span style="color:#e63946">■ Gastos</span><span style="color:#2ec4b6">■ Neto</span></div>`;
+  }
+
+
+  // ── DISTRIBUCIÓN ──
   function renderDistribucion() {
     const t = calcularTotales();
-
-    // Bruto físico en mano — efectivo + didi_efectivo + facebook + whatsapp (redes sociales = efectivo)
     const bruto = t.efectivo + t.tarjeta + t.didi_efectivo + t.facebook + t.whatsapp;
-
     const pctSueldo  = (parseFloat(document.getElementById('pct-sueldo').value)  || 0) / 100;
     const pctInv     = (parseFloat(document.getElementById('pct-inv').value)     || 0) / 100;
     const pctColchon = (parseFloat(document.getElementById('pct-colchon').value) || 0) / 100;
-
     document.getElementById('lbl-sueldo').textContent  = Math.round(pctSueldo*100)  + '%';
     document.getElementById('lbl-inv').textContent     = Math.round(pctInv*100)     + '%';
     document.getElementById('lbl-colchon').textContent = Math.round(pctColchon*100) + '%';
-
     const totalPct = pctSueldo + pctInv + pctColchon;
     document.getElementById('dist-alerta').style.display = totalPct > 1.001 ? 'block' : 'none';
-
-    // Gastos por tipo
     const gastosNegocio  = gastos.filter(g => !g.tipo || g.tipo === 'negocio');
     const gastosPersonal = gastos.filter(g => g.tipo === 'personal');
     const totalGasNeg = gastosNegocio.reduce((s,g)=>s+g.monto,0);
     const totalGasPer = gastosPersonal.reduce((s,g)=>s+g.monto,0);
-
-    // Bolsillos base sobre el bruto
     const sueldoBase  = bruto * pctSueldo;
     const invBase     = bruto * pctInv;
     const colchonBase = bruto * pctColchon;
-
-    // Gastos personales → salen del sueldo
-    const sueldoFinal = Math.max(0, sueldoBase - totalGasPer);
-
-    // Gastos de negocio → salen de inversión
     let invFinal = invBase - totalGasNeg;
-    let descontadoDeColchon = 0;
-    let descontadoDeSueldo = 0;
-
-    if (invFinal < 0) {
-      // No alcanzó la inversión → tomar del colchón
-      descontadoDeColchon = Math.abs(invFinal);
-      invFinal = 0;
-    }
-
+    let descontadoDeColchon = 0, descontadoDeSueldo = 0;
+    if (invFinal < 0) { descontadoDeColchon = Math.abs(invFinal); invFinal = 0; }
     let colchonFinal = colchonBase - descontadoDeColchon;
-
-    if (colchonFinal < 0) {
-      // No alcanzó el colchón → tomar del sueldo
-      descontadoDeSueldo = Math.abs(colchonFinal);
-      colchonFinal = 0;
-    }
-
-    // Sueldo final: ya descontados gastos personales, y si hubo que cubrir faltante
+    if (colchonFinal < 0) { descontadoDeSueldo = Math.abs(colchonFinal); colchonFinal = 0; }
     const sueldoFinalReal = Math.max(0, sueldoBase - totalGasPer - descontadoDeSueldo);
-
-    document.getElementById('dist-en-mano').textContent = '$' + bruto.toFixed(2);
-    document.getElementById('dist-sueldo').textContent  = '$' + sueldoFinalReal.toFixed(2);
-    document.getElementById('dist-inv').textContent     = '$' + invFinal.toFixed(2);
-    document.getElementById('dist-colchon').textContent = '$' + colchonFinal.toFixed(2);
-
-    document.getElementById('dist-sueldo-det').textContent  = Math.round(pctSueldo*100)  + '% de $' + bruto.toFixed(2) + ' bruto';
-    document.getElementById('dist-inv-det').textContent     = Math.round(pctInv*100)     + '% de $' + bruto.toFixed(2) + ' bruto';
-    document.getElementById('dist-colchon-det').textContent = Math.round(pctColchon*100) + '% de $' + bruto.toFixed(2) + ' bruto';
-
-    // Detalle de gastos en cada bolsillo
+    document.getElementById('dist-en-mano').textContent  = '$' + bruto.toFixed(2);
+    document.getElementById('dist-sueldo').textContent   = '$' + sueldoFinalReal.toFixed(2);
+    document.getElementById('dist-inv').textContent      = '$' + invFinal.toFixed(2);
+    document.getElementById('dist-colchon').textContent  = '$' + colchonFinal.toFixed(2);
+    document.getElementById('dist-sueldo-det').textContent  = Math.round(pctSueldo*100)  + '% de $' + bruto.toFixed(2);
+    document.getElementById('dist-inv-det').textContent     = Math.round(pctInv*100)     + '% de $' + bruto.toFixed(2);
+    document.getElementById('dist-colchon-det').textContent = Math.round(pctColchon*100) + '% de $' + bruto.toFixed(2);
     const elSueldoG = document.getElementById('dist-sueldo-gastos');
     if (elSueldoG) {
-      let html = gastosPersonal.length
-        ? gastosPersonal.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('')
-        : '';
-      if (totalGasPer > sueldoBase) {
-        html += `<div style="color:var(--rojo);margin-top:4px;">⚠️ Gastos personales exceden tu sueldo en $${(totalGasPer-sueldoBase).toFixed(2)}</div>`;
-      }
-      if (descontadoDeSueldo > 0) {
-        html += `<div style="color:var(--rojo);margin-top:4px;">⚠️ $${descontadoDeSueldo.toFixed(2)} tomado de tu sueldo para cubrir gastos de negocio</div>`;
-      }
+      let html = gastosPersonal.map(g=>`<div>\u00b7 ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('');
+      if (totalGasPer > sueldoBase) html += `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f Exceden sueldo en $${(totalGasPer-sueldoBase).toFixed(2)}</div>`;
+      if (descontadoDeSueldo > 0)   html += `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f $${descontadoDeSueldo.toFixed(2)} tomado para cubrir negocio</div>`;
       elSueldoG.innerHTML = html;
     }
-
     const elInvG = document.getElementById('dist-inv-gastos');
     if (elInvG) {
-      elInvG.innerHTML = gastosNegocio.length
-        ? gastosNegocio.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('') +
-          (descontadoDeColchon > 0 ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ $${descontadoDeColchon.toFixed(2)} tomado del Colchón</div>` : '')
-        : '';
+      elInvG.innerHTML = gastosNegocio.map(g=>`<div>\u00b7 ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('') +
+        (descontadoDeColchon > 0 ? `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f $${descontadoDeColchon.toFixed(2)} tomado del Colch\u00f3n</div>` : '');
     }
-
     const elColchonG = document.getElementById('dist-colchon-gastos');
     if (elColchonG) {
-      if (descontadoDeColchon > 0) {
-        elColchonG.innerHTML = `<div style="color:var(--rojo);">· Cubrió faltante de inversión: <b>-$${descontadoDeColchon.toFixed(2)}</b></div>` +
-          (descontadoDeSueldo > 0 ? `<div style="color:var(--rojo);margin-top:4px;">⚠️ Colchón insuficiente. $${descontadoDeSueldo.toFixed(2)} tomados de tu Sueldo</div>` : '');
-      } else {
-        elColchonG.innerHTML = '';
-      }
+      elColchonG.innerHTML = descontadoDeColchon > 0
+        ? `<div style="color:var(--rojo);">\u00b7 Cubri\u00f3 faltante: <b>-$${descontadoDeColchon.toFixed(2)}</b></div>` +
+          (descontadoDeSueldo > 0 ? `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f Colch\u00f3n insuficiente. $${descontadoDeSueldo.toFixed(2)} tomados del Sueldo</div>` : '')
+        : '';
     }
   }
+
+  // ─── BACKUP ──────────────────────────────────────────────────────────────────
+
+  function initBackupFechas() {
+    const hoy = new Date();
+    const fmt = d => d.toISOString().split('T')[0];
+    const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    document.getElementById('backup-fecha-desde').value = fmt(primerDiaMes);
+    document.getElementById('backup-fecha-hasta').value = fmt(hoy);
+  }
+
+  function setRangoHoy() {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('backup-fecha-desde').value = hoy;
+    document.getElementById('backup-fecha-hasta').value = hoy;
+  }
+
+  function setRangoSemana() {
+    const hoy = new Date();
+    const dia = hoy.getDay();
+    const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - (dia===0?6:dia-1));
+    const fmt = d => d.toISOString().split('T')[0];
+    document.getElementById('backup-fecha-desde').value = fmt(lunes);
+    document.getElementById('backup-fecha-hasta').value = fmt(hoy);
+  }
+
+  function setRangoMes() {
+    const hoy = new Date();
+    const fmt = d => d.toISOString().split('T')[0];
+    document.getElementById('backup-fecha-desde').value = fmt(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    document.getElementById('backup-fecha-hasta').value = fmt(hoy);
+  }
+
+  function setRangoTodo() {
+    document.getElementById('backup-fecha-desde').value = '2020-01-01';
+    document.getElementById('backup-fecha-hasta').value = new Date().toISOString().split('T')[0];
+  }
+
+  function fechaEnRango(fechaStr, desde, hasta) {
+    // Intenta parsear tanto formato ISO (2025-01-14) como formato historial ("lunes, 14 de enero de 2025")
+    let d;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+      d = new Date(fechaStr + 'T12:00:00');
+    } else {
+      d = parseFechaHistorial(fechaStr);
+    }
+    if (!d) return false;
+    return d >= desde && d <= hasta;
+  }
+
+  function exportarExcel() {
+    const desdeStr = document.getElementById('backup-fecha-desde').value;
+    const hastaStr = document.getElementById('backup-fecha-hasta').value;
+    if (!desdeStr || !hastaStr) { mostrarToast('⚠️ Selecciona las fechas'); return; }
+
+    const desde = new Date(desdeStr + 'T00:00:00');
+    const hasta = new Date(hastaStr + 'T23:59:59');
+    const wb = XLSX.utils.book_new();
+
+    // ── Hoja 1: Ventas del día actual (si entran en rango) ──
+    const hoyEnRango = new Date() >= desde && new Date() <= hasta;
+    let todasVentas = [];
+
+    if (hoyEnRango && movimientos.length) {
+      const hoyStr = new Date().toLocaleDateString('es-MX', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      movimientos.forEach(m => {
+        todasVentas.push({
+          Fecha: hoyStr,
+          Hora: m.hora || '',
+          Producto: m.producto,
+          'Precio ($)': m.precio,
+          'Método de Pago': nombreMetodo(m.metodo)
+        });
+      });
+    }
+
+    // ── Ventas del historial en rango ──
+    let diasIncluidos = 0;
+    historial.forEach(dia => {
+      if (!fechaEnRango(dia.fecha, desde, hasta)) return;
+      diasIncluidos++;
+      dia.movimientos.forEach(m => {
+        todasVentas.push({
+          Fecha: dia.fecha,
+          Hora: m.hora || '',
+          Producto: m.producto,
+          'Precio ($)': m.precio,
+          'Método de Pago': nombreMetodo(m.metodo)
+        });
+      });
+    });
+
+    if (todasVentas.length) {
+      const ws1 = XLSX.utils.json_to_sheet(todasVentas);
+      ws1['!cols'] = [{wch:30},{wch:8},{wch:22},{wch:12},{wch:18}];
+      XLSX.utils.book_append_sheet(wb, ws1, 'Ventas');
+    }
+
+    // ── Hoja 2: Gastos ──
+    let todosGastos = [];
+    if (hoyEnRango && gastos.length) {
+      const hoyStr = new Date().toLocaleDateString('es-MX', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      gastos.forEach(g => {
+        todosGastos.push({ Fecha: hoyStr, Hora: g.hora||'', Concepto: g.concepto, 'Monto ($)': g.monto, Tipo: g.tipo==='personal'?'Personal':'Negocio' });
+      });
+    }
+    historial.forEach(dia => {
+      if (!fechaEnRango(dia.fecha, desde, hasta)) return;
+      (dia.gastos||[]).forEach(g => {
+        todosGastos.push({ Fecha: dia.fecha, Hora: g.hora||'', Concepto: g.concepto, 'Monto ($)': g.monto, Tipo: g.tipo==='personal'?'Personal':'Negocio' });
+      });
+    });
+    if (todosGastos.length) {
+      const ws2 = XLSX.utils.json_to_sheet(todosGastos);
+      ws2['!cols'] = [{wch:30},{wch:8},{wch:24},{wch:12},{wch:10}];
+      XLSX.utils.book_append_sheet(wb, ws2, 'Gastos');
+    }
+
+    // ── Hoja 3: Resumen por día ──
+    let resumenDias = [];
+    if (hoyEnRango) {
+      const t = calcularTotales();
+      resumenDias.push({
+        Fecha: new Date().toLocaleDateString('es-MX', {weekday:'long',day:'numeric',month:'long',year:'numeric'}),
+        'Efectivo ($)': t.efectivo, 'Tarjeta ($)': t.tarjeta,
+        'Didi Ef. ($)': t.didi_efectivo, 'Didi Tar. ($)': t.didi_tarjeta,
+        'Rappi ($)': t.rappi, 'Uber ($)': t.uber,
+        'Facebook ($)': t.facebook||0, 'WhatsApp ($)': t.whatsapp||0,
+        'Total Gastos ($)': t.totalGastos, 'Venta Total ($)': t.totalVenta
+      });
+    }
+    historial.forEach(dia => {
+      if (!fechaEnRango(dia.fecha, desde, hasta)) return;
+      const t = dia.totales;
+      resumenDias.push({
+        Fecha: dia.fecha,
+        'Efectivo ($)': t.efectivo||0, 'Tarjeta ($)': t.tarjeta||0,
+        'Didi Ef. ($)': t.didi_efectivo||0, 'Didi Tar. ($)': t.didi_tarjeta||0,
+        'Rappi ($)': t.rappi||0, 'Uber ($)': t.uber||0,
+        'Facebook ($)': t.facebook||0, 'WhatsApp ($)': t.whatsapp||0,
+        'Total Gastos ($)': t.totalGastos||0, 'Venta Total ($)': t.totalVenta||0
+      });
+    });
+    if (resumenDias.length) {
+      const ws3 = XLSX.utils.json_to_sheet(resumenDias);
+      ws3['!cols'] = [{wch:32},...Array(10).fill({wch:14})];
+      XLSX.utils.book_append_sheet(wb, ws3, 'Resumen por Día');
+    }
+
+    // ── Hoja 4: Datos crudos para reimportar (JSON comprimido) ──
+    // Esta hoja guarda todo el historial en formato reimportable
+    const backupData = [{
+      tipo: 'BACKUP_BAJON_V1',
+      fecha_exportacion: new Date().toISOString(),
+      historial: JSON.stringify(historial),
+      movimientos_hoy: JSON.stringify(movimientos),
+      gastos_hoy: JSON.stringify(gastos),
+      mesas: JSON.stringify(mesas)
+    }];
+    const ws4 = XLSX.utils.json_to_sheet(backupData);
+    ws4['!cols'] = [{wch:20},{wch:25},{wch:80},{wch:80},{wch:80},{wch:40}];
+    XLSX.utils.book_append_sheet(wb, ws4, '_BACKUP_DATOS');
+
+    if (!todasVentas.length && !todosGastos.length && !resumenDias.length) {
+      mostrarToast('⚠️ No hay datos en ese rango'); return;
+    }
+
+    const nombreArchivo = `ElBajon_${desdeStr}_${hastaStr}.xlsx`;
+    XLSX.writeFile(wb, nombreArchivo);
+    const info = `✅ Exportado: ${todasVentas.length} ventas, ${todosGastos.length} gastos, ${resumenDias.length} días`;
+    document.getElementById('backup-export-info').textContent = info;
+    mostrarToast('📥 Excel descargado');
+  }
+
+  function importarExcel(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const info = document.getElementById('backup-import-info');
+    info.innerHTML = '<span style="color:var(--amarillo)">⏳ Leyendo archivo...</span>';
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+
+        // Buscar hoja de backup
+        const backupSheet = wb.Sheets['_BACKUP_DATOS'];
+        if (!backupSheet) {
+          info.innerHTML = '<span style="color:var(--rojo)">❌ Este archivo no es un backup de El Bajón. Usa un archivo exportado desde esta misma página.</span>';
+          return;
+        }
+
+        const rows = XLSX.utils.sheet_to_json(backupSheet);
+        if (!rows.length || rows[0].tipo !== 'BACKUP_BAJON_V1') {
+          info.innerHTML = '<span style="color:var(--rojo)">❌ Formato de backup no reconocido.</span>';
+          return;
+        }
+
+        const backup = rows[0];
+        const histBackup = JSON.parse(backup.historial || '[]');
+        const movBackup  = JSON.parse(backup.movimientos_hoy || '[]');
+        const gasBackup  = JSON.parse(backup.gastos_hoy || '[]');
+        const mesasBackup= JSON.parse(backup.mesas || '[]');
+
+        // Agregar sin duplicar (por id)
+        const idsHist = new Set(historial.map(d=>d.id));
+        let diasAgregados = 0;
+        histBackup.forEach(d => { if (!idsHist.has(d.id)) { historial.unshift(d); diasAgregados++; } });
+
+        // Movimientos del día actual del backup — solo si no hay movimientos actuales
+        let movAgregados = 0;
+        if (!movimientos.length && movBackup.length) {
+          movimientos = movBackup;
+          movAgregados = movBackup.length;
+        }
+
+        // Gastos del día actual del backup
+        let gastosAgregados = 0;
+        if (!gastos.length && gasBackup.length) {
+          gastos = gasBackup;
+          gastosAgregados = gasBackup.length;
+        }
+
+        // Mesas
+        const idsMesas = new Set(mesas.map(m=>m.id));
+        let mesasAgregadas = 0;
+        mesasBackup.forEach(m => { if (!idsMesas.has(m.id)) { mesas.push(m); mesasAgregadas++; } });
+
+        guardarHistorial(); guardarMov(); guardarGastos(); guardarMesas();
+        actualizarTotalesRapidos(); renderMesas();
+
+        info.innerHTML = `<span style="color:var(--verde);">✅ Importación exitosa:<br>
+          📅 ${diasAgregados} días del historial agregados<br>
+          🧾 ${movAgregados} ventas del día cargadas<br>
+          💸 ${gastosAgregados} gastos del día cargados<br>
+          🪑 ${mesasAgregadas} mesas restauradas</span>`;
+        mostrarToast('✅ Datos restaurados');
+      } catch(err) {
+        info.innerHTML = '<span style="color:var(--rojo)">❌ Error al leer el archivo: ' + err.message + '</span>';
+      }
+      input.value = '';
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // Inicializar fechas del backup
+  initBackupFechas();
+
+  // ─── FIN BACKUP ───────────────────────────────────────────────────────────────
 
 </script>
 </body>
