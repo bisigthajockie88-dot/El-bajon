@@ -179,7 +179,6 @@
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -517,7 +516,7 @@
   <!-- EXPORTAR -->
   <div class="resumen-box" style="margin-bottom:14px;">
     <h3 style="color:var(--verde);">📤 Exportar a Excel</h3>
-    <p style="font-size:12px;color:var(--gris);margin-bottom:14px;line-height:1.6;">Selecciona el rango de fechas que quieres exportar. Se descargará un archivo .xlsx con todas tus ventas, gastos e historial.</p>
+    <p style="font-size:12px;color:var(--gris);margin-bottom:14px;line-height:1.6;">Selecciona el rango de fechas que quieres exportar. Se descargarán tus ventas y gastos en CSV (abre en Excel) y un archivo de respaldo JSON.</p>
 
     <div style="display:flex;gap:10px;margin-bottom:10px;">
       <div style="flex:1;">
@@ -539,21 +538,21 @@
       <button onclick="setRangoTodo()" style="flex:1;min-width:80px;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:9px 6px;color:var(--amarillo);font-size:12px;font-weight:700;border-color:var(--amarillo);cursor:pointer;">Todo</button>
     </div>
 
-    <button onclick="exportarExcel()" style="width:100%;background:var(--verde);border:none;border-radius:10px;padding:15px;color:var(--oscuro);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">📥 Descargar Excel</button>
+    <button onclick="exportarDatos()" style="width:100%;background:var(--verde);border:none;border-radius:10px;padding:15px;color:var(--oscuro);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">📥 Descargar Respaldo</button>
     <div id="backup-export-info" style="font-size:11px;color:var(--gris);text-align:center;margin-top:8px;"></div>
   </div>
 
   <!-- IMPORTAR -->
   <div class="resumen-box">
     <h3 style="color:var(--amarillo);">📂 Importar desde Excel</h3>
-    <p style="font-size:12px;color:var(--gris);margin-bottom:6px;line-height:1.6;">Sube el archivo .xlsx que exportaste antes para restaurar tus datos.</p>
+    <p style="font-size:12px;color:var(--gris);margin-bottom:6px;line-height:1.6;">Sube el archivo de respaldo <b>.json</b> que descargaste para restaurar tus datos.</p>
     <p style="font-size:11px;color:var(--rojo);margin-bottom:14px;line-height:1.5;">⚠️ Esto <b>agrega</b> los datos del archivo a los que ya tienes. No borra lo actual.</p>
 
     <label style="display:block;width:100%;background:var(--oscuro);border:2px dashed #444;border-radius:10px;padding:20px;text-align:center;cursor:pointer;color:var(--gris);font-size:14px;" id="backup-drop-zone">
       <div style="font-size:32px;margin-bottom:6px;">📂</div>
       <div>Toca aquí para seleccionar el archivo</div>
-      <div style="font-size:11px;margin-top:4px;">.xlsx exportado por El Bajón</div>
-      <input type="file" id="backup-file-input" accept=".xlsx" style="display:none;" onchange="importarExcel(this)">
+      <div style="font-size:11px;margin-top:4px;">.json de respaldo de El Bajón</div>
+      <input type="file" id="backup-file-input" accept=".json" style="display:none;" onchange="importarExcel(this)">
     </label>
 
     <div id="backup-import-info" style="font-size:12px;color:var(--gris);text-align:center;margin-top:10px;line-height:1.6;"></div>
@@ -1814,199 +1813,116 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     return d >= desde && d <= hasta;
   }
 
-  function exportarExcel() {
+  function descargarArchivo(contenido, nombre, tipo) {
+    const blob = new Blob([contenido], { type: tipo });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nombre; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function toCSV(filas) {
+    if (!filas.length) return '';
+    const cols = Object.keys(filas[0]);
+    const esc = v => {
+      const s = String(v === null || v === undefined ? '' : v);
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g,'""') + '"' : s;
+    };
+    return [cols.join(','), ...filas.map(r => cols.map(c => esc(r[c])).join(','))].join('\n');
+  }
+
+  function exportarDatos() {
     const desdeStr = document.getElementById('backup-fecha-desde').value;
     const hastaStr = document.getElementById('backup-fecha-hasta').value;
-    if (!desdeStr || !hastaStr) { mostrarToast('⚠️ Selecciona las fechas'); return; }
-
+    if (!desdeStr || !hastaStr) { mostrarToast('\u26a0\ufe0f Selecciona las fechas'); return; }
     const desde = new Date(desdeStr + 'T00:00:00');
-    const hasta = new Date(hastaStr + 'T23:59:59');
-    const wb = XLSX.utils.book_new();
+    const hasta  = new Date(hastaStr + 'T23:59:59');
 
-    // ── Hoja 1: Ventas del día actual (si entran en rango) ──
     const hoyEnRango = new Date() >= desde && new Date() <= hasta;
-    let todasVentas = [];
+    const hoyStr = new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
-    if (hoyEnRango && movimientos.length) {
-      const hoyStr = new Date().toLocaleDateString('es-MX', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
-      movimientos.forEach(m => {
-        todasVentas.push({
-          Fecha: hoyStr,
-          Hora: m.hora || '',
-          Producto: m.producto,
-          'Precio ($)': m.precio,
-          'Método de Pago': nombreMetodo(m.metodo)
-        });
-      });
-    }
-
-    // ── Ventas del historial en rango ──
-    let diasIncluidos = 0;
+    // ── Ventas CSV ──
+    let ventas = [];
+    if (hoyEnRango) movimientos.forEach(m => ventas.push({ Fecha:hoyStr, Hora:m.hora||'', Producto:m.producto, 'Precio ($)':m.precio, Metodo:nombreMetodo(m.metodo) }));
     historial.forEach(dia => {
       if (!fechaEnRango(dia.fecha, desde, hasta)) return;
-      diasIncluidos++;
-      dia.movimientos.forEach(m => {
-        todasVentas.push({
-          Fecha: dia.fecha,
-          Hora: m.hora || '',
-          Producto: m.producto,
-          'Precio ($)': m.precio,
-          'Método de Pago': nombreMetodo(m.metodo)
-        });
-      });
+      dia.movimientos.forEach(m => ventas.push({ Fecha:dia.fecha, Hora:m.hora||'', Producto:m.producto, 'Precio ($)':m.precio, Metodo:nombreMetodo(m.metodo) }));
     });
 
-    if (todasVentas.length) {
-      const ws1 = XLSX.utils.json_to_sheet(todasVentas);
-      ws1['!cols'] = [{wch:30},{wch:8},{wch:22},{wch:12},{wch:18}];
-      XLSX.utils.book_append_sheet(wb, ws1, 'Ventas');
-    }
-
-    // ── Hoja 2: Gastos ──
-    let todosGastos = [];
-    if (hoyEnRango && gastos.length) {
-      const hoyStr = new Date().toLocaleDateString('es-MX', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
-      gastos.forEach(g => {
-        todosGastos.push({ Fecha: hoyStr, Hora: g.hora||'', Concepto: g.concepto, 'Monto ($)': g.monto, Tipo: g.tipo==='personal'?'Personal':'Negocio' });
-      });
-    }
+    // ── Gastos CSV ──
+    let gastosList = [];
+    if (hoyEnRango) gastos.forEach(g => gastosList.push({ Fecha:hoyStr, Hora:g.hora||'', Concepto:g.concepto, 'Monto ($)':g.monto, Tipo:g.tipo==='personal'?'Personal':'Negocio' }));
     historial.forEach(dia => {
       if (!fechaEnRango(dia.fecha, desde, hasta)) return;
-      (dia.gastos||[]).forEach(g => {
-        todosGastos.push({ Fecha: dia.fecha, Hora: g.hora||'', Concepto: g.concepto, 'Monto ($)': g.monto, Tipo: g.tipo==='personal'?'Personal':'Negocio' });
-      });
+      (dia.gastos||[]).forEach(g => gastosList.push({ Fecha:dia.fecha, Hora:g.hora||'', Concepto:g.concepto, 'Monto ($)':g.monto, Tipo:g.tipo==='personal'?'Personal':'Negocio' }));
     });
-    if (todosGastos.length) {
-      const ws2 = XLSX.utils.json_to_sheet(todosGastos);
-      ws2['!cols'] = [{wch:30},{wch:8},{wch:24},{wch:12},{wch:10}];
-      XLSX.utils.book_append_sheet(wb, ws2, 'Gastos');
-    }
 
-    // ── Hoja 3: Resumen por día ──
-    let resumenDias = [];
-    if (hoyEnRango) {
-      const t = calcularTotales();
-      resumenDias.push({
-        Fecha: new Date().toLocaleDateString('es-MX', {weekday:'long',day:'numeric',month:'long',year:'numeric'}),
-        'Efectivo ($)': t.efectivo, 'Tarjeta ($)': t.tarjeta,
-        'Didi Ef. ($)': t.didi_efectivo, 'Didi Tar. ($)': t.didi_tarjeta,
-        'Rappi ($)': t.rappi, 'Uber ($)': t.uber,
-        'Facebook ($)': t.facebook||0, 'WhatsApp ($)': t.whatsapp||0,
-        'Total Gastos ($)': t.totalGastos, 'Venta Total ($)': t.totalVenta
-      });
-    }
-    historial.forEach(dia => {
-      if (!fechaEnRango(dia.fecha, desde, hasta)) return;
-      const t = dia.totales;
-      resumenDias.push({
-        Fecha: dia.fecha,
-        'Efectivo ($)': t.efectivo||0, 'Tarjeta ($)': t.tarjeta||0,
-        'Didi Ef. ($)': t.didi_efectivo||0, 'Didi Tar. ($)': t.didi_tarjeta||0,
-        'Rappi ($)': t.rappi||0, 'Uber ($)': t.uber||0,
-        'Facebook ($)': t.facebook||0, 'WhatsApp ($)': t.whatsapp||0,
-        'Total Gastos ($)': t.totalGastos||0, 'Venta Total ($)': t.totalVenta||0
-      });
-    });
-    if (resumenDias.length) {
-      const ws3 = XLSX.utils.json_to_sheet(resumenDias);
-      ws3['!cols'] = [{wch:32},...Array(10).fill({wch:14})];
-      XLSX.utils.book_append_sheet(wb, ws3, 'Resumen por Día');
-    }
+    if (!ventas.length && !gastosList.length) { mostrarToast('\u26a0\ufe0f No hay datos en ese rango'); return; }
 
-    // ── Hoja 4: Datos crudos para reimportar (JSON comprimido) ──
-    // Esta hoja guarda todo el historial en formato reimportable
-    const backupData = [{
+    const prefijo = 'ElBajon_' + desdeStr + '_' + hastaStr;
+    if (ventas.length)      descargarArchivo(toCSV(ventas),      prefijo + '_Ventas.csv',  'text/csv;charset=utf-8;');
+    if (gastosList.length)  descargarArchivo(toCSV(gastosList),  prefijo + '_Gastos.csv',  'text/csv;charset=utf-8;');
+
+    // ── Backup JSON completo (para reimportar) ──
+    const backupObj = {
       tipo: 'BACKUP_BAJON_V1',
       fecha_exportacion: new Date().toISOString(),
-      historial: JSON.stringify(historial),
-      movimientos_hoy: JSON.stringify(movimientos),
-      gastos_hoy: JSON.stringify(gastos),
-      mesas: JSON.stringify(mesas)
-    }];
-    const ws4 = XLSX.utils.json_to_sheet(backupData);
-    ws4['!cols'] = [{wch:20},{wch:25},{wch:80},{wch:80},{wch:80},{wch:40}];
-    XLSX.utils.book_append_sheet(wb, ws4, '_BACKUP_DATOS');
+      historial, movimientos_hoy: movimientos, gastos_hoy: gastos, mesas
+    };
+    descargarArchivo(JSON.stringify(backupObj, null, 2), prefijo + '_BACKUP.json', 'application/json');
 
-    if (!todasVentas.length && !todosGastos.length && !resumenDias.length) {
-      mostrarToast('⚠️ No hay datos en ese rango'); return;
-    }
-
-    const nombreArchivo = `ElBajon_${desdeStr}_${hastaStr}.xlsx`;
-    XLSX.writeFile(wb, nombreArchivo);
-    const info = `✅ Exportado: ${todasVentas.length} ventas, ${todosGastos.length} gastos, ${resumenDias.length} días`;
-    document.getElementById('backup-export-info').textContent = info;
-    mostrarToast('📥 Excel descargado');
+    const info = document.getElementById('backup-export-info');
+    info.textContent = '\u2705 Descargados: ' + ventas.length + ' ventas, ' + gastosList.length + ' gastos + backup.json';
+    mostrarToast('\ud83d\udce5 Archivos descargados');
   }
 
   function importarExcel(input) {
     const file = input.files[0];
     if (!file) return;
     const info = document.getElementById('backup-import-info');
-    info.innerHTML = '<span style="color:var(--amarillo)">⏳ Leyendo archivo...</span>';
-
+    info.innerHTML = '<span style="color:var(--amarillo)">\u23f3 Leyendo archivo...</span>';
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
-        const wb = XLSX.read(e.target.result, { type: 'array' });
-
-        // Buscar hoja de backup
-        const backupSheet = wb.Sheets['_BACKUP_DATOS'];
-        if (!backupSheet) {
-          info.innerHTML = '<span style="color:var(--rojo)">❌ Este archivo no es un backup de El Bajón. Usa un archivo exportado desde esta misma página.</span>';
+        const backup = JSON.parse(e.target.result);
+        if (backup.tipo !== 'BACKUP_BAJON_V1') {
+          info.innerHTML = '<span style="color:var(--rojo)">\u274c Formato no reconocido. Usa el archivo _BACKUP.json exportado desde esta p\u00e1gina.</span>';
           return;
         }
+        const histBackup  = backup.historial || [];
+        const movBackup   = backup.movimientos_hoy || [];
+        const gasBackup   = backup.gastos_hoy || [];
+        const mesasBackup = backup.mesas || [];
 
-        const rows = XLSX.utils.sheet_to_json(backupSheet);
-        if (!rows.length || rows[0].tipo !== 'BACKUP_BAJON_V1') {
-          info.innerHTML = '<span style="color:var(--rojo)">❌ Formato de backup no reconocido.</span>';
-          return;
-        }
-
-        const backup = rows[0];
-        const histBackup = JSON.parse(backup.historial || '[]');
-        const movBackup  = JSON.parse(backup.movimientos_hoy || '[]');
-        const gasBackup  = JSON.parse(backup.gastos_hoy || '[]');
-        const mesasBackup= JSON.parse(backup.mesas || '[]');
-
-        // Agregar sin duplicar (por id)
         const idsHist = new Set(historial.map(d=>d.id));
-        let diasAgregados = 0;
-        histBackup.forEach(d => { if (!idsHist.has(d.id)) { historial.unshift(d); diasAgregados++; } });
+        let diasAg = 0;
+        histBackup.forEach(d => { if (!idsHist.has(d.id)) { historial.unshift(d); diasAg++; } });
 
-        // Movimientos del día actual del backup — solo si no hay movimientos actuales
-        let movAgregados = 0;
-        if (!movimientos.length && movBackup.length) {
-          movimientos = movBackup;
-          movAgregados = movBackup.length;
-        }
+        let movAg = 0;
+        if (!movimientos.length && movBackup.length) { movimientos = movBackup; movAg = movBackup.length; }
 
-        // Gastos del día actual del backup
-        let gastosAgregados = 0;
-        if (!gastos.length && gasBackup.length) {
-          gastos = gasBackup;
-          gastosAgregados = gasBackup.length;
-        }
+        let gasAg = 0;
+        if (!gastos.length && gasBackup.length) { gastos = gasBackup; gasAg = gasBackup.length; }
 
-        // Mesas
         const idsMesas = new Set(mesas.map(m=>m.id));
-        let mesasAgregadas = 0;
-        mesasBackup.forEach(m => { if (!idsMesas.has(m.id)) { mesas.push(m); mesasAgregadas++; } });
+        let mesasAg = 0;
+        mesasBackup.forEach(m => { if (!idsMesas.has(m.id)) { mesas.push(m); mesasAg++; } });
 
         guardarHistorial(); guardarMov(); guardarGastos(); guardarMesas();
         actualizarTotalesRapidos(); renderMesas();
 
-        info.innerHTML = `<span style="color:var(--verde);">✅ Importación exitosa:<br>
-          📅 ${diasAgregados} días del historial agregados<br>
-          🧾 ${movAgregados} ventas del día cargadas<br>
-          💸 ${gastosAgregados} gastos del día cargados<br>
-          🪑 ${mesasAgregadas} mesas restauradas</span>`;
-        mostrarToast('✅ Datos restaurados');
+        info.innerHTML = '<span style="color:var(--verde);">✅ Importación exitosa:<br>' +
+          '📅 ' + diasAg + ' días del historial agregados<br>' +
+          '🧾 ' + movAg + ' ventas del día cargadas<br>' +
+          '💸 ' + gasAg + ' gastos del día cargados<br>' +
+          '🪑 ' + mesasAg + ' mesas restauradas</span>';
+        mostrarToast('\u2705 Datos restaurados');
       } catch(err) {
-        info.innerHTML = '<span style="color:var(--rojo)">❌ Error al leer el archivo: ' + err.message + '</span>';
+        info.innerHTML = '<span style="color:var(--rojo)">\u274c Error: ' + err.message + '. Aseg\u00farate de subir el archivo _BACKUP.json</span>';
       }
       input.value = '';
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsText(file, 'utf-8');
   }
 
   // Inicializar fechas del backup
