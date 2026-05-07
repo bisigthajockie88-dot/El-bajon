@@ -635,7 +635,7 @@
     if(tab==='resumen') renderResumen();
     if(tab==='historial') renderHistorial();
     if(tab==='distribucion') renderDistribucion();
-    if(tab==='graficas') { semanaOffset=0; renderGraficas(); renderGraficasHistoricas(); }
+    if(tab==='graficas') { renderGraficas(); renderGraficasHistoricas(); }
   }
 
   // ── TECLADO NUMÉRICO ──
@@ -1006,6 +1006,13 @@
       </div>`).join('');
   }
 
+  function refrescarGraficasSiActivas() {
+    if (document.getElementById('tab-graficas').classList.contains('active')) {
+      renderGraficas();
+      renderGraficasHistoricas();
+    }
+  }
+
   function recalcularTotalesDia(dia) {
     const tots={efectivo:0,tarjeta:0,didi_efectivo:0,didi_tarjeta:0,rappi:0,uber:0,facebook:0,whatsapp:0};
     dia.movimientos.forEach(m=>{ tots[m.metodo]=(tots[m.metodo]||0)+m.precio; });
@@ -1087,7 +1094,7 @@
         <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--verde)">$${dia.totales.totalVenta.toFixed(2)}</div>
         <div style="font-size:11px;color:var(--rojo);margin-top:2px;">Gastos: -$${dia.totales.totalGastos.toFixed(2)}</div>
       </div>
-      <button class="btn-cancelar" onclick="document.getElementById('overlay-hist').classList.remove('visible');renderHistorial();" style="width:100%;margin-top:16px">Cerrar</button>`;
+      <button class="btn-cancelar" onclick="document.getElementById('overlay-hist').classList.remove('visible');renderHistorial();refrescarGraficasSiActivas();" style="width:100%;margin-top:16px">Cerrar</button>`;
   }
 
   function eliminarMovHist(diaId, movId) {
@@ -1097,7 +1104,7 @@
     recalcularTotalesDia(historial[idx]);
     guardarHistorial();
     renderModalDetalleDia(historial[idx]);
-    renderGraficas(); renderGraficasHistoricas();
+    refrescarGraficasSiActivas();
     mostrarToast('✓ Venta eliminada');
   }
 
@@ -1108,7 +1115,7 @@
     recalcularTotalesDia(historial[idx]);
     guardarHistorial();
     renderModalDetalleDia(historial[idx]);
-    renderGraficas(); renderGraficasHistoricas();
+    refrescarGraficasSiActivas();
     mostrarToast('✓ Gasto eliminado');
   }
 
@@ -1124,7 +1131,7 @@
     recalcularTotalesDia(historial[idx]);
     guardarHistorial();
     renderModalDetalleDia(historial[idx]);
-    renderGraficas(); renderGraficasHistoricas();
+    refrescarGraficasSiActivas();
     mostrarToast('✅ Venta agregada');
   }
 
@@ -1141,7 +1148,7 @@
     recalcularTotalesDia(historial[idx]);
     guardarHistorial();
     renderModalDetalleDia(historial[idx]);
-    renderGraficas(); renderGraficasHistoricas();
+    refrescarGraficasSiActivas();
     mostrarToast('✅ Gasto agregado');
   }
 
@@ -1165,7 +1172,7 @@
     guardarHistorial();
     mostrarToast('✅ Fecha actualizada');
     renderHistorial();
-    renderGraficas(); renderGraficasHistoricas();
+    refrescarGraficasSiActivas();
   }
 
   function copiarResumen() {
@@ -1646,10 +1653,11 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     const gasNegPorDia = Array(7).fill(0);
     const gasPerPorDia = Array(7).fill(0);
 
-    // Agrupar movimientos por día de la semana
+    // Agrupar movimientos por día de la semana usando _fecha (ya correctamente asignada)
     movs.forEach(m => {
-      const d = new Date(m.id);
-      const diff = Math.floor((d - lunes) / 86400000);
+      if (!m._fecha) return;
+      const d = new Date(m._fecha);
+      const diff = Math.round((d - lunes) / 86400000);
       if (diff >= 0 && diff < 7) {
         const bruto = ['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo) ? m.precio : 0;
         invPorDia[diff]    += bruto * pctInv;
@@ -1657,26 +1665,27 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
       }
     });
 
-    // Gastos del historial de la semana
-    const diasHistorial = historial.filter(d => {
-      const fecha = new Date(d.id);
-      return fecha >= lunes && fecha <= domingo;
-    });
-    diasHistorial.forEach(d => {
-      const diff = Math.floor((new Date(d.id) - lunes) / 86400000);
+    // Gastos del historial cerrado de la semana seleccionada
+    historial.forEach(dia => {
+      const fecha = parseFechaHistorial(dia.fecha);
+      if (!fecha) return;
+      const diff = Math.round((fecha - lunes) / 86400000);
       if (diff >= 0 && diff < 7) {
-        const gNeg = (d.gastos||[]).filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
-        const gPer = (d.gastos||[]).filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
+        const gNeg = (dia.gastos||[]).filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
+        const gPer = (dia.gastos||[]).filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
         gasNegPorDia[diff] += gNeg;
         gasPerPorDia[diff] += gPer;
       }
     });
-    // Gastos del día actual
+
+    // Gastos del día actual — solo si la semana actual está seleccionada
     const hoy = new Date();
-    const diffHoy = Math.floor((hoy - lunes) / 86400000);
-    if (diffHoy >= 0 && diffHoy < 7) {
-      gasNegPorDia[diffHoy] += gastos.filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
-      gasPerPorDia[diffHoy] += gastos.filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
+    if (hoy >= lunes && hoy <= domingo) {
+      const diffHoy = Math.round((hoy - lunes) / 86400000);
+      if (diffHoy >= 0 && diffHoy < 7) {
+        gasNegPorDia[diffHoy] += gastos.filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
+        gasPerPorDia[diffHoy] += gastos.filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
+      }
     }
 
     const invNetoPorDia    = invPorDia.map((v,i) => Math.max(0, v - gasNegPorDia[i]));
