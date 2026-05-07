@@ -814,7 +814,7 @@
   function cobrarTicket() {
     if (!ticketItems.length) { mostrarToast('⚠️ El ticket está vacío'); return; }
     if (!metodoSeleccionado) { mostrarToast('⚠️ Selecciona forma de pago'); return; }
-    const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'});
+    const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit', hour12:false});
     const ticketId = Date.now();
     ticketItems.forEach((item, idx) => {
       movimientos.push({
@@ -1422,7 +1422,17 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     const horaMap = {};
     movs.forEach(m => {
       if (!m.hora) return;
-      const h = parseInt(m.hora.split(':')[0]);
+      // Parsear hora robustamente: soporta "20:30" (24h) y "8:30 p.m." (12h legacy)
+      let h = NaN;
+      const horaStr = m.hora.trim();
+      const esPM = /p\.?m\.?/i.test(horaStr);
+      const esAM = /a\.?m\.?/i.test(horaStr);
+      const numMatch = horaStr.match(/^(\d+):(\d+)/);
+      if (numMatch) {
+        h = parseInt(numMatch[1]);
+        if (esPM && h < 12) h += 12;
+        else if (esAM && h === 12) h = 0;
+      }
       if (!isNaN(h)) horaMap[h] = (horaMap[h] || 0) + m.precio;
     });
     // Rango fijo del negocio: 15-23 (tarde) + 0-3 (madrugada)
