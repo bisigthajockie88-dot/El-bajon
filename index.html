@@ -1097,6 +1097,7 @@
     recalcularTotalesDia(historial[idx]);
     guardarHistorial();
     renderModalDetalleDia(historial[idx]);
+    renderGraficas(); renderGraficasHistoricas();
     mostrarToast('✓ Venta eliminada');
   }
 
@@ -1107,6 +1108,7 @@
     recalcularTotalesDia(historial[idx]);
     guardarHistorial();
     renderModalDetalleDia(historial[idx]);
+    renderGraficas(); renderGraficasHistoricas();
     mostrarToast('✓ Gasto eliminado');
   }
 
@@ -1122,6 +1124,7 @@
     recalcularTotalesDia(historial[idx]);
     guardarHistorial();
     renderModalDetalleDia(historial[idx]);
+    renderGraficas(); renderGraficasHistoricas();
     mostrarToast('✅ Venta agregada');
   }
 
@@ -1138,6 +1141,7 @@
     recalcularTotalesDia(historial[idx]);
     guardarHistorial();
     renderModalDetalleDia(historial[idx]);
+    renderGraficas(); renderGraficasHistoricas();
     mostrarToast('✅ Gasto agregado');
   }
 
@@ -1161,6 +1165,7 @@
     guardarHistorial();
     mostrarToast('✅ Fecha actualizada');
     renderHistorial();
+    renderGraficas(); renderGraficasHistoricas();
   }
 
   function copiarResumen() {
