@@ -416,10 +416,10 @@
     <div id="resumen-gastos-semana" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div>
   </div>
 
-  <!-- Gráfica 6: Inversión por semana (histórico) -->
+  <!-- Gráfica 6: Inversión semana en turno + Gráfica 7: Sueldo semana en turno -->
   <div class="resumen-box">
     <h3>📦 Inversión por Semana</h3>
-    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Lo que se juntó vs lo que se gastó de inversión (incluyendo lo tomado del colchón, sueldo o extra)</p>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-inv-semana">📦 Inversión juntada vs gastada — semana actual</p>
     <canvas id="chart-inversion-semanas" height="220"></canvas>
     <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;flex-wrap:wrap;">
       <span style="color:#f4a261;">■ Juntado</span>
@@ -432,7 +432,7 @@
   <!-- Gráfica 7: Sueldo por semana (histórico) -->
   <div class="resumen-box">
     <h3>💵 Sueldo por Semana</h3>
-    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Lo que se juntó de sueldo vs lo que se gastó en personal (lo que te quedó de bolsillo)</p>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-sueldo-semana">🧍 Sueldo juntado vs gastos personales — semana actual</p>
     <canvas id="chart-sueldo-semanas" height="220"></canvas>
     <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;flex-wrap:wrap;">
       <span style="color:#9b5de5;">■ Sueldo juntado</span>
@@ -440,6 +440,22 @@
       <span style="color:#2ec4b6;">■ Lo que te quedó</span>
     </div>
     <div id="resumen-sueldo-semanas" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
+  </div>
+
+  <!-- Gráfica 8: Sueldo neto acumulado histórico -->
+  <div class="card" style="margin-top:16px;">
+    <div class="card-title">📈 Sueldo Neto — Histórico Semanal</div>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Cuánto te quedó de bolsillo cada semana (sueldo menos gastos personales)</p>
+    <canvas id="chart-sueldo-historico" height="200"></canvas>
+    <div id="resumen-sueldo-historico" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
+  </div>
+
+  <!-- Gráfica 9: Inversión neta acumulada histórica -->
+  <div class="card" style="margin-top:16px;">
+    <div class="card-title">📦 Inversión — Histórico Semanal</div>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Inversión asignada vs gastada semana por semana</p>
+    <canvas id="chart-inversion-historico" height="200"></canvas>
+    <div id="resumen-inversion-historico" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
   </div>
 
 </div>
@@ -1625,8 +1641,132 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     const semanas = calcularSemanasHistoricas();
     const cf = { color:'#a0a0b8', gridColor:'rgba(255,255,255,0.05)' };
 
-    if (!semanas.length) return;
+    // ── Gráfica Inversión y Sueldo de la SEMANA EN TURNO ──
+    const { movs, lunes, domingo } = getMovimientosSemana(semanaOffset);
 
+    // Calcular sueldo e inversión de la semana seleccionada por día
+    const diasSemana = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    const pctSueldo = (parseFloat(document.getElementById('pct-sueldo').value)||40)/100;
+    const pctInv    = (parseFloat(document.getElementById('pct-inv').value)||45)/100;
+
+    const invPorDia    = Array(7).fill(0);
+    const sueldoPorDia = Array(7).fill(0);
+    const gasNegPorDia = Array(7).fill(0);
+    const gasPerPorDia = Array(7).fill(0);
+
+    // Agrupar movimientos por día de la semana
+    movs.forEach(m => {
+      const d = new Date(m.id);
+      const diff = Math.floor((d - lunes) / 86400000);
+      if (diff >= 0 && diff < 7) {
+        const bruto = ['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo) ? m.precio : 0;
+        invPorDia[diff]    += bruto * pctInv;
+        sueldoPorDia[diff] += bruto * pctSueldo;
+      }
+    });
+
+    // Gastos del historial de la semana
+    const diasHistorial = historial.filter(d => {
+      const fecha = new Date(d.id);
+      return fecha >= lunes && fecha <= domingo;
+    });
+    diasHistorial.forEach(d => {
+      const diff = Math.floor((new Date(d.id) - lunes) / 86400000);
+      if (diff >= 0 && diff < 7) {
+        const gNeg = (d.gastos||[]).filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
+        const gPer = (d.gastos||[]).filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
+        gasNegPorDia[diff] += gNeg;
+        gasPerPorDia[diff] += gPer;
+      }
+    });
+    // Gastos del día actual
+    const hoy = new Date();
+    const diffHoy = Math.floor((hoy - lunes) / 86400000);
+    if (diffHoy >= 0 && diffHoy < 7) {
+      gasNegPorDia[diffHoy] += gastos.filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
+      gasPerPorDia[diffHoy] += gastos.filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
+    }
+
+    const invNetoPorDia    = invPorDia.map((v,i) => Math.max(0, v - gasNegPorDia[i]));
+    const sueldoNetoPorDia = sueldoPorDia.map((v,i) => Math.max(0, v - gasPerPorDia[i]));
+
+    // Actualizar labels semana
+    const labelInv    = document.getElementById('label-inv-semana');
+    const labelSueldo = document.getElementById('label-sueldo-semana');
+    const semLabel = semanaOffset === 0 ? 'semana actual' : `hace ${Math.abs(semanaOffset)} semana${Math.abs(semanaOffset)>1?'s':''}`;
+    if (labelInv)    labelInv.textContent    = `📦 Inversión juntada vs gastos negocio — ${semLabel}`;
+    if (labelSueldo) labelSueldo.textContent = `🧍 Sueldo vs gastos personales — ${semLabel}`;
+
+    // Gráfica Inversión semana
+    destroyChart('inversion-semanas');
+    grafCharts['inversion-semanas'] = new Chart(document.getElementById('chart-inversion-semanas'), {
+      type: 'bar',
+      data: {
+        labels: diasSemana,
+        datasets: [
+          { label:'📦 Inv asignada', data: invPorDia, backgroundColor:'rgba(244,162,97,0.75)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 },
+          { label:'💸 Gastos negocio', data: gasNegPorDia, backgroundColor:'rgba(230,57,70,0.75)', borderColor:'#e63946', borderWidth:2, borderRadius:5 },
+          { label:'✅ Inv disponible', data: invNetoPorDia, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
+        ]
+      },
+      options: { responsive:true,
+        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
+          tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
+        scales: {
+          x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
+          y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
+        }
+      }
+    });
+
+    // Resumen inversión semana
+    const resInv = document.getElementById('resumen-inversion-semanas');
+    const totInvAsig = invPorDia.reduce((s,v)=>s+v,0);
+    const totGasNeg  = gasNegPorDia.reduce((s,v)=>s+v,0);
+    const totInvNet  = invNetoPorDia.reduce((s,v)=>s+v,0);
+    resInv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;">
+        <span style="color:#f4a261">📦 Inv asignada total: <b>$${totInvAsig.toFixed(0)}</b></span>
+        <span style="color:#e63946">💸 Gastos negocio: <b>-$${totGasNeg.toFixed(0)}</b></span>
+        <span style="color:#2ec4b6">✅ Disponible: <b>$${totInvNet.toFixed(0)}</b></span>
+      </div>`;
+
+    // Gráfica Sueldo semana
+    destroyChart('sueldo-semanas');
+    grafCharts['sueldo-semanas'] = new Chart(document.getElementById('chart-sueldo-semanas'), {
+      type: 'bar',
+      data: {
+        labels: diasSemana,
+        datasets: [
+          { label:'💵 Sueldo', data: sueldoPorDia, backgroundColor:'rgba(155,93,229,0.75)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 },
+          { label:'🧍 Gastos personales', data: gasPerPorDia, backgroundColor:'rgba(230,57,70,0.75)', borderColor:'#e63946', borderWidth:2, borderRadius:5 },
+          { label:'✅ Sueldo neto', data: sueldoNetoPorDia, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
+        ]
+      },
+      options: { responsive:true,
+        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
+          tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
+        scales: {
+          x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
+          y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
+        }
+      }
+    });
+
+    // Resumen sueldo semana
+    const resSueldo = document.getElementById('resumen-sueldo-semanas');
+    const totSueldoAsig = sueldoPorDia.reduce((s,v)=>s+v,0);
+    const totGasPer     = gasPerPorDia.reduce((s,v)=>s+v,0);
+    const totSueldoNet  = sueldoNetoPorDia.reduce((s,v)=>s+v,0);
+    resSueldo.innerHTML = `
+      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;">
+        <span style="color:#9b5de5">💵 Sueldo total: <b>$${totSueldoAsig.toFixed(0)}</b></span>
+        <span style="color:#e63946">🧍 Gastos personales: <b>-$${totGasPer.toFixed(0)}</b></span>
+        <span style="color:#2ec4b6">✅ Sueldo neto: <b>$${totSueldoNet.toFixed(0)}</b></span>
+      </div>`;
+
+    // ══ GRÁFICAS HISTÓRICAS ACUMULADAS ══
+    if (!semanas.length) return;
     const labels      = semanas.map(s => labelSemana(s.lunes));
     const invJuntado  = semanas.map(s => parseFloat(s.invJuntado.toFixed(2)));
     const invGastado  = semanas.map(s => parseFloat(s.invGastado.toFixed(2)));
@@ -1658,10 +1798,10 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     });
 
     // Resumen inversión
-    const resInv = document.getElementById('resumen-inversion-semanas');
+    const resInvHist = document.getElementById('resumen-inversion-semanas');
     const ultima = semanas[semanas.length-1];
     const netoUlt = ultima.invJuntado - ultima.invGastado;
-    resInv.innerHTML = semanas.map((s,i) => {
+    resInvHist.innerHTML = semanas.map((s,i) => {
       const neto = s.invJuntado - s.invGastado;
       const color = neto >= 0 ? 'var(--verde)' : 'var(--rojo)';
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #2a2a3e;font-size:11px;">
@@ -1696,8 +1836,8 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     });
 
     // Resumen sueldo
-    const resSueldo = document.getElementById('resumen-sueldo-semanas');
-    resSueldo.innerHTML = semanas.map(s => {
+    const resSueldoHist = document.getElementById('resumen-sueldo-semanas');
+    resSueldoHist.innerHTML = semanas.map(s => {
       const neto = s.sueldoJuntado - s.sueldoGastado;
       const color = neto >= 0 ? 'var(--verde)' : 'var(--rojo)';
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #2a2a3e;font-size:11px;">
@@ -1708,6 +1848,57 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
       </div>`;
     }).join('') + `<div style="display:flex;justify-content:flex-end;gap:16px;padding-top:6px;font-size:10px;color:var(--gris);">
       <span style="color:#9b5de5">■ Sueldo</span><span style="color:#e63946">■ Gastos</span><span style="color:#2ec4b6">■ Neto</span></div>`;
+
+    // ── Gráfica Sueldo Neto Histórico ──
+    if (document.getElementById('chart-sueldo-historico')) {
+      destroyChart('sueldo-historico');
+      grafCharts['sueldo-historico'] = new Chart(document.getElementById('chart-sueldo-historico'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label:'💵 Sueldo', data: sueldoJunt, backgroundColor:'rgba(155,93,229,0.75)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 },
+            { label:'🧍 Gastos personales', data: sueldoGast, backgroundColor:'rgba(230,57,70,0.75)', borderColor:'#e63946', borderWidth:2, borderRadius:5 },
+            { label:'✅ Neto', data: sueldoNeto, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
+          ]
+        },
+        options: { responsive:true,
+          plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
+            tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
+          scales: {
+            x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:40 }, grid:{color:cf.gridColor} },
+            y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
+          }
+        }
+      });
+      const totSueldoHist = sueldoNeto.reduce((s,v)=>s+v,0);
+      document.getElementById('resumen-sueldo-historico').innerHTML =
+        `<div style="text-align:center;font-size:13px;color:#2ec4b6;">Total acumulado que te quedó: <b>$${totSueldoHist.toFixed(2)}</b></div>`;
+    }
+
+    // ── Gráfica Inversión Histórica ──
+    if (document.getElementById('chart-inversion-historico')) {
+      destroyChart('inversion-historico');
+      grafCharts['inversion-historico'] = new Chart(document.getElementById('chart-inversion-historico'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label:'📦 Juntado', data: invJuntado, backgroundColor:'rgba(244,162,97,0.75)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 },
+            { label:'💸 Gastado', data: invGastado, backgroundColor:'rgba(230,57,70,0.75)', borderColor:'#e63946', borderWidth:2, borderRadius:5 },
+            { label:'✅ Neto', data: invNeto, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
+          ]
+        },
+        options: { responsive:true,
+          plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
+            tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
+          scales: {
+            x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:40 }, grid:{color:cf.gridColor} },
+            y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
+          }
+        }
+      });
+    }
   }
 
 
