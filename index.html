@@ -195,6 +195,7 @@
   <div class="tab" onclick="cambiarTab('historial',this)">Historial</div>
   <div class="tab" onclick="cambiarTab('distribucion',this)">💰 Dist.</div>
   <div class="tab" onclick="cambiarTab('graficas',this)">📈 Gráficas</div>
+  <div class="tab" onclick="cambiarTab('historico',this)">📊 Histórico</div>
   <div class="tab" onclick="cambiarTab('backup',this)">💾 Backup</div>
 </div>
 
@@ -356,108 +357,110 @@
     <button onclick="semanaSiguiente()" id="btn-semana-sig" style="background:var(--medio);border:1px solid #444;border-radius:8px;padding:8px 16px;color:var(--texto);font-size:16px;cursor:pointer;">▶</button>
   </div>
 
-  <!-- Gráfica 1: Ventas por método de pago -->
-  <div class="resumen-box">
-    <h3>💳 Ventas por Método de Pago</h3>
-    <canvas id="chart-metodos" height="260"></canvas>
+  <!-- Resumen rápido de la semana -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+    <div class="total-card" style="border-color:var(--verde);"><div class="label">💰 Venta Total</div><div class="valor" style="color:var(--verde);font-size:22px;" id="graf-total-semana">$0</div></div>
+    <div class="total-card" style="border-color:var(--rojo);"><div class="label">💸 Gastos</div><div class="valor" style="color:var(--rojo);font-size:22px;" id="graf-gastos-semana-top">$0</div></div>
+    <div class="total-card" style="border-color:var(--amarillo);"><div class="label">📅 Días con venta</div><div class="valor" style="color:var(--amarillo);font-size:22px;" id="graf-dias-activos">0</div></div>
+    <div class="total-card" style="border-color:var(--morado);"><div class="label">🏆 Mejor día</div><div class="valor" style="color:var(--morado);font-size:14px;line-height:1.3;" id="graf-mejor-dia">—</div></div>
   </div>
 
-  <!-- Gráfica 2: Plataformas -->
+  <!-- Gráfica 1: Total vendido por día (Bruto) -->
   <div class="resumen-box">
-    <h3>📱 Ventas por Plataforma / Redes</h3>
-    <canvas id="chart-plataformas" height="200"></canvas>
-  </div>
-
-  <!-- Gráfica CANAL: Efectivo negocio vs Plataformas vs Redes Sociales -->
-  <div class="resumen-box">
-    <h3>📊 Ventas por Canal de Venta</h3>
-    <canvas id="chart-canal" height="200"></canvas>
-    <div style="display:flex;gap:12px;justify-content:center;margin-top:10px;font-size:11px;flex-wrap:wrap;">
-      <span style="color:#2ec4b6;">■ Negocio Efectivo</span>
-      <span style="color:#9b5de5;">■ Negocio Tarjeta</span>
-      <span style="color:#f4a261;">■ Plataformas</span>
-      <span style="color:#1877f2;">■ Redes Sociales</span>
-    </div>
-    <div id="resumen-canal" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div>
-  </div>
-
-  <!-- Gráfica NUEVA: Total vendido por día -->
-  <div class="resumen-box">
-    <h3>📆 Total Vendido por Día (Bruto)</h3>
+    <h3>📆 ¿Cuánto vendiste cada día?</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Venta bruta de lunes a domingo. El más alto se resalta.</p>
     <canvas id="chart-total-dia" height="200"></canvas>
+  </div>
+
+  <!-- Gráfica 2: De dónde viene el dinero (canal unificado) -->
+  <div class="resumen-box">
+    <h3>📊 ¿De dónde viene el dinero?</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Efectivo · Tarjeta · Plataformas (Didi/Rappi/Uber) · Redes (FB/WA)</p>
+    <canvas id="chart-canal" height="220"></canvas>
+    <div id="resumen-canal" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div>
   </div>
 
   <!-- Gráfica 3: Productos más vendidos -->
   <div class="resumen-box">
-    <h3>🏆 Top Productos Más Vendidos</h3>
+    <h3>🏆 ¿Qué se vende más?</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Top 8 productos por dinero generado esta semana.</p>
     <canvas id="chart-productos" height="260"></canvas>
   </div>
 
-  <!-- Gráfica 4a: Por hora -->
+  <!-- Gráfica 4: Por hora -->
   <div class="resumen-box">
-    <h3>🕐 Ventas por Hora del Día</h3>
+    <h3>🕐 ¿A qué hora vendes más?</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Pico de ventas por hora del día (3pm–3am).</p>
     <canvas id="chart-horas" height="200"></canvas>
   </div>
 
-  <!-- Gráfica 4b: Por día de la semana -->
+  <!-- Gráfica 5: Gastos de la semana -->
   <div class="resumen-box">
-    <h3>📅 Ventas por Día de la Semana</h3>
-    <canvas id="chart-dias" height="200"></canvas>
-  </div>
-
-  <!-- Gráfica 5: Gastos semanales -->
-  <div class="resumen-box">
-    <h3>💸 Gastos de la Semana</h3>
-    <canvas id="chart-gastos-semana" height="220"></canvas>
-    <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;">
-      <span style="color:#f4a261;">■ Negocio (Inversión)</span>
-      <span style="color:#9b5de5;">■ Personal (Sueldo)</span>
-    </div>
+    <h3>💸 Gastos de la semana</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Gastos de negocio (salen de inversión) vs personales (salen de tu sueldo).</p>
+    <canvas id="chart-gastos-semana" height="200"></canvas>
     <div id="resumen-gastos-semana" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div>
   </div>
 
-  <!-- Gráfica 6: Inversión semana en turno + Gráfica 7: Sueldo semana en turno -->
+  <!-- Gráfica 6: Inversión de la semana -->
   <div class="resumen-box">
-    <h3>📦 Inversión por Semana</h3>
-    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-inv-semana">📦 Inversión juntada vs gastada — semana actual</p>
-    <canvas id="chart-inversion-semana-actual" height="220"></canvas>
-    <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;flex-wrap:wrap;">
-      <span style="color:#f4a261;">■ Juntado</span>
-      <span style="color:#e63946;">■ Gastado</span>
-      <span style="color:#2ec4b6;">■ Neto (sobrante)</span>
-    </div>
-    <div id="resumen-inversion-semana-actual" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
+    <h3>📦 ¿Cómo va tu inversión esta semana?</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-inv-semana">Lo que apartaste para el negocio vs lo que ya gastaste.</p>
+    <canvas id="chart-inversion-semana-actual" height="200"></canvas>
+    <div id="resumen-inversion-semana-actual" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
   </div>
 
-  <!-- Gráfica 7: Sueldo por semana en turno -->
+  <!-- Gráfica 7: Sueldo de la semana -->
   <div class="resumen-box">
-    <h3>💵 Sueldo por Semana</h3>
-    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-sueldo-semana">🧍 Sueldo juntado vs gastos personales — semana actual</p>
-    <canvas id="chart-sueldo-semana-actual" height="220"></canvas>
-    <div style="display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:11px;flex-wrap:wrap;">
-      <span style="color:#9b5de5;">■ Sueldo juntado</span>
-      <span style="color:#e63946;">■ Gastos personales</span>
-      <span style="color:#2ec4b6;">■ Lo que te quedó</span>
-    </div>
-    <div id="resumen-sueldo-semana-actual" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
+    <h3>💵 ¿Cómo va tu sueldo esta semana?</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-sueldo-semana">Lo que te toca de sueldo vs lo que ya gastaste de él.</p>
+    <canvas id="chart-sueldo-semana-actual" height="200"></canvas>
+    <div id="resumen-sueldo-semana-actual" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
   </div>
 
-  <!-- Gráfica 8: Sueldo neto acumulado histórico -->
-  <div class="card" style="margin-top:16px;">
-    <div class="card-title">📈 Sueldo Neto — Histórico Semanal</div>
-    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Cuánto te quedó de bolsillo cada semana (sueldo menos gastos personales)</p>
-    <canvas id="chart-sueldo-historico" height="200"></canvas>
-    <div id="resumen-sueldo-historico" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
+</div>
+
+<!-- TAB HISTÓRICO -->
+<div class="seccion" id="tab-historico">
+  <div class="dist-header">📊 Histórico General</div>
+  <div class="dist-sub">Todas las semanas registradas</div>
+
+  <!-- Resumen acumulado total -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+    <div class="total-card" style="border-color:var(--verde);"><div class="label">💰 Total ventas</div><div class="valor" style="color:var(--verde);font-size:20px;" id="hist-total-ventas">$0</div></div>
+    <div class="total-card" style="border-color:var(--amarillo);"><div class="label">📅 Semanas</div><div class="valor" style="color:var(--amarillo);font-size:20px;" id="hist-total-semanas">0</div></div>
+    <div class="total-card" style="border-color:var(--morado);"><div class="label">💵 Sueldo acumulado</div><div class="valor" style="color:var(--morado);font-size:20px;" id="hist-total-sueldo">$0</div></div>
+    <div class="total-card" style="border-color:var(--amarillo);"><div class="label">📦 Inv. disponible</div><div class="valor" style="color:var(--amarillo);font-size:20px;" id="hist-total-inv">$0</div></div>
   </div>
 
-  <!-- Gráfica 9: Inversión neta acumulada histórica -->
-  <div class="card" style="margin-top:16px;">
-    <div class="card-title">📦 Inversión — Histórico Semanal</div>
-    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Inversión asignada vs gastada semana por semana</p>
-    <canvas id="chart-inversion-historico" height="200"></canvas>
-    <div id="resumen-inversion-historico" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
+  <!-- Gráfica: Ventas por semana -->
+  <div class="resumen-box">
+    <h3>📈 ¿Cuánto vendiste cada semana?</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Venta bruta de todas las semanas registradas.</p>
+    <canvas id="chart-hist-ventas" height="220"></canvas>
   </div>
 
+  <!-- Gráfica: Inversión histórica -->
+  <div class="resumen-box">
+    <h3>📦 Inversión semana por semana</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Lo que juntaste para el negocio vs lo que gastaste en él. Línea verde = lo que queda.</p>
+    <canvas id="chart-inversion-historico" height="220"></canvas>
+    <div id="resumen-inversion-historico" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
+  </div>
+
+  <!-- Gráfica: Sueldo histórico -->
+  <div class="resumen-box">
+    <h3>💵 Sueldo semana por semana</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Sueldo generado vs gastos personales. La línea verde es lo que te quedó.</p>
+    <canvas id="chart-sueldo-historico" height="220"></canvas>
+    <div id="resumen-sueldo-historico" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
+  </div>
+
+  <!-- Tabla resumen por semana -->
+  <div class="resumen-box">
+    <h3>📋 Resumen por semana</h3>
+    <div id="hist-tabla-semanas" style="font-size:12px;"></div>
+  </div>
 </div>
 
 <!-- MODAL VENTA -->
@@ -635,7 +638,8 @@
     if(tab==='resumen') renderResumen();
     if(tab==='historial') renderHistorial();
     if(tab==='distribucion') renderDistribucion();
-    if(tab==='graficas') { renderGraficas(); renderGraficasHistoricas(); }
+    if(tab==='graficas') { renderGraficas(); }
+    if(tab==='historico') { renderGraficasHistoricas(); }
   }
 
   // ── TECLADO NUMÉRICO ──
@@ -1009,6 +1013,8 @@
   function refrescarGraficasSiActivas() {
     if (document.getElementById('tab-graficas').classList.contains('active')) {
       renderGraficas();
+    }
+    if (document.getElementById('tab-historico') && document.getElementById('tab-historico').classList.contains('active')) {
       renderGraficasHistoricas();
     }
   }
@@ -1207,12 +1213,25 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     setTimeout(()=>t.classList.remove('show'),2000);
   }
 
+  function selTipoGasto(tipo) {
+    tipoGastoSeleccionado = tipo;
+    const btnNeg = document.getElementById('btn-tipo-negocio');
+    const btnPer = document.getElementById('btn-tipo-personal');
+    if (tipo === 'negocio') {
+      btnNeg.style.borderColor = 'var(--amarillo)'; btnNeg.style.background = 'rgba(244,162,97,0.15)'; btnNeg.style.color = 'var(--amarillo)';
+      btnPer.style.borderColor = '#444'; btnPer.style.background = 'transparent'; btnPer.style.color = 'var(--gris)';
+    } else {
+      btnPer.style.borderColor = 'var(--morado)'; btnPer.style.background = 'rgba(155,93,229,0.15)'; btnPer.style.color = 'var(--morado)';
+      btnNeg.style.borderColor = '#444'; btnNeg.style.background = 'transparent'; btnNeg.style.color = 'var(--gris)';
+    }
+  }
+
   actualizarTotalesRapidos();
   selTipoGasto('negocio');
   renderMesas();
 
   // ─── GRÁFICAS ────────────────────────────────────────────────────────────────
-  // Semana = lunes a domingo. semanaOffset: 0 = semana actual, -1 = semana anterior, etc.
+  // semanaOffset: 0 = semana actual, -1 = semana anterior, etc.
   let semanaOffset = 0;
   let grafCharts = {};
 
@@ -1230,7 +1249,6 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
   }
 
   function parseFechaHistorial(fechaStr) {
-    // formato: "lunes, 14 de julio de 2025" -> Date
     const meses = {enero:0,febrero:1,marzo:2,abril:3,mayo:4,junio:5,julio:6,agosto:7,septiembre:8,octubre:9,noviembre:10,diciembre:11};
     const m = fechaStr.match(/(\d+)\s+de\s+(\w+)\s+de\s+(\d+)/);
     if (!m) return null;
@@ -1240,22 +1258,35 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
   function getMovimientosSemana(offset) {
     const { lunes, domingo } = getLunesDomingo(offset);
     const movSemana = [];
-
-    // Día actual (si entra en el rango)
+    // Día actual (si entra en el rango de la semana seleccionada)
     const hoyDate = new Date();
     if (hoyDate >= lunes && hoyDate <= domingo) {
-      movimientos.forEach(m => movSemana.push({ ...m, _fecha: hoyDate }));
+      movimientos.forEach(m => movSemana.push({ ...m, _fecha: new Date(hoyDate) }));
     }
-
     // Historial cerrado
     historial.forEach(dia => {
       const fecha = parseFechaHistorial(dia.fecha);
       if (fecha && fecha >= lunes && fecha <= domingo) {
-        dia.movimientos.forEach(m => movSemana.push({ ...m, _fecha: fecha }));
+        dia.movimientos.forEach(m => movSemana.push({ ...m, _fecha: new Date(fecha) }));
       }
     });
-
     return { movs: movSemana, lunes, domingo };
+  }
+
+  function getGastosSemana(offset) {
+    const { lunes, domingo } = getLunesDomingo(offset);
+    const gastosSemana = [];
+    const hoyDate = new Date();
+    if (hoyDate >= lunes && hoyDate <= domingo) {
+      gastos.forEach(g => gastosSemana.push({ ...g, _fecha: new Date(hoyDate) }));
+    }
+    historial.forEach(dia => {
+      const fecha = parseFechaHistorial(dia.fecha);
+      if (fecha && fecha >= lunes && fecha <= domingo) {
+        (dia.gastos || []).forEach(g => gastosSemana.push({ ...g, _fecha: new Date(fecha) }));
+      }
+    });
+    return gastosSemana;
   }
 
   function semanaAnterior() {
@@ -1275,72 +1306,70 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     if (grafCharts[id]) { grafCharts[id].destroy(); delete grafCharts[id]; }
   }
 
-  // ── TIPO DE GASTO ──
-  function selTipoGasto(tipo) {
-    tipoGastoSeleccionado = tipo;
-    const btnNeg = document.getElementById('btn-tipo-negocio');
-    const btnPer = document.getElementById('btn-tipo-personal');
-    if (tipo === 'negocio') {
-      btnNeg.style.borderColor = 'var(--amarillo)'; btnNeg.style.background = 'rgba(244,162,97,0.15)'; btnNeg.style.color = 'var(--amarillo)';
-      btnPer.style.borderColor = '#444'; btnPer.style.background = 'transparent'; btnPer.style.color = 'var(--gris)';
-    } else {
-      btnPer.style.borderColor = 'var(--morado)'; btnPer.style.background = 'rgba(155,93,229,0.15)'; btnPer.style.color = 'var(--morado)';
-      btnNeg.style.borderColor = '#444'; btnNeg.style.background = 'transparent'; btnNeg.style.color = 'var(--gris)';
-    }
-  }
-
   function renderGraficas() {
     const { movs, lunes, domingo } = getMovimientosSemana(semanaOffset);
+    const gastosSem = getGastosSemana(semanaOffset);
 
     // Labels de semana
     const esActual = semanaOffset === 0;
-    document.getElementById('graf-semana-label').textContent = esActual ? 'Semana actual' : `Hace ${Math.abs(semanaOffset)} semana${Math.abs(semanaOffset) > 1 ? 's' : ''}`;
+    document.getElementById('graf-semana-label').textContent = esActual
+      ? 'Semana actual'
+      : `Hace ${Math.abs(semanaOffset)} semana${Math.abs(semanaOffset) > 1 ? 's' : ''}`;
     document.getElementById('graf-semana-rango').textContent = fmtFecha(lunes) + ' – ' + fmtFecha(domingo);
-    document.getElementById('btn-semana-sig').style.opacity = semanaOffset < 0 ? '1' : '0.3';
-    document.getElementById('btn-semana-sig').style.pointerEvents = semanaOffset < 0 ? 'auto' : 'none';
+    const btnSig = document.getElementById('btn-semana-sig');
+    btnSig.style.opacity = semanaOffset < 0 ? '1' : '0.3';
+    btnSig.style.pointerEvents = semanaOffset < 0 ? 'auto' : 'none';
 
-    const cf = { color: '#eaeaea', gridColor: 'rgba(255,255,255,0.07)' };
+    const cf = { color: '#d0d0e0', gridColor: 'rgba(255,255,255,0.07)' };
+    const diasNom = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
-    // ── 1. VENTAS POR MÉTODO DE PAGO (todos los métodos incluyendo redes) ──
-    const metodos = { efectivo:0, tarjeta:0, didi_efectivo:0, didi_tarjeta:0, rappi:0, uber:0, facebook:0, whatsapp:0 };
-    movs.forEach(m => { if (metodos[m.metodo] !== undefined) metodos[m.metodo] += m.precio; });
-    destroyChart('metodos');
-    grafCharts['metodos'] = new Chart(document.getElementById('chart-metodos'), {
+    // ── RESUMEN RÁPIDO ──
+    const totalVentaSem = movs.reduce((s,m) => s + m.precio, 0);
+    const totalGastosSem = gastosSem.reduce((s,g) => s + g.monto, 0);
+    document.getElementById('graf-total-semana').textContent = '$' + totalVentaSem.toFixed(0);
+    document.getElementById('graf-gastos-semana-top').textContent = '$' + totalGastosSem.toFixed(0);
+
+    // Días con venta y mejor día
+    const totalPorDia = [0,0,0,0,0,0,0];
+    movs.forEach(m => {
+      if (!m._fecha) return;
+      const idx = (new Date(m._fecha).getDay() + 6) % 7;
+      totalPorDia[idx] += m.precio;
+    });
+    const diasActivos = totalPorDia.filter(v => v > 0).length;
+    document.getElementById('graf-dias-activos').textContent = diasActivos;
+    const maxVal = Math.max(...totalPorDia);
+    if (maxVal > 0) {
+      const idxMax = totalPorDia.indexOf(maxVal);
+      document.getElementById('graf-mejor-dia').textContent = diasNom[idxMax] + '\n$' + maxVal.toFixed(0);
+    } else {
+      document.getElementById('graf-mejor-dia').textContent = '—';
+    }
+
+    // ── 1. TOTAL VENDIDO POR DÍA ──
+    destroyChart('total-dia');
+    grafCharts['total-dia'] = new Chart(document.getElementById('chart-total-dia'), {
       type: 'bar',
       data: {
-        labels: ['💵 Efectivo', '💳 Tarjeta', '🚗 DiDi Ef.', '🚗 DiDi TAR', '🛵 Rappi', '🚙 Uber', '📘 Facebook', '💬 WhatsApp'],
+        labels: diasNom,
         datasets: [{
-          data: [metodos.efectivo, metodos.tarjeta, metodos.didi_efectivo, metodos.didi_tarjeta, metodos.rappi, metodos.uber, metodos.facebook, metodos.whatsapp],
-          backgroundColor: ['rgba(46,196,182,0.7)','rgba(155,93,229,0.7)','rgba(255,107,53,0.7)','rgba(255,149,0,0.7)','rgba(255,60,56,0.7)','rgba(170,170,170,0.7)','rgba(24,119,242,0.7)','rgba(37,211,102,0.7)'],
-          borderColor: ['#2ec4b6','#9b5de5','#ff6b35','#ff9500','#ff3c38','#aaa','#1877f2','#25d366'],
+          data: totalPorDia,
+          backgroundColor: totalPorDia.map(v => v > 0 && v === maxVal ? 'rgba(244,162,97,0.9)' : 'rgba(244,162,97,0.3)'),
+          borderColor: totalPorDia.map(v => v > 0 && v === maxVal ? '#f4a261' : 'rgba(244,162,97,0.5)'),
           borderWidth: 2, borderRadius: 8
         }]
       },
-      options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
-        scales: { x:{ ticks:{ color:cf.color, font:{size:10} }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
+      options: { responsive:true,
+        plugins:{ legend:{display:false},
+          tooltip:{ callbacks:{ label: ctx => 'Total: $' + ctx.raw.toFixed(2) } } },
+        scales: {
+          x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
+          y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} }
+        }
+      }
     });
 
-    // ── 2. PLATAFORMAS (dona) — incluye FB y WA como redes sociales ──
-    const plat = { didi_tarjeta:0, rappi:0, uber:0, facebook:0, whatsapp:0 };
-    movs.forEach(m => { if (plat[m.metodo] !== undefined) plat[m.metodo] += m.precio; });
-    destroyChart('plataformas');
-    grafCharts['plataformas'] = new Chart(document.getElementById('chart-plataformas'), {
-      type: 'doughnut',
-      data: {
-        labels: ['🚗 Didi TAR', '🛵 Rappi TAR', '🚙 Uber TAR', '📘 Facebook', '💬 WhatsApp'],
-        datasets: [{
-          data: [plat.didi_tarjeta, plat.rappi, plat.uber, plat.facebook, plat.whatsapp],
-          backgroundColor: ['rgba(255,149,0,0.75)', 'rgba(255,60,56,0.75)', 'rgba(170,170,170,0.75)', 'rgba(24,119,242,0.75)', 'rgba(37,211,102,0.75)'],
-          borderColor: ['#ff9500', '#ff3c38', '#aaa', '#1877f2', '#25d366'],
-          borderWidth: 2
-        }]
-      },
-      options: { responsive:true, cutout:'60%',
-        plugins:{ legend:{ position:'bottom', labels:{ color:cf.color, font:{size:11}, padding:10 } },
-          tooltip:{ callbacks:{ label: ctx => ctx.label + ': $' + ctx.raw.toFixed(2) } } } }
-    });
-
-    // ── NUEVA: Ventas por Canal (presencial ef, presencial tar, plataformas, redes sociales) ──
+    // ── 2. DE DÓNDE VIENE EL DINERO (dona unificada) ──
     const canalEfectivo   = movs.filter(m=>m.metodo==='efectivo'||m.metodo==='didi_efectivo').reduce((s,m)=>s+m.precio,0);
     const canalTarjeta    = movs.filter(m=>m.metodo==='tarjeta').reduce((s,m)=>s+m.precio,0);
     const canalPlataforma = movs.filter(m=>['didi_tarjeta','rappi','uber'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
@@ -1350,7 +1379,7 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     grafCharts['canal'] = new Chart(document.getElementById('chart-canal'), {
       type: 'doughnut',
       data: {
-        labels: ['💵 Negocio Efectivo', '💳 Negocio Tarjeta', '📱 Plataformas (Didi/Rappi/Uber)', '📲 Redes (FB/WA)'],
+        labels: ['💵 Efectivo', '💳 Tarjeta', '📱 Plataformas', '📲 Redes Sociales'],
         datasets: [{
           data: [canalEfectivo, canalTarjeta, canalPlataforma, canalRedes],
           backgroundColor: ['rgba(46,196,182,0.8)','rgba(155,93,229,0.8)','rgba(244,162,97,0.8)','rgba(24,119,242,0.8)'],
@@ -1359,99 +1388,74 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
         }]
       },
       options: { responsive:true, cutout:'55%',
-        plugins:{ legend:{ position:'bottom', labels:{ color:cf.color, font:{size:11}, padding:8, boxWidth:12 } },
+        plugins:{ legend:{ position:'bottom', labels:{ color:cf.color, font:{size:12}, padding:12, boxWidth:14 } },
           tooltip:{ callbacks:{ label: ctx => ctx.label + ': $' + ctx.raw.toFixed(2) + (canalTotal>0?' ('+Math.round(ctx.raw/canalTotal*100)+'%)':'') } } } }
     });
-    // Resumen canal
-    const rCan=document.getElementById('resumen-canal');
-    if(rCan && canalTotal > 0){
-      const pct=(v)=>Math.round(v/canalTotal*100)+'%';
-      rCan.innerHTML=`
-        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2a2a3e;"><span style="color:#2ec4b6;">💵 Efectivo presencial</span><span style="color:#2ec4b6;font-weight:700;">$${canalEfectivo.toFixed(2)} <span style="opacity:.6;font-size:10px">${pct(canalEfectivo)}</span></span></div>
-        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2a2a3e;"><span style="color:#9b5de5;">💳 Tarjeta presencial</span><span style="color:#9b5de5;font-weight:700;">$${canalTarjeta.toFixed(2)} <span style="opacity:.6;font-size:10px">${pct(canalTarjeta)}</span></span></div>
-        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2a2a3e;"><span style="color:#f4a261;">📱 Plataformas</span><span style="color:#f4a261;font-weight:700;">$${canalPlataforma.toFixed(2)} <span style="opacity:.6;font-size:10px">${pct(canalPlataforma)}</span></span></div>
-        <div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:#1877f2;">📲 Redes Sociales</span><span style="color:#1877f2;font-weight:700;">$${canalRedes.toFixed(2)} <span style="opacity:.6;font-size:10px">${pct(canalRedes)}</span></span></div>`;
-    } else if(rCan){ rCan.innerHTML='<span style="color:var(--gris)">Sin ventas esta semana</span>'; }
+    const rCan = document.getElementById('resumen-canal');
+    if (canalTotal > 0) {
+      const pct = v => Math.round(v/canalTotal*100) + '%';
+      rCan.innerHTML = [
+        ['#2ec4b6','💵 Efectivo', canalEfectivo],
+        ['#9b5de5','💳 Tarjeta', canalTarjeta],
+        ['#f4a261','📱 Plataformas (Didi/Rappi/Uber)', canalPlataforma],
+        ['#1877f2','📲 Redes (FB/WA)', canalRedes]
+      ].map(([c,lbl,v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3e;">
+        <span style="color:${c}">${lbl}</span>
+        <span style="color:${c};font-weight:700;">$${v.toFixed(0)} <span style="opacity:.6;font-size:10px">${pct(v)}</span></span>
+      </div>`).join('');
+    } else {
+      rCan.innerHTML = '<span style="color:var(--gris)">Sin ventas esta semana</span>';
+    }
 
-    // ── NUEVA: Total vendido por día (bruto) ──
-    const diasNom = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-    const totalDiaMap = [0,0,0,0,0,0,0];
-    movs.forEach(m => {
-      if (!m._fecha) return;
-      const d = new Date(m._fecha);
-      const idx = (d.getDay() + 6) % 7;
-      totalDiaMap[idx] += m.precio;
-    });
-    destroyChart('total-dia');
-    grafCharts['total-dia'] = new Chart(document.getElementById('chart-total-dia'), {
-      type: 'bar',
-      data: {
-        labels: diasNom,
-        datasets: [{
-          label: 'Total Bruto',
-          data: totalDiaMap,
-          backgroundColor: totalDiaMap.map(v => v === Math.max(...totalDiaMap) && v > 0 ? 'rgba(244,162,97,0.85)' : 'rgba(244,162,97,0.35)'),
-          borderColor: '#f4a261',
-          borderWidth: 2, borderRadius: 8
-        }]
-      },
-      options: { responsive:true,
-        plugins:{ legend:{display:false},
-          tooltip:{ callbacks:{ label: ctx => 'Total: $' + ctx.raw.toFixed(2) } } },
-        scales: { x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
-          y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
-    });
-
-    // ── 3. PRODUCTOS MÁS VENDIDOS (barras horizontales) ──
+    // ── 3. PRODUCTOS MÁS VENDIDOS ──
     const prodMap = {};
     movs.forEach(m => {
       const key = m.producto || 'Otro';
-      if (!prodMap[key]) prodMap[key] = { monto: 0, cant: 0 };
-      prodMap[key].monto += m.precio;
-      prodMap[key].cant++;
+      if (!prodMap[key]) prodMap[key] = 0;
+      prodMap[key] += m.precio;
     });
-    const prodSorted = Object.entries(prodMap).sort((a,b) => b[1].monto - a[1].monto).slice(0, 8);
+    const prodSorted = Object.entries(prodMap).sort((a,b) => b[1] - a[1]).slice(0,8);
     destroyChart('productos');
     grafCharts['productos'] = new Chart(document.getElementById('chart-productos'), {
       type: 'bar',
       data: {
         labels: prodSorted.map(([k]) => k),
         datasets: [{
-          label: 'Ventas $',
-          data: prodSorted.map(([,v]) => v.monto),
-          backgroundColor: 'rgba(244,162,97,0.7)',
-          borderColor: '#f4a261',
+          data: prodSorted.map(([,v]) => v),
+          backgroundColor: 'rgba(230,57,70,0.65)',
+          borderColor: '#e63946',
           borderWidth: 2, borderRadius: 6
         }]
       },
       options: { indexAxis:'y', responsive:true,
-        plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
-        scales: { x:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, font:{size:11} }, grid:{color:cf.gridColor} } } }
+        plugins:{ legend:{display:false},
+          tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
+        scales: {
+          x:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} },
+          y:{ ticks:{ color:cf.color, font:{size:11} }, grid:{color:cf.gridColor} }
+        }
+      }
     });
 
-    // ── 4a. POR HORA — horario nocturno: 15:00 a 03:00 ──
-    // Orden lógico: 15,16,17,18,19,20,21,22,23,0,1,2,3
+    // ── 4. VENTAS POR HORA ──
     const horaMap = {};
     movs.forEach(m => {
       if (!m.hora) return;
-      // Parsear hora robustamente: soporta "20:30" (24h) y "8:30 p.m." (12h legacy)
       let h = NaN;
-      const horaStr = m.hora.trim();
-      const esPM = /p\.?m\.?/i.test(horaStr);
-      const esAM = /a\.?m\.?/i.test(horaStr);
-      const numMatch = horaStr.match(/^(\d+):(\d+)/);
-      if (numMatch) {
-        h = parseInt(numMatch[1]);
+      const hs = m.hora.trim();
+      const esPM = /p\.?m\.?/i.test(hs);
+      const esAM = /a\.?m\.?/i.test(hs);
+      const nm = hs.match(/^(\d+):(\d+)/);
+      if (nm) {
+        h = parseInt(nm[1]);
         if (esPM && h < 12) h += 12;
         else if (esAM && h === 12) h = 0;
       }
-      if (!isNaN(h)) horaMap[h] = (horaMap[h] || 0) + m.precio;
+      if (!isNaN(h)) horaMap[h] = (horaMap[h]||0) + m.precio;
     });
-    // Rango fijo del negocio: 15-23 (tarde) + 0-3 (madrugada)
-    const horasLabels = [];
-    const horasData = [];
-    for (let h = 15; h <= 23; h++) { horasLabels.push(h + ':00'); horasData.push(horaMap[h] || 0); }
-    for (let h = 0; h <= 3; h++)   { horasLabels.push(h + ':00'); horasData.push(horaMap[h] || 0); }
+    const horasLabels = [], horasData = [];
+    for (let h = 15; h <= 23; h++) { horasLabels.push(h+':00'); horasData.push(horaMap[h]||0); }
+    for (let h = 0; h <= 3; h++)   { horasLabels.push(h+':00'); horasData.push(horaMap[h]||0); }
     destroyChart('horas');
     grafCharts['horas'] = new Chart(document.getElementById('chart-horas'), {
       type: 'line',
@@ -1460,254 +1464,93 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
         datasets: [{
           data: horasData,
           borderColor: '#e63946',
-          backgroundColor: 'rgba(230,57,70,0.15)',
-          fill: true, tension: 0.4, pointRadius: 4,
-          pointBackgroundColor: '#e63946'
+          backgroundColor: 'rgba(230,57,70,0.12)',
+          fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#e63946'
         }]
       },
-      options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
-        scales: { x:{ ticks:{ color:cf.color, font:{size:10} }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
-    });
-
-    // ── 4b. POR DÍA DE LA SEMANA — desglosado por tipo con colores ──
-    const diasEfectivo   = [0,0,0,0,0,0,0]; // efectivo + didi_efectivo + facebook + whatsapp
-    const diasTarjeta    = [0,0,0,0,0,0,0]; // tarjeta
-    const diasPlataforma = [0,0,0,0,0,0,0]; // didi_tarjeta + rappi + uber
-    const diasRedesS     = [0,0,0,0,0,0,0]; // facebook + whatsapp
-    movs.forEach(m => {
-      if (!m._fecha) return;
-      const d = new Date(m._fecha);
-      const idx = (d.getDay() + 6) % 7;
-      if (m.metodo==='efectivo'||m.metodo==='didi_efectivo') diasEfectivo[idx]+=m.precio;
-      else if (m.metodo==='tarjeta') diasTarjeta[idx]+=m.precio;
-      else if (m.metodo==='didi_tarjeta'||m.metodo==='rappi'||m.metodo==='uber') diasPlataforma[idx]+=m.precio;
-      else if (m.metodo==='facebook'||m.metodo==='whatsapp') diasRedesS[idx]+=m.precio;
-    });
-    destroyChart('dias');
-    grafCharts['dias'] = new Chart(document.getElementById('chart-dias'), {
-      type: 'bar',
-      data: {
-        labels: diasNom,
-        datasets: [
-          { label:'💵 Efectivo', data: diasEfectivo, backgroundColor:'rgba(46,196,182,0.8)', borderColor:'#2ec4b6', borderWidth:2, borderRadius:4 },
-          { label:'💳 Tarjeta',  data: diasTarjeta,  backgroundColor:'rgba(155,93,229,0.8)', borderColor:'#9b5de5', borderWidth:2, borderRadius:4 },
-          { label:'📱 Plataforma', data: diasPlataforma, backgroundColor:'rgba(255,149,0,0.8)', borderColor:'#ff9500', borderWidth:2, borderRadius:4 },
-          { label:'📲 Redes Soc.', data: diasRedesS, backgroundColor:'rgba(24,119,242,0.8)', borderColor:'#1877f2', borderWidth:2, borderRadius:4 },
-        ]
-      },
-      options: { responsive:true, plugins:{
-        legend:{ display:true, position:'bottom', labels:{ color:cf.color, font:{size:10}, padding:8 } },
-        tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } }
-      },
-        scales: { x:{ stacked:true, ticks:{ color:cf.color }, grid:{color:cf.gridColor} }, y:{ stacked:true, ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
-    });
-
-    // ── 5. GASTOS SEMANALES: negocio vs personal por día ──
-    // Recolectar gastos del historial + día actual en el rango de semana
-    const gastosDiaNeg = [0,0,0,0,0,0,0];
-    const gastosDiaPer = [0,0,0,0,0,0,0];
-
-    // Gastos día actual
-    const hoyDate = new Date();
-    if (hoyDate >= lunes && hoyDate <= domingo) {
-      const idxHoy = (hoyDate.getDay() + 6) % 7;
-      gastos.forEach(g => {
-        if (g.tipo === 'personal') gastosDiaPer[idxHoy] += g.monto;
-        else gastosDiaNeg[idxHoy] += g.monto;
-      });
-    }
-    // Gastos en historial cerrado
-    historial.forEach(dia => {
-      const fecha = parseFechaHistorial(dia.fecha);
-      if (fecha && fecha >= lunes && fecha <= domingo) {
-        const idx = (fecha.getDay() + 6) % 7;
-        (dia.gastos || []).forEach(g => {
-          if (g.tipo === 'personal') gastosDiaPer[idx] += g.monto;
-          else gastosDiaNeg[idx] += g.monto;
-        });
+      options: { responsive:true,
+        plugins:{ legend:{display:false},
+          tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
+        scales: {
+          x:{ ticks:{ color:cf.color, font:{size:10} }, grid:{color:cf.gridColor} },
+          y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} }
+        }
       }
     });
 
-    const totalNeg = gastosDiaNeg.reduce((a,b)=>a+b,0);
-    const totalPer = gastosDiaPer.reduce((a,b)=>a+b,0);
-
+    // ── 5. GASTOS POR DÍA ──
+    const gasNegDia = [0,0,0,0,0,0,0];
+    const gasPerDia = [0,0,0,0,0,0,0];
+    gastosSem.forEach(g => {
+      const idx = (new Date(g._fecha).getDay() + 6) % 7;
+      if (g.tipo === 'personal') gasPerDia[idx] += g.monto;
+      else gasNegDia[idx] += g.monto;
+    });
+    const totGasNeg = gasNegDia.reduce((a,b)=>a+b,0);
+    const totGasPer = gasPerDia.reduce((a,b)=>a+b,0);
     destroyChart('gastos-semana');
     grafCharts['gastos-semana'] = new Chart(document.getElementById('chart-gastos-semana'), {
       type: 'bar',
       data: {
         labels: diasNom,
         datasets: [
-          {
-            label: '📦 Negocio',
-            data: gastosDiaNeg,
-            backgroundColor: 'rgba(244,162,97,0.75)',
-            borderColor: '#f4a261',
-            borderWidth: 2, borderRadius: 6
-          },
-          {
-            label: '🧍 Personal',
-            data: gastosDiaPer,
-            backgroundColor: 'rgba(155,93,229,0.75)',
-            borderColor: '#9b5de5',
-            borderWidth: 2, borderRadius: 6
-          }
+          { label:'📦 Negocio', data: gasNegDia, backgroundColor:'rgba(244,162,97,0.75)', borderColor:'#f4a261', borderWidth:2, borderRadius:6 },
+          { label:'🧍 Personal', data: gasPerDia, backgroundColor:'rgba(155,93,229,0.75)', borderColor:'#9b5de5', borderWidth:2, borderRadius:6 }
         ]
       },
       options: { responsive:true,
-        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:12 } },
+        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
           tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
         scales: {
-          x:{ stacked:false, ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
+          x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
           y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} }
         }
       }
     });
-
-    // Resumen texto bajo la gráfica
-    const resEl = document.getElementById('resumen-gastos-semana');
-    if (totalNeg === 0 && totalPer === 0) {
-      resEl.innerHTML = '<span style="color:var(--gris)">Sin gastos registrados esta semana</span>';
+    const resGasEl = document.getElementById('resumen-gastos-semana');
+    if (totGasNeg === 0 && totGasPer === 0) {
+      resGasEl.innerHTML = '<span style="color:var(--gris)">Sin gastos registrados esta semana</span>';
     } else {
-      resEl.innerHTML = `
+      resGasEl.innerHTML = `
         <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3e;">
-          <span style="color:#f4a261;">📦 Total gastos negocio</span>
-          <span style="color:#f4a261;font-weight:700;">$${totalNeg.toFixed(2)}</span>
+          <span style="color:#f4a261;">📦 Gastos negocio</span><span style="color:#f4a261;font-weight:700;">$${totGasNeg.toFixed(2)}</span>
         </div>
         <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3e;">
-          <span style="color:#9b5de5;">🧍 Total gastos personales</span>
-          <span style="color:#9b5de5;font-weight:700;">$${totalPer.toFixed(2)}</span>
+          <span style="color:#9b5de5;">🧍 Gastos personales</span><span style="color:#9b5de5;font-weight:700;">$${totGasPer.toFixed(2)}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;margin-top:2px;">
-          <span style="color:var(--texto);font-weight:600;">💸 Total semana</span>
-          <span style="color:var(--rojo);font-weight:700;font-size:15px;">$${(totalNeg+totalPer).toFixed(2)}</span>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:700;">
+          <span>💸 Total</span><span style="color:var(--rojo);">$${(totGasNeg+totGasPer).toFixed(2)}</span>
         </div>`;
     }
-  }
 
-  // ── HELPER: obtener lunes de la semana de una fecha ──
-  function lunesDe(fecha) {
-    const d = new Date(fecha);
-    const dia = d.getDay();
-    d.setDate(d.getDate() - (dia === 0 ? 6 : dia - 1));
-    d.setHours(0,0,0,0);
-    return d;
-  }
-
-  function labelSemana(lunes) {
-    const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
-    const fmt = d => d.toLocaleDateString('es-MX', {day:'numeric', month:'short'});
-    return fmt(lunes) + ' - ' + fmt(domingo);
-  }
-
-  // ── Agrupa días del historial por semana y calcula inversión/sueldo ──
-  function calcularSemanasHistoricas() {
-    const pctSueldo  = (parseFloat(document.getElementById('pct-sueldo').value)  || 0) / 100;
-    const pctInv     = (parseFloat(document.getElementById('pct-inv').value)     || 0) / 100;
-
-    const semanasMap = {}; // clave: timestamp del lunes
-
-    // Incluir día actual
-    const hoyLunes = lunesDe(new Date());
-    const keyHoy = hoyLunes.getTime();
-    const tHoy = calcularTotales();
-    const brutoHoy = tHoy.efectivo + tHoy.tarjeta + tHoy.didi_efectivo + tHoy.facebook + tHoy.whatsapp;
-    if (!semanasMap[keyHoy]) semanasMap[keyHoy] = { lunes: hoyLunes, invJuntado:0, invGastado:0, sueldoJuntado:0, sueldoGastado:0 };
-    semanasMap[keyHoy].invJuntado    += brutoHoy * pctInv;
-    semanasMap[keyHoy].sueldoJuntado += brutoHoy * pctSueldo;
-    semanasMap[keyHoy].invGastado    += tHoy.totalGastosNegocio;
-    semanasMap[keyHoy].sueldoGastado += tHoy.totalGastosPersonal;
-
-    // Historial
-    historial.forEach(dia => {
-      const fecha = parseFechaHistorial(dia.fecha);
-      if (!fecha) return;
-      const lunes = lunesDe(fecha);
-      const key = lunes.getTime();
-      if (!semanasMap[key]) semanasMap[key] = { lunes, invJuntado:0, invGastado:0, sueldoJuntado:0, sueldoGastado:0 };
-      const t = dia.totales;
-      const bruto = (t.efectivo||0) + (t.tarjeta||0) + (t.didi_efectivo||0) + (t.facebook||0) + (t.whatsapp||0);
-      semanasMap[key].invJuntado    += bruto * pctInv;
-      semanasMap[key].sueldoJuntado += bruto * pctSueldo;
-      semanasMap[key].invGastado    += (t.totalGastosNegocio||0);
-      semanasMap[key].sueldoGastado += (t.totalGastosPersonal||0);
-    });
-
-    // Ordenar por fecha
-    return Object.values(semanasMap).sort((a,b) => a.lunes - b.lunes);
-  }
-
-  function renderGraficasHistoricas() {
-    const semanas = calcularSemanasHistoricas();
-    const cf = { color:'#a0a0b8', gridColor:'rgba(255,255,255,0.05)' };
-
-    // ── Gráfica Inversión y Sueldo de la SEMANA EN TURNO ──
-    const { movs, lunes, domingo } = getMovimientosSemana(semanaOffset);
-
-    // Calcular sueldo e inversión de la semana seleccionada por día
-    const diasSemana = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-    const pctSueldo = (parseFloat(document.getElementById('pct-sueldo').value)||40)/100;
+    // ── 6. INVERSIÓN DE LA SEMANA ──
     const pctInv    = (parseFloat(document.getElementById('pct-inv').value)||45)/100;
+    const pctSueldo = (parseFloat(document.getElementById('pct-sueldo').value)||40)/100;
+    const semLabel  = esActual ? 'semana actual' : `hace ${Math.abs(semanaOffset)} semana${Math.abs(semanaOffset)>1?'s':''}`;
 
     const invPorDia    = Array(7).fill(0);
     const sueldoPorDia = Array(7).fill(0);
-    const gasNegPorDia = Array(7).fill(0);
-    const gasPerPorDia = Array(7).fill(0);
-
-    // Agrupar movimientos por día de la semana usando _fecha (ya correctamente asignada)
     movs.forEach(m => {
       if (!m._fecha) return;
-      const d = new Date(m._fecha);
-      const diff = Math.round((d - lunes) / 86400000);
-      if (diff >= 0 && diff < 7) {
-        const bruto = ['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo) ? m.precio : 0;
-        invPorDia[diff]    += bruto * pctInv;
-        sueldoPorDia[diff] += bruto * pctSueldo;
+      const idx = (new Date(m._fecha).getDay() + 6) % 7;
+      if (['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)) {
+        invPorDia[idx]    += m.precio * pctInv;
+        sueldoPorDia[idx] += m.precio * pctSueldo;
       }
     });
+    const invNetoPorDia    = invPorDia.map((v,i) => Math.max(0, v - gasNegDia[i]));
+    const sueldoNetoPorDia = sueldoPorDia.map((v,i) => Math.max(0, v - gasPerDia[i]));
 
-    // Gastos del historial cerrado de la semana seleccionada
-    historial.forEach(dia => {
-      const fecha = parseFechaHistorial(dia.fecha);
-      if (!fecha) return;
-      const diff = Math.round((fecha - lunes) / 86400000);
-      if (diff >= 0 && diff < 7) {
-        const gNeg = (dia.gastos||[]).filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
-        const gPer = (dia.gastos||[]).filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
-        gasNegPorDia[diff] += gNeg;
-        gasPerPorDia[diff] += gPer;
-      }
-    });
-
-    // Gastos del día actual — solo si la semana actual está seleccionada
-    const hoy = new Date();
-    if (hoy >= lunes && hoy <= domingo) {
-      const diffHoy = Math.round((hoy - lunes) / 86400000);
-      if (diffHoy >= 0 && diffHoy < 7) {
-        gasNegPorDia[diffHoy] += gastos.filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
-        gasPerPorDia[diffHoy] += gastos.filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
-      }
-    }
-
-    const invNetoPorDia    = invPorDia.map((v,i) => Math.max(0, v - gasNegPorDia[i]));
-    const sueldoNetoPorDia = sueldoPorDia.map((v,i) => Math.max(0, v - gasPerPorDia[i]));
-
-    // Actualizar labels semana
-    const labelInv    = document.getElementById('label-inv-semana');
-    const labelSueldo = document.getElementById('label-sueldo-semana');
-    const semLabel = semanaOffset === 0 ? 'semana actual' : `hace ${Math.abs(semanaOffset)} semana${Math.abs(semanaOffset)>1?'s':''}`;
-    if (labelInv)    labelInv.textContent    = `📦 Inversión juntada vs gastos negocio — ${semLabel}`;
-    if (labelSueldo) labelSueldo.textContent = `🧍 Sueldo vs gastos personales — ${semLabel}`;
-
-    // Gráfica Inversión semana
+    document.getElementById('label-inv-semana').textContent = `Lo que apartaste para el negocio vs lo que ya gastaste — ${semLabel}`;
     destroyChart('inversion-semana-actual');
     grafCharts['inversion-semana-actual'] = new Chart(document.getElementById('chart-inversion-semana-actual'), {
       type: 'bar',
       data: {
-        labels: diasSemana,
+        labels: diasNom,
         datasets: [
-          { label:'📦 Inv asignada', data: invPorDia, backgroundColor:'rgba(244,162,97,0.75)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 },
-          { label:'💸 Gastos negocio', data: gasNegPorDia, backgroundColor:'rgba(230,57,70,0.75)', borderColor:'#e63946', borderWidth:2, borderRadius:5 },
-          { label:'✅ Inv disponible', data: invNetoPorDia, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
+          { label:'📦 Asignado', data: invPorDia, backgroundColor:'rgba(244,162,97,0.7)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 },
+          { label:'💸 Gastado',  data: gasNegDia, backgroundColor:'rgba(230,57,70,0.7)',  borderColor:'#e63946', borderWidth:2, borderRadius:5 },
+          { label:'✅ Disponible', data: invNetoPorDia, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
         ]
       },
       options: { responsive:true,
@@ -1719,28 +1562,26 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
         }
       }
     });
-
-    // Resumen inversión semana
-    const resInv = document.getElementById('resumen-inversion-semana-actual');
     const totInvAsig = invPorDia.reduce((s,v)=>s+v,0);
-    const totGasNeg  = gasNegPorDia.reduce((s,v)=>s+v,0);
+    const totGasNegS = gasNegDia.reduce((s,v)=>s+v,0);
     const totInvNet  = invNetoPorDia.reduce((s,v)=>s+v,0);
-    resInv.innerHTML = `
-      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;">
-        <span style="color:#f4a261">📦 Inv asignada total: <b>$${totInvAsig.toFixed(0)}</b></span>
-        <span style="color:#e63946">💸 Gastos negocio: <b>-$${totGasNeg.toFixed(0)}</b></span>
+    document.getElementById('resumen-inversion-semana-actual').innerHTML = `
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding:4px 0;font-size:12px;">
+        <span style="color:#f4a261">📦 Asignado: <b>$${totInvAsig.toFixed(0)}</b></span>
+        <span style="color:#e63946">💸 Gastado: <b>-$${totGasNegS.toFixed(0)}</b></span>
         <span style="color:#2ec4b6">✅ Disponible: <b>$${totInvNet.toFixed(0)}</b></span>
       </div>`;
 
-    // Gráfica Sueldo semana
+    // ── 7. SUELDO DE LA SEMANA ──
+    document.getElementById('label-sueldo-semana').textContent = `Lo que te toca de sueldo vs lo que ya gastaste de él — ${semLabel}`;
     destroyChart('sueldo-semana-actual');
     grafCharts['sueldo-semana-actual'] = new Chart(document.getElementById('chart-sueldo-semana-actual'), {
       type: 'bar',
       data: {
-        labels: diasSemana,
+        labels: diasNom,
         datasets: [
-          { label:'💵 Sueldo', data: sueldoPorDia, backgroundColor:'rgba(155,93,229,0.75)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 },
-          { label:'🧍 Gastos personales', data: gasPerPorDia, backgroundColor:'rgba(230,57,70,0.75)', borderColor:'#e63946', borderWidth:2, borderRadius:5 },
+          { label:'💵 Sueldo', data: sueldoPorDia, backgroundColor:'rgba(155,93,229,0.7)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 },
+          { label:'🧍 Gastos personales', data: gasPerDia, backgroundColor:'rgba(230,57,70,0.7)', borderColor:'#e63946', borderWidth:2, borderRadius:5 },
           { label:'✅ Sueldo neto', data: sueldoNetoPorDia, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
         ]
       },
@@ -1753,94 +1594,190 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
         }
       }
     });
-
-    // Resumen sueldo semana
-    const resSueldo = document.getElementById('resumen-sueldo-semana-actual');
     const totSueldoAsig = sueldoPorDia.reduce((s,v)=>s+v,0);
-    const totGasPer     = gasPerPorDia.reduce((s,v)=>s+v,0);
+    const totGasPerS    = gasPerDia.reduce((s,v)=>s+v,0);
     const totSueldoNet  = sueldoNetoPorDia.reduce((s,v)=>s+v,0);
-    resSueldo.innerHTML = `
-      <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:12px;">
-        <span style="color:#9b5de5">💵 Sueldo total: <b>$${totSueldoAsig.toFixed(0)}</b></span>
-        <span style="color:#e63946">🧍 Gastos personales: <b>-$${totGasPer.toFixed(0)}</b></span>
-        <span style="color:#2ec4b6">✅ Sueldo neto: <b>$${totSueldoNet.toFixed(0)}</b></span>
+    document.getElementById('resumen-sueldo-semana-actual').innerHTML = `
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding:4px 0;font-size:12px;">
+        <span style="color:#9b5de5">💵 Sueldo: <b>$${totSueldoAsig.toFixed(0)}</b></span>
+        <span style="color:#e63946">🧍 Gastos: <b>-$${totGasPerS.toFixed(0)}</b></span>
+        <span style="color:#2ec4b6">✅ Neto: <b>$${totSueldoNet.toFixed(0)}</b></span>
       </div>`;
+  }
 
-    // ══ GRÁFICAS HISTÓRICAS ACUMULADAS ══
+  // ── HELPER: lunes de una fecha ──
+  function lunesDe(fecha) {
+    const d = new Date(fecha);
+    const dia = d.getDay();
+    d.setDate(d.getDate() - (dia === 0 ? 6 : dia - 1));
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function labelSemana(lunes) {
+    const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+    return fmtFecha(lunes) + ' – ' + fmtFecha(domingo);
+  }
+
+  // ── Agrupa el historial por semana ──
+  function calcularSemanasHistoricas() {
+    const pctSueldo = (parseFloat(document.getElementById('pct-sueldo').value)||40)/100;
+    const pctInv    = (parseFloat(document.getElementById('pct-inv').value)||45)/100;
+    const semanasMap = {};
+
+    // Día actual
+    const hoyLunes = lunesDe(new Date());
+    const keyHoy = hoyLunes.getTime();
+    const tHoy = calcularTotales();
+    const brutoHoy = tHoy.efectivo + tHoy.tarjeta + tHoy.didi_efectivo + (tHoy.facebook||0) + (tHoy.whatsapp||0);
+    if (!semanasMap[keyHoy]) semanasMap[keyHoy] = { lunes:hoyLunes, ventas:0, invAsig:0, invGast:0, sueldoAsig:0, sueldoGast:0 };
+    semanasMap[keyHoy].ventas      += tHoy.totalVenta;
+    semanasMap[keyHoy].invAsig     += brutoHoy * pctInv;
+    semanasMap[keyHoy].sueldoAsig  += brutoHoy * pctSueldo;
+    semanasMap[keyHoy].invGast     += tHoy.totalGastosNegocio||0;
+    semanasMap[keyHoy].sueldoGast  += tHoy.totalGastosPersonal||0;
+
+    // Historial cerrado
+    historial.forEach(dia => {
+      const fecha = parseFechaHistorial(dia.fecha);
+      if (!fecha) return;
+      const lunes = lunesDe(fecha);
+      const key = lunes.getTime();
+      if (!semanasMap[key]) semanasMap[key] = { lunes, ventas:0, invAsig:0, invGast:0, sueldoAsig:0, sueldoGast:0 };
+      const t = dia.totales;
+      const bruto = (t.efectivo||0)+(t.tarjeta||0)+(t.didi_efectivo||0)+(t.facebook||0)+(t.whatsapp||0);
+      semanasMap[key].ventas     += t.totalVenta||0;
+      semanasMap[key].invAsig    += bruto * pctInv;
+      semanasMap[key].sueldoAsig += bruto * pctSueldo;
+      semanasMap[key].invGast    += t.totalGastosNegocio||0;
+      semanasMap[key].sueldoGast += t.totalGastosPersonal||0;
+    });
+
+    return Object.values(semanasMap).sort((a,b) => a.lunes - b.lunes);
+  }
+
+  function renderGraficasHistoricas() {
+    if (!document.getElementById('tab-historico').classList.contains('active')) return;
+    const semanas = calcularSemanasHistoricas();
+    const cf = { color:'#c0c0d8', gridColor:'rgba(255,255,255,0.06)' };
+
+    // Totales globales
+    const totVentas   = semanas.reduce((s,w)=>s+w.ventas,0);
+    const totSueldo   = semanas.reduce((s,w)=>s+Math.max(0,w.sueldoAsig-w.sueldoGast),0);
+    const totInv      = semanas.reduce((s,w)=>s+Math.max(0,w.invAsig-w.invGast),0);
+    document.getElementById('hist-total-ventas').textContent  = '$' + totVentas.toFixed(0);
+    document.getElementById('hist-total-semanas').textContent = semanas.length;
+    document.getElementById('hist-total-sueldo').textContent  = '$' + totSueldo.toFixed(0);
+    document.getElementById('hist-total-inv').textContent     = '$' + totInv.toFixed(0);
+
     if (!semanas.length) return;
-    const labels      = semanas.map(s => labelSemana(s.lunes));
-    const invJuntado  = semanas.map(s => parseFloat(s.invJuntado.toFixed(2)));
-    const invGastado  = semanas.map(s => parseFloat(s.invGastado.toFixed(2)));
-    const invNeto     = semanas.map(s => parseFloat((s.invJuntado - s.invGastado).toFixed(2)));
-    const sueldoJunt  = semanas.map(s => parseFloat(s.sueldoJuntado.toFixed(2)));
-    const sueldoGast  = semanas.map(s => parseFloat(s.sueldoGastado.toFixed(2)));
-    const sueldoNeto  = semanas.map(s => parseFloat((s.sueldoJuntado - s.sueldoGastado).toFixed(2)));
+    const labels = semanas.map(s => labelSemana(s.lunes));
 
-    // ── Gráfica Inversión Histórica ──
+    // ── Ventas por semana ──
+    destroyChart('hist-ventas');
+    grafCharts['hist-ventas'] = new Chart(document.getElementById('chart-hist-ventas'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Venta semanal',
+          data: semanas.map(s => parseFloat(s.ventas.toFixed(2))),
+          backgroundColor: 'rgba(46,196,182,0.65)',
+          borderColor: '#2ec4b6',
+          borderWidth: 2, borderRadius: 6
+        }]
+      },
+      options: { responsive:true,
+        plugins:{ legend:{display:false},
+          tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
+        scales: {
+          x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:45 }, grid:{color:cf.gridColor} },
+          y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
+        }
+      }
+    });
+
+    // ── Inversión histórica ──
+    const invAsig  = semanas.map(s => parseFloat(s.invAsig.toFixed(2)));
+    const invGast  = semanas.map(s => parseFloat(s.invGast.toFixed(2)));
+    const invNeto  = semanas.map(s => parseFloat(Math.max(0,s.invAsig-s.invGast).toFixed(2)));
     destroyChart('inversion-historico');
     grafCharts['inversion-historico'] = new Chart(document.getElementById('chart-inversion-historico'), {
       type: 'bar',
       data: {
         labels,
         datasets: [
-          { label:'📦 Juntado', data: invJuntado, backgroundColor:'rgba(244,162,97,0.75)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 },
-          { label:'💸 Gastado', data: invGastado, backgroundColor:'rgba(230,57,70,0.75)',  borderColor:'#e63946', borderWidth:2, borderRadius:5 },
-          { label:'✅ Neto',    data: invNeto,    type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
+          { label:'📦 Asignado', data:invAsig, backgroundColor:'rgba(244,162,97,0.7)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 },
+          { label:'💸 Gastado',  data:invGast, backgroundColor:'rgba(230,57,70,0.7)',  borderColor:'#e63946', borderWidth:2, borderRadius:5 },
+          { label:'✅ Disponible', data:invNeto, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:4 }
         ]
       },
       options: { responsive:true,
         plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
           tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
         scales: {
-          x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:40 }, grid:{color:cf.gridColor} },
+          x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:45 }, grid:{color:cf.gridColor} },
           y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
         }
       }
     });
-    // Resumen inversión histórico
     const resInvHist = document.getElementById('resumen-inversion-historico');
-    if (resInvHist) {
-      resInvHist.innerHTML = semanas.map(s => {
-        const neto = s.invJuntado - s.invGastado;
-        const color = neto >= 0 ? 'var(--verde)' : 'var(--rojo)';
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #2a2a3e;font-size:11px;">
-          <span style="color:var(--gris);flex:2">${labelSemana(s.lunes)}</span>
-          <span style="color:#f4a261;flex:1;text-align:right">$${s.invJuntado.toFixed(0)}</span>
-          <span style="color:#e63946;flex:1;text-align:right">-$${s.invGastado.toFixed(0)}</span>
-          <span style="color:${color};flex:1;text-align:right;font-weight:700">${neto>=0?'+':''} $${neto.toFixed(0)}</span>
-        </div>`;
-      }).join('') + `<div style="display:flex;justify-content:flex-end;gap:16px;padding-top:6px;font-size:10px;color:var(--gris);">
-        <span style="color:#f4a261">■ Juntado</span><span style="color:#e63946">■ Gastado</span><span style="color:#2ec4b6">■ Neto</span></div>`;
-    }
+    const totInvAsigH = invAsig.reduce((s,v)=>s+v,0);
+    const totInvGastH = invGast.reduce((s,v)=>s+v,0);
+    const totInvNetoH = invNeto.reduce((s,v)=>s+v,0);
+    resInvHist.innerHTML = `
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;">
+        <span style="color:#f4a261">📦 Total asignado: <b>$${totInvAsigH.toFixed(0)}</b></span>
+        <span style="color:#e63946">💸 Total gastado: <b>$${totInvGastH.toFixed(0)}</b></span>
+        <span style="color:#2ec4b6">✅ Disponible: <b>$${totInvNetoH.toFixed(0)}</b></span>
+      </div>`;
 
-    // ── Gráfica Sueldo Histórico ──
+    // ── Sueldo histórico ──
+    const sueldoAsig = semanas.map(s => parseFloat(s.sueldoAsig.toFixed(2)));
+    const sueldoGast = semanas.map(s => parseFloat(s.sueldoGast.toFixed(2)));
+    const sueldoNeto = semanas.map(s => parseFloat(Math.max(0,s.sueldoAsig-s.sueldoGast).toFixed(2)));
     destroyChart('sueldo-historico');
     grafCharts['sueldo-historico'] = new Chart(document.getElementById('chart-sueldo-historico'), {
       type: 'bar',
       data: {
         labels,
         datasets: [
-          { label:'💵 Sueldo', data: sueldoJunt, backgroundColor:'rgba(155,93,229,0.75)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 },
-          { label:'🧍 Gastos personales', data: sueldoGast, backgroundColor:'rgba(230,57,70,0.75)', borderColor:'#e63946', borderWidth:2, borderRadius:5 },
-          { label:'✅ Neto', data: sueldoNeto, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
+          { label:'💵 Sueldo', data:sueldoAsig, backgroundColor:'rgba(155,93,229,0.7)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 },
+          { label:'🧍 Gastos', data:sueldoGast, backgroundColor:'rgba(230,57,70,0.7)',  borderColor:'#e63946', borderWidth:2, borderRadius:5 },
+          { label:'✅ Lo que quedó', data:sueldoNeto, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:4 }
         ]
       },
       options: { responsive:true,
         plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
           tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
         scales: {
-          x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:40 }, grid:{color:cf.gridColor} },
+          x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:45 }, grid:{color:cf.gridColor} },
           y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
         }
       }
     });
-    const totSueldoHist = sueldoNeto.reduce((s,v)=>s+v,0);
+    const totSueldoNetoH = sueldoNeto.reduce((s,v)=>s+v,0);
     document.getElementById('resumen-sueldo-historico').innerHTML =
-      `<div style="text-align:center;font-size:13px;color:#2ec4b6;">Total acumulado que te quedó: <b>$${totSueldoHist.toFixed(2)}</b></div>`;
+      `<div style="text-align:center;font-size:13px;color:#2ec4b6;">Total acumulado en tu bolsillo: <b>$${totSueldoNetoH.toFixed(2)}</b></div>`;
+
+    // ── Tabla por semana ──
+    const tablaEl = document.getElementById('hist-tabla-semanas');
+    tablaEl.innerHTML = semanas.slice().reverse().map(s => {
+      const invNet = Math.max(0,s.invAsig-s.invGast);
+      const sueldoNet = Math.max(0,s.sueldoAsig-s.sueldoGast);
+      return `<div style="padding:8px 0;border-bottom:1px solid #2a2a3e;">
+        <div style="font-weight:700;color:var(--amarillo);margin-bottom:4px;">${labelSemana(s.lunes)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;">
+          <span style="color:#2ec4b6">💰 Venta: <b>$${s.ventas.toFixed(0)}</b></span>
+          <span style="color:#f4a261">📦 Inv: <b>$${invNet.toFixed(0)}</b></span>
+          <span style="color:#9b5de5">💵 Sueldo: <b>$${sueldoNet.toFixed(0)}</b></span>
+          <span style="color:#e63946">💸 Gastos: <b>$${(s.invGast+s.sueldoGast).toFixed(0)}</b></span>
+        </div>
+      </div>`;
+    }).join('') || '<span style="color:var(--gris)">Sin datos históricos aún</span>';
   }
 
-
-  // ── DISTRIBUCIÓN ──
+    // ── DISTRIBUCIÓN ──
   function renderDistribucion() {
     const t = calcularTotales();
     const bruto = t.efectivo + t.tarjeta + t.didi_efectivo + t.facebook + t.whatsapp;
