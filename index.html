@@ -129,7 +129,6 @@
   .dist-alerta{background:rgba(230,57,70,0.15);border:1px solid var(--rojo);border-radius:10px;padding:10px;text-align:center;font-size:12px;color:var(--rojo);margin-bottom:12px;display:none;}
   .dist-nota{font-size:11px;color:var(--gris);text-align:center;margin-top:4px;font-style:italic;}
 
-
   /* MESAS */
   .mesas-bar{padding:10px 14px 0;display:none;}
   .mesas-bar.visible{display:block;}
@@ -177,13 +176,49 @@
   .btn-agregar-ticket{flex:2;background:var(--amarillo);border:none;border-radius:10px;padding:14px;color:var(--oscuro);font-size:15px;font-weight:700;cursor:pointer;}
   .btn-agregar-ticket:active{opacity:0.8;}
 
+  /* VUELTO */
+  .vuelto-box{background:rgba(46,196,182,0.08);border:1px solid var(--verde);border-radius:10px;padding:12px;margin-top:10px;}
+  .vuelto-box label{font-size:11px;color:var(--verde);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;display:block;margin-bottom:6px;}
+  .vuelto-input{width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:12px 14px;color:var(--texto);font-size:22px;font-weight:700;text-align:center;outline:none;}
+  .vuelto-input:focus{border-color:var(--verde);}
+  .vuelto-resultado{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid rgba(46,196,182,0.2);}
+  .vuelto-label{font-size:12px;color:var(--gris);}
+  .vuelto-monto{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--verde);}
+  .vuelto-monto.negativo{color:var(--rojo);}
+
+  /* MODAL CONFIRMACIÓN */
+  .modal-confirm{background:var(--medio);border-radius:20px 20px 0 0;padding:28px 20px 36px;width:100%;max-width:480px;border-top:2px solid var(--rojo);}
+  .modal-confirm h2{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--rojo);letter-spacing:1px;margin-bottom:8px;text-align:center;}
+  .modal-confirm p{font-size:14px;color:var(--gris);text-align:center;line-height:1.6;margin-bottom:20px;}
+
+  /* PRECIOS */
+  .precios-grid{display:grid;gap:8px;}
+  .precio-item{background:var(--medio);border:1px solid #333;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .precio-nombre{font-size:13px;font-weight:600;flex:1;}
+  .precio-input{width:90px;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:9px 10px;color:var(--verde);font-size:16px;font-weight:700;text-align:center;outline:none;}
+  .precio-input:focus{border-color:var(--amarillo);}
+
+  /* GASTOS SELECCIÓN */
+  .gasto-check{display:flex;align-items:center;gap:8px;padding:4px 0;}
+  .gasto-check input[type="checkbox"]{width:18px;height:18px;accent-color:var(--verde);cursor:pointer;flex-shrink:0;}
+  .btn-copiar-gastos{width:100%;background:var(--claro);border:1px solid var(--verde);border-radius:10px;padding:13px;color:var(--verde);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;letter-spacing:0.5px;}
+  .btn-copiar-gastos:active{opacity:0.8;}
+
+  /* BÚSQUEDA HISTORIAL */
+  .historial-search{background:var(--oscuro);border:1px solid #444;border-radius:10px;padding:11px 14px;color:var(--texto);font-size:14px;outline:none;width:100%;margin-bottom:12px;}
+  .historial-search:focus{border-color:var(--amarillo);}
+
+  /* NUMPAD GASTOS */
+  .gasto-numpad-display{background:var(--oscuro);border:2px solid var(--rojo);border-radius:10px;padding:14px 16px;color:var(--verde);font-size:28px;font-weight:700;text-align:center;margin-bottom:8px;min-height:58px;cursor:pointer;}
+  .gasto-numpad-display:focus-within{border-color:var(--amarillo);}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
 <header>
-  <h1>🌮 El Bajón</h1>
+  <h1>🍔 El Bajón</h1>
   <div class="fecha" id="fechaHeader"></div>
 </header>
 
@@ -196,6 +231,7 @@
   <div class="tab" onclick="cambiarTab('distribucion',this)">💰 Dist.</div>
   <div class="tab" onclick="cambiarTab('graficas',this)">📈 Gráficas</div>
   <div class="tab" onclick="cambiarTab('historico',this)">📊 Histórico</div>
+  <div class="tab" onclick="cambiarTab('precios',this)">🏷️ Precios</div>
   <div class="tab" onclick="cambiarTab('backup',this)">💾 Backup</div>
 </div>
 
@@ -209,30 +245,30 @@
   </div>
 
   <div class="cat-label">🍔 Hamburguesas</div>
-  <div class="productos-grid">
-    <button class="btn-producto" onclick="abrirModal('Ham Sola',79)"><div class="nombre">Ham Sola</div><div class="precio-ref">Ref: $79</div></button>
-    <button class="btn-producto" onclick="abrirModal('Ham c/ Papas',99)"><div class="nombre">Ham c/ Papas</div><div class="precio-ref">Ref: $99</div></button>
+  <div class="productos-grid" id="grid-Hamburguesas">
+    <button class="btn-producto" onclick="abrirModal('Ham Sola','Ham Sola')"><div class="nombre">Ham Sola</div><div class="precio-ref" id="pref-Ham Sola">Ref: $79</div></button>
+    <button class="btn-producto" onclick="abrirModal('Ham c/ Papas','Ham c/ Papas')"><div class="nombre">Ham c/ Papas</div><div class="precio-ref" id="pref-Ham c/ Papas">Ref: $99</div></button>
   </div>
   <div class="cat-label">🌭 Hot Dogs</div>
   <div class="productos-grid">
-    <button class="btn-producto" onclick="abrirModal('HD Sencillo',25)"><div class="nombre">HD Sencillo</div><div class="precio-ref">Ref: $25</div></button>
-    <button class="btn-producto" onclick="abrirModal('HD Preparado',39)"><div class="nombre">HD Preparado</div><div class="precio-ref">Ref: $39</div></button>
+    <button class="btn-producto" onclick="abrirModal('HD Sencillo','HD Sencillo')"><div class="nombre">HD Sencillo</div><div class="precio-ref" id="pref-HD Sencillo">Ref: $25</div></button>
+    <button class="btn-producto" onclick="abrirModal('HD Preparado','HD Preparado')"><div class="nombre">HD Preparado</div><div class="precio-ref" id="pref-HD Preparado">Ref: $39</div></button>
   </div>
   <div class="cat-label">🍟 Órdenes</div>
   <div class="productos-grid">
-    <button class="btn-producto" onclick="abrirModal('Ord Sencilla',69)"><div class="nombre">Ord Sencilla</div><div class="precio-ref">Ref: $69</div></button>
-    <button class="btn-producto" onclick="abrirModal('Ord Preparada',99)"><div class="nombre">Ord Preparada</div><div class="precio-ref">Ref: $99</div></button>
-    <button class="btn-producto" onclick="abrirModal('Ord Papas',39)"><div class="nombre">Ord Papas</div><div class="precio-ref">Ref: $39</div></button>
+    <button class="btn-producto" onclick="abrirModal('Ord Sencilla','Ord Sencilla')"><div class="nombre">Ord Sencilla</div><div class="precio-ref" id="pref-Ord Sencilla">Ref: $69</div></button>
+    <button class="btn-producto" onclick="abrirModal('Ord Preparada','Ord Preparada')"><div class="nombre">Ord Preparada</div><div class="precio-ref" id="pref-Ord Preparada">Ref: $99</div></button>
+    <button class="btn-producto" onclick="abrirModal('Ord Papas','Ord Papas')"><div class="nombre">Ord Papas</div><div class="precio-ref" id="pref-Ord Papas">Ref: $39</div></button>
   </div>
   <div class="cat-label">🥤 Refrescos</div>
   <div class="productos-grid">
-    <button class="btn-producto" onclick="abrirModal('Coca Cola 600ml',25)"><div class="nombre">Coca Cola 600ml</div><div class="precio-ref">Ref: $25</div></button>
-    <button class="btn-producto" onclick="abrirModal('Pepsi 600ml',20)"><div class="nombre">Pepsi 600ml</div><div class="precio-ref">Ref: $20</div></button>
-    <button class="btn-producto" onclick="abrirModal('Fresca 600ml',23)"><div class="nombre">Fresca 600ml</div><div class="precio-ref">Ref: $23</div></button>
+    <button class="btn-producto" onclick="abrirModal('Coca Cola 600ml','Coca Cola 600ml')"><div class="nombre">Coca Cola 600ml</div><div class="precio-ref" id="pref-Coca Cola 600ml">Ref: $25</div></button>
+    <button class="btn-producto" onclick="abrirModal('Pepsi 600ml','Pepsi 600ml')"><div class="nombre">Pepsi 600ml</div><div class="precio-ref" id="pref-Pepsi 600ml">Ref: $20</div></button>
+    <button class="btn-producto" onclick="abrirModal('Fresca 600ml','Fresca 600ml')"><div class="nombre">Fresca 600ml</div><div class="precio-ref" id="pref-Fresca 600ml">Ref: $23</div></button>
   </div>
   <div class="cat-label">➕ Otro</div>
   <div class="productos-grid">
-    <button class="btn-producto" onclick="abrirModal('Otro',0)"><div class="nombre">Personalizado</div><div class="precio-ref">Tú pones precio</div></button>
+    <button class="btn-producto" onclick="abrirModal('Otro','Otro')"><div class="nombre">Personalizado</div><div class="precio-ref">Tú pones precio</div></button>
   </div>
 </div>
 
@@ -250,13 +286,33 @@
   <div class="gasto-form">
     <h3>Agregar Gasto</h3>
     <div class="input-row"><input type="text" id="gasto-concepto" placeholder="Concepto (ej: gas, camión...)"></div>
-    <div class="input-row"><input type="number" id="gasto-monto" placeholder="$0.00" inputmode="decimal"></div>
+    <!-- Display del monto con numpad -->
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Monto ($)</div>
+      <div class="gasto-numpad-display" id="gasto-monto-display" onclick="focusGastoNumpad()">$0</div>
+      <!-- Numpad gastos -->
+      <div class="numpad" id="gasto-numpad">
+        <div class="numpad-btn" onclick="gastoNumpadPress('7')">7</div>
+        <div class="numpad-btn" onclick="gastoNumpadPress('8')">8</div>
+        <div class="numpad-btn" onclick="gastoNumpadPress('9')">9</div>
+        <div class="numpad-btn" onclick="gastoNumpadPress('4')">4</div>
+        <div class="numpad-btn" onclick="gastoNumpadPress('5')">5</div>
+        <div class="numpad-btn" onclick="gastoNumpadPress('6')">6</div>
+        <div class="numpad-btn" onclick="gastoNumpadPress('1')">1</div>
+        <div class="numpad-btn" onclick="gastoNumpadPress('2')">2</div>
+        <div class="numpad-btn" onclick="gastoNumpadPress('3')">3</div>
+        <div class="numpad-btn" onclick="gastoNumpadPress('.')">.</div>
+        <div class="numpad-btn" onclick="gastoNumpadPress('0')">0</div>
+        <div class="numpad-btn btn-borrar" onclick="gastoNumpadPress('DEL')">⌫</div>
+      </div>
+    </div>
     <div style="display:flex;gap:8px;margin-bottom:10px;">
       <button id="btn-tipo-negocio" onclick="selTipoGasto('negocio')" style="flex:1;padding:11px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(244,162,97,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">📦 Gasto del Negocio<br><span style="font-size:10px;font-weight:400;opacity:0.8;">Descuenta de Inversión</span></button>
       <button id="btn-tipo-personal" onclick="selTipoGasto('personal')" style="flex:1;padding:11px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">🧍 Gasto Personal<br><span style="font-size:10px;font-weight:400;opacity:0.8;">Descuenta de tu Sueldo</span></button>
     </div>
     <button class="btn-agregar-gasto" onclick="agregarGasto()">+ Agregar Gasto</button>
   </div>
+  <button class="btn-copiar-gastos" onclick="copiarGastosSeleccionados()">📋 Copiar seleccionados</button>
   <div id="lista-gastos"><div class="empty-state"><div class="icon">💸</div>Sin gastos registrados</div></div>
 </div>
 
@@ -280,14 +336,14 @@
     <div style="font-size:10px;color:var(--gris);text-align:right;margin-top:2px;" id="res-en-mano-det"></div>
   </div>
   <button class="btn-copiar" onclick="copiarResumen()">📋 Copiar para Excel</button>
-  <button class="btn-cerrar-dia" onclick="cerrarDia()">🔒 Cerrar Día y Empezar Nuevo</button>
+  <button class="btn-cerrar-dia" onclick="pedirCerrarDia()">🔒 Cerrar Día y Empezar Nuevo</button>
 </div>
 
 <!-- TAB HISTORIAL -->
 <div class="seccion" id="tab-historial">
+  <input type="text" class="historial-search" id="historial-busqueda" placeholder="🔍 Buscar por fecha (ej: lunes, julio, 14)..." oninput="renderHistorial()">
   <div id="lista-historial"><div class="empty-state"><div class="icon">📅</div>Aún no hay días cerrados</div></div>
 </div>
-
 
 <!-- TAB DISTRIBUCIÓN -->
 <div class="seccion" id="tab-distribucion">
@@ -344,20 +400,17 @@
   <div class="dist-nota">* Las ventas de Didi TAR, Rappi y Uber no se incluyen — ese dinero aún no está en tu mano</div>
 </div>
 
-
 <!-- TAB GRÁFICAS -->
 <div class="seccion" id="tab-graficas">
   <div class="dist-header">📈 Gráficas Semanales</div>
   <div class="dist-sub" id="graf-semana-label">Semana actual</div>
 
-  <!-- Navegación de semanas -->
   <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:18px;">
     <button onclick="semanaAnterior()" style="background:var(--medio);border:1px solid #444;border-radius:8px;padding:8px 16px;color:var(--texto);font-size:16px;cursor:pointer;">◀</button>
     <span id="graf-semana-rango" style="font-size:12px;color:var(--gris);text-align:center;min-width:160px;"></span>
     <button onclick="semanaSiguiente()" id="btn-semana-sig" style="background:var(--medio);border:1px solid #444;border-radius:8px;padding:8px 16px;color:var(--texto);font-size:16px;cursor:pointer;">▶</button>
   </div>
 
-  <!-- Resumen rápido de la semana -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
     <div class="total-card" style="border-color:var(--verde);"><div class="label">💰 Venta Total</div><div class="valor" style="color:var(--verde);font-size:22px;" id="graf-total-semana">$0</div></div>
     <div class="total-card" style="border-color:var(--rojo);"><div class="label">💸 Gastos</div><div class="valor" style="color:var(--rojo);font-size:22px;" id="graf-gastos-semana-top">$0</div></div>
@@ -365,14 +418,12 @@
     <div class="total-card" style="border-color:var(--morado);"><div class="label">🏆 Mejor día</div><div class="valor" style="color:var(--morado);font-size:14px;line-height:1.3;" id="graf-mejor-dia">—</div></div>
   </div>
 
-  <!-- Gráfica 1: Total vendido por día (Bruto) -->
   <div class="resumen-box">
     <h3>📆 ¿Cuánto vendiste cada día?</h3>
     <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Venta bruta de lunes a domingo. El más alto se resalta.</p>
     <canvas id="chart-total-dia" height="200"></canvas>
   </div>
 
-  <!-- Gráfica 2: De dónde viene el dinero (canal unificado) -->
   <div class="resumen-box">
     <h3>📊 ¿De dónde viene el dinero?</h3>
     <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Efectivo · Tarjeta · Plataformas (Didi/Rappi/Uber) · Redes (FB/WA)</p>
@@ -380,21 +431,18 @@
     <div id="resumen-canal" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div>
   </div>
 
-  <!-- Gráfica 3: Productos más vendidos -->
   <div class="resumen-box">
     <h3>🏆 ¿Qué se vende más?</h3>
     <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Top 8 productos por dinero generado esta semana.</p>
     <canvas id="chart-productos" height="260"></canvas>
   </div>
 
-  <!-- Gráfica 4: Por hora -->
   <div class="resumen-box">
     <h3>🕐 ¿A qué hora vendes más?</h3>
     <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Pico de ventas por hora del día (3pm–3am).</p>
     <canvas id="chart-horas" height="200"></canvas>
   </div>
 
-  <!-- Gráfica 5: Gastos de la semana -->
   <div class="resumen-box">
     <h3>💸 Gastos de la semana</h3>
     <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Gastos de negocio (salen de inversión) vs personales (salen de tu sueldo).</p>
@@ -402,7 +450,6 @@
     <div id="resumen-gastos-semana" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div>
   </div>
 
-  <!-- Gráfica 6: Inversión de la semana -->
   <div class="resumen-box">
     <h3>📦 ¿Cómo va tu inversión esta semana?</h3>
     <p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-inv-semana">Lo que apartaste para el negocio vs lo que ya gastaste.</p>
@@ -410,14 +457,12 @@
     <div id="resumen-inversion-semana-actual" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
   </div>
 
-  <!-- Gráfica 7: Sueldo de la semana -->
   <div class="resumen-box">
     <h3>💵 ¿Cómo va tu sueldo esta semana?</h3>
     <p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-sueldo-semana">Lo que te toca de sueldo vs lo que ya gastaste de él.</p>
     <canvas id="chart-sueldo-semana-actual" height="200"></canvas>
     <div id="resumen-sueldo-semana-actual" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
   </div>
-
 </div>
 
 <!-- TAB HISTÓRICO -->
@@ -425,7 +470,6 @@
   <div class="dist-header">📊 Histórico General</div>
   <div class="dist-sub">Todas las semanas registradas</div>
 
-  <!-- Resumen acumulado total -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
     <div class="total-card" style="border-color:var(--verde);"><div class="label">💰 Total ventas</div><div class="valor" style="color:var(--verde);font-size:20px;" id="hist-total-ventas">$0</div></div>
     <div class="total-card" style="border-color:var(--amarillo);"><div class="label">📅 Semanas</div><div class="valor" style="color:var(--amarillo);font-size:20px;" id="hist-total-semanas">0</div></div>
@@ -433,14 +477,12 @@
     <div class="total-card" style="border-color:var(--amarillo);"><div class="label">📦 Inv. disponible</div><div class="valor" style="color:var(--amarillo);font-size:20px;" id="hist-total-inv">$0</div></div>
   </div>
 
-  <!-- Gráfica: Ventas por semana -->
   <div class="resumen-box">
     <h3>📈 ¿Cuánto vendiste cada semana?</h3>
     <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Venta bruta de todas las semanas registradas.</p>
     <canvas id="chart-hist-ventas" height="220"></canvas>
   </div>
 
-  <!-- Gráfica: Inversión histórica -->
   <div class="resumen-box">
     <h3>📦 Inversión semana por semana</h3>
     <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Lo que juntaste para el negocio vs lo que gastaste en él. Línea verde = lo que queda.</p>
@@ -448,7 +490,6 @@
     <div id="resumen-inversion-historico" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
   </div>
 
-  <!-- Gráfica: Sueldo histórico -->
   <div class="resumen-box">
     <h3>💵 Sueldo semana por semana</h3>
     <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Sueldo generado vs gastos personales. La línea verde es lo que te quedó.</p>
@@ -456,10 +497,21 @@
     <div id="resumen-sueldo-historico" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div>
   </div>
 
-  <!-- Tabla resumen por semana -->
   <div class="resumen-box">
     <h3>📋 Resumen por semana</h3>
     <div id="hist-tabla-semanas" style="font-size:12px;"></div>
+  </div>
+</div>
+
+<!-- TAB PRECIOS -->
+<div class="seccion" id="tab-precios">
+  <div class="dist-header">🏷️ Editar Precios</div>
+  <div class="dist-sub">Cambia el precio de referencia de cada producto</div>
+  <div class="resumen-box">
+    <h3>Precios de referencia</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:14px;line-height:1.6;">Los cambios se guardan automáticamente y se reflejan en los botones de venta.</p>
+    <div class="precios-grid" id="precios-lista"></div>
+    <button onclick="resetearPrecios()" style="width:100%;margin-top:14px;background:transparent;border:1px solid #444;border-radius:8px;padding:12px;color:var(--gris);font-size:13px;cursor:pointer;">↩️ Restaurar precios originales</button>
   </div>
 </div>
 
@@ -522,6 +574,17 @@
     <div class="btn-metodo" onclick="selMetodo('facebook')" id="m-facebook" style="color:#1877f2;border-color:#1877f2;">📘 Facebook</div>
     <div class="btn-metodo" onclick="selMetodo('whatsapp')" id="m-whatsapp" style="color:#25d366;border-color:#25d366;">💬 WhatsApp</div>
   </div>
+
+  <!-- CAMPO DE VUELTO (solo efectivo) -->
+  <div class="vuelto-box" id="vuelto-box" style="display:none;">
+    <label>💵 ¿Con cuánto paga el cliente?</label>
+    <input type="number" class="vuelto-input" id="vuelto-pago" inputmode="decimal" placeholder="$0.00" oninput="calcularVuelto()">
+    <div class="vuelto-resultado">
+      <span class="vuelto-label">Vuelto a regresar:</span>
+      <span class="vuelto-monto" id="vuelto-monto">$0.00</span>
+    </div>
+  </div>
+
   <button class="btn-cobrar" onclick="cobrarTicket()">💰 COBRAR TICKET</button>
   <button onclick="abrirGuardarMesa()" style="width:100%;margin-top:8px;background:var(--medio);border:2px solid var(--amarillo);border-radius:10px;padding:13px;color:var(--amarillo);font-size:14px;font-weight:700;cursor:pointer;">🪑 Guardar como Mesa (cliente come aquí)</button>
   <button class="btn-cancelar" onclick="cancelarTicket()" style="width:100%;margin-top:8px;">✕ Cancelar ticket</button>
@@ -532,7 +595,6 @@
   <div class="dist-header">💾 Respaldo de Datos</div>
   <div class="dist-sub">Exporta e importa tus datos para no perderlos</div>
 
-  <!-- EXPORTAR -->
   <div class="resumen-box" style="margin-bottom:14px;">
     <h3 style="color:var(--verde);">📤 Exportar a Excel</h3>
     <p style="font-size:12px;color:var(--gris);margin-bottom:14px;line-height:1.6;">Selecciona el rango de fechas que quieres exportar. Se descargarán tus ventas y gastos en CSV (abre en Excel) y un archivo de respaldo JSON.</p>
@@ -561,7 +623,6 @@
     <div id="backup-export-info" style="font-size:11px;color:var(--gris);text-align:center;margin-top:8px;"></div>
   </div>
 
-  <!-- IMPORTAR -->
   <div class="resumen-box">
     <h3 style="color:var(--amarillo);">📂 Importar desde Excel</h3>
     <p style="font-size:12px;color:var(--gris);margin-bottom:6px;line-height:1.6;">Sube el archivo de respaldo <b>.json</b> que descargaste para restaurar tus datos.</p>
@@ -598,6 +659,18 @@
   </div>
 </div>
 
+<!-- MODAL CONFIRMACIÓN CERRAR DÍA -->
+<div class="overlay" id="overlay-confirm" onclick="cerrarConfirm(event)">
+  <div class="modal-confirm">
+    <h2>⚠️ Cerrar el Día</h2>
+    <p>¿Seguro que quieres cerrar el día?<br>Esta acción no se puede deshacer.</p>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="document.getElementById('overlay-confirm').classList.remove('visible')">Cancelar</button>
+      <button class="btn-confirmar" onclick="confirmarCerrarDia()">🔒 Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -608,16 +681,78 @@
   let productoActual = '', precioRef = 0, metodoSeleccionado = '';
   let ticketItems = [];
   let tipoGastoSeleccionado = 'negocio';
-  let mesaActiva = null; // id de la mesa que se está editando, o null si es ticket rápido
-  
-  // Guardar fecha de apertura del día (primer uso del día)
+  let mesaActiva = null;
+
+  // ── PRECIOS EDITABLES ──
+  const PRECIOS_DEFAULT = {
+    'Ham Sola': 79,
+    'Ham c/ Papas': 99,
+    'HD Sencillo': 25,
+    'HD Preparado': 39,
+    'Ord Sencilla': 69,
+    'Ord Preparada': 99,
+    'Ord Papas': 39,
+    'Coca Cola 600ml': 25,
+    'Pepsi 600ml': 20,
+    'Fresca 600ml': 23,
+    'Otro': 0
+  };
+  let preciosEditables = JSON.parse(localStorage.getItem('bajon_precios') || 'null') || { ...PRECIOS_DEFAULT };
+
+  function guardarPrecios() { localStorage.setItem('bajon_precios', JSON.stringify(preciosEditables)); }
+
+  function getPrecio(nombre) {
+    return preciosEditables[nombre] !== undefined ? preciosEditables[nombre] : (PRECIOS_DEFAULT[nombre] || 0);
+  }
+
+  function renderPrecios() {
+    const lista = document.getElementById('precios-lista');
+    lista.innerHTML = Object.keys(PRECIOS_DEFAULT).filter(n => n !== 'Otro').map(nombre => `
+      <div class="precio-item">
+        <span class="precio-nombre">${nombre}</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:12px;color:var(--gris);">$</span>
+          <input class="precio-input" type="number" min="0" value="${getPrecio(nombre)}"
+            oninput="actualizarPrecio('${nombre}', this.value)"
+            inputmode="decimal">
+        </div>
+      </div>`).join('');
+  }
+
+  function actualizarPrecio(nombre, valor) {
+    const v = parseFloat(valor);
+    if (!isNaN(v) && v >= 0) {
+      preciosEditables[nombre] = v;
+      guardarPrecios();
+      // Actualizar etiqueta en tab venta
+      const el = document.getElementById('pref-' + nombre);
+      if (el) el.textContent = 'Ref: $' + v;
+    }
+  }
+
+  function resetearPrecios() {
+    if (!confirm('¿Restaurar todos los precios a los valores originales?')) return;
+    preciosEditables = { ...PRECIOS_DEFAULT };
+    guardarPrecios();
+    renderPrecios();
+    actualizarEtiquetasPrecios();
+    mostrarToast('✅ Precios restaurados');
+  }
+
+  function actualizarEtiquetasPrecios() {
+    Object.keys(PRECIOS_DEFAULT).forEach(nombre => {
+      const el = document.getElementById('pref-' + nombre);
+      if (el) el.textContent = 'Ref: $' + getPrecio(nombre);
+    });
+  }
+
+  // Guardar fecha de apertura del día
   const HOY = new Date().toLocaleDateString('es-MX', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
   if (!localStorage.getItem('bajon_fecha_apertura')) {
     localStorage.setItem('bajon_fecha_apertura', HOY);
   }
   let fechaApertura = localStorage.getItem('bajon_fecha_apertura') || HOY;
 
-  // Fecha header
   const ahora = new Date();
   document.getElementById('fechaHeader').innerHTML =
     ahora.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}) + '<br>' +
@@ -640,10 +775,11 @@
     if(tab==='distribucion') renderDistribucion();
     if(tab==='graficas') { renderGraficas(); }
     if(tab==='historico') { renderGraficasHistoricas(); }
+    if(tab==='precios') { renderPrecios(); }
   }
 
-  // ── TECLADO NUMÉRICO ──
-  let numpadFoco = 'precio'; // 'cant' o 'precio'
+  // ── TECLADO NUMÉRICO (modal venta) ──
+  let numpadFoco = 'precio';
   let numpadCantStr = '1';
   let numpadPrecioStr = '';
 
@@ -662,21 +798,41 @@
       if (!str.includes('.')) str += '.';
     } else {
       if (str === '0' || str === '') str = key;
-      else if (str === '1' && isCant && key !== '.') str = key; // reemplaza el 1 inicial en cant
+      else if (str === '1' && isCant && key !== '.') str = key;
       else str += key;
     }
     if (isCant) { numpadCantStr = str; document.getElementById('numpad-cant-display').textContent = str || '0'; }
     else { numpadPrecioStr = str; document.getElementById('numpad-precio-display').textContent = str ? '$' + str : '0'; }
   }
 
-  function abrirModal(nombre, precio) {
-    productoActual = nombre; precioRef = precio;
+  // ── NUMPAD GASTOS ──
+  let gastoMontoStr = '';
+
+  function focusGastoNumpad() {
+    document.getElementById('gasto-monto-display').style.borderColor = 'var(--amarillo)';
+  }
+
+  function gastoNumpadPress(key) {
+    if (key === 'DEL') {
+      gastoMontoStr = gastoMontoStr.length > 1 ? gastoMontoStr.slice(0, -1) : '';
+    } else if (key === '.') {
+      if (!gastoMontoStr.includes('.')) gastoMontoStr += '.';
+    } else {
+      if (gastoMontoStr === '0' || gastoMontoStr === '') gastoMontoStr = key;
+      else gastoMontoStr += key;
+    }
+    document.getElementById('gasto-monto-display').textContent = gastoMontoStr ? '$' + gastoMontoStr : '$0';
+  }
+
+  function abrirModal(nombre, key) {
+    productoActual = nombre;
+    precioRef = getPrecio(key || nombre);
     document.getElementById('modal-titulo').textContent = nombre;
-    document.getElementById('modal-sugerido').textContent = precio > 0 ? 'Precio sugerido: $' + precio : 'Ingresa el precio';
+    document.getElementById('modal-sugerido').textContent = precioRef > 0 ? 'Precio sugerido: $' + precioRef : 'Ingresa el precio';
     numpadCantStr = '1';
-    numpadPrecioStr = precio > 0 ? String(precio) : '';
+    numpadPrecioStr = precioRef > 0 ? String(precioRef) : '';
     document.getElementById('numpad-cant-display').textContent = '1';
-    document.getElementById('numpad-precio-display').textContent = precio > 0 ? '$' + precio : '0';
+    document.getElementById('numpad-precio-display').textContent = precioRef > 0 ? '$' + precioRef : '0';
     numpadFoco = 'precio';
     document.getElementById('numpad-cant-display').style.borderColor = '#444';
     document.getElementById('numpad-precio-display').style.borderColor = 'var(--amarillo)';
@@ -686,17 +842,36 @@
   function cerrarModal(e){ if(e.target===document.getElementById('overlay')) cerrarModalBtn(); }
   function cerrarModalBtn(){ document.getElementById('overlay').classList.remove('visible'); }
   function cerrarHistModal(e){ if(e.target===document.getElementById('overlay-hist')) document.getElementById('overlay-hist').classList.remove('visible'); }
+  function cerrarConfirm(e){ if(e.target===document.getElementById('overlay-confirm')) document.getElementById('overlay-confirm').classList.remove('visible'); }
 
   function selMetodo(metodo) {
-    metodoSeleccionado=metodo;
-    document.querySelectorAll('.btn-metodo').forEach(b=>b.classList.remove('selected'));
-    const el=document.getElementById('m-'+metodo);
-    if(el){
+    metodoSeleccionado = metodo;
+    document.querySelectorAll('.btn-metodo').forEach(b => b.classList.remove('selected'));
+    const el = document.getElementById('m-' + metodo);
+    if (el) {
       el.classList.add('selected');
-      // Colores especiales para redes sociales
-      if(metodo==='facebook') { el.style.borderColor='#1877f2'; el.style.color='#1877f2'; el.style.background='rgba(24,119,242,0.15)'; }
-      else if(metodo==='whatsapp') { el.style.borderColor='#25d366'; el.style.color='#25d366'; el.style.background='rgba(37,211,102,0.15)'; }
+      if (metodo === 'facebook') { el.style.borderColor='#1877f2'; el.style.color='#1877f2'; el.style.background='rgba(24,119,242,0.15)'; }
+      else if (metodo === 'whatsapp') { el.style.borderColor='#25d366'; el.style.color='#25d366'; el.style.background='rgba(37,211,102,0.15)'; }
     }
+    // Mostrar/ocultar campo de vuelto (efectivo, facebook y whatsapp cobran en cash)
+    const vueltoBox = document.getElementById('vuelto-box');
+    if (['efectivo', 'didi_efectivo', 'facebook', 'whatsapp'].includes(metodo)) {
+      vueltoBox.style.display = 'block';
+      document.getElementById('vuelto-pago').value = '';
+      document.getElementById('vuelto-monto').textContent = '$0.00';
+      document.getElementById('vuelto-monto').className = 'vuelto-monto';
+    } else {
+      vueltoBox.style.display = 'none';
+    }
+  }
+
+  function calcularVuelto() {
+    const total = ticketItems.reduce((s, i) => s + i.precio * i.cant, 0);
+    const pago = parseFloat(document.getElementById('vuelto-pago').value) || 0;
+    const vuelto = pago - total;
+    const el = document.getElementById('vuelto-monto');
+    el.textContent = '$' + Math.abs(vuelto).toFixed(2);
+    el.className = 'vuelto-monto' + (vuelto < 0 ? ' negativo' : '');
   }
 
   function agregarAlTicket() {
@@ -713,7 +888,6 @@
     const preview = document.getElementById('ticket-preview');
     if (!ticketItems.length) { preview.classList.remove('visible'); renderMesas(); return; }
     preview.classList.add('visible');
-    // Mostrar nombre de mesa si hay una activa
     const mesaNombre = mesaActiva !== null ? (mesas.find(m=>m.id===mesaActiva)||{}).nombre : null;
     document.getElementById('ticket-count').textContent = mesaNombre
       ? '🪑 ' + mesaNombre
@@ -727,9 +901,10 @@
         <span class="ti-precio">$${(item.precio * item.cant).toFixed(2)}</span>
         <button class="ti-del" onclick="quitarDelTicket(${item.id})">✕</button>
       </div>`).join('');
-    // Limpiar selección de método
+    // Limpiar selección de método y vuelto
     document.querySelectorAll('.btn-metodo').forEach(b => b.classList.remove('selected'));
     metodoSeleccionado = '';
+    document.getElementById('vuelto-box').style.display = 'none';
     renderMesas();
   }
 
@@ -748,7 +923,6 @@
   // ── MESAS ──
   function abrirGuardarMesa() {
     if (!ticketItems.length) { mostrarToast('⚠️ El ticket está vacío'); return; }
-    // Sugerir nombre automático
     const siguiente = mesas.length + 1;
     document.getElementById('mesa-nombre-input').value = 'Mesa ' + siguiente;
     document.getElementById('overlay-mesa').classList.add('visible');
@@ -762,7 +936,6 @@
     const nombre = document.getElementById('mesa-nombre-input').value.trim();
     if (!nombre) { mostrarToast('⚠️ Ponle un nombre a la mesa'); return; }
     if (mesaActiva !== null) {
-      // Actualizando mesa existente
       const idx = mesas.findIndex(m => m.id === mesaActiva);
       if (idx !== -1) { mesas[idx].items = [...ticketItems]; mesas[idx].nombre = nombre; }
     } else {
@@ -779,23 +952,22 @@
   }
 
   function abrirMesa(id) {
-    // Si hay ticket activo en curso, preguntar
+    // Guardar ticket en curso si hay uno diferente
     if (ticketItems.length > 0 && mesaActiva !== id) {
       if (!confirm('Tienes un ticket en curso. ¿Guardar la mesa actual primero?')) return;
-      // guardar ticket actual como mesa temporal
       const tmpNombre = 'Mesa (sin nombre)';
       mesas.push({ id: Date.now(), nombre: tmpNombre, items: [...ticketItems] });
       guardarMesas();
     }
     const mesa = mesas.find(m => m.id === id);
     if (!mesa) return;
+    // Cargar items de la mesa — se puede seguir agregando productos
     ticketItems = [...mesa.items];
     mesaActiva = id;
     metodoSeleccionado = '';
     renderTicket();
     renderMesas();
-    mostrarToast('🪑 Retomando: ' + mesa.nombre);
-    // Scroll suave al ticket
+    mostrarToast('🪑 Retomando: ' + mesa.nombre + ' — agrega más productos o cobra');
     document.getElementById('ticket-preview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
@@ -830,7 +1002,6 @@
         ticketId
       });
     });
-    // Si era una mesa, eliminarla
     if (mesaActiva !== null) {
       mesas = mesas.filter(m => m.id !== mesaActiva);
       guardarMesas();
@@ -846,22 +1017,20 @@
     renderMesas();
   }
 
-  function confirmarVenta() {
-    // Mantener compatibilidad — ya no se usa directo
-    agregarAlTicket();
-  }
-
   function agregarGasto() {
-    const concepto=document.getElementById('gasto-concepto').value.trim();
-    const monto=parseFloat(document.getElementById('gasto-monto').value);
-    if(!concepto){ mostrarToast('⚠️ Escribe el concepto'); return; }
-    if(!monto||monto<=0){ mostrarToast('⚠️ Ingresa el monto'); return; }
-    const hora=new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-    gastos.push({id:Date.now(),concepto,monto,hora,tipo:tipoGastoSeleccionado});
+    const concepto = document.getElementById('gasto-concepto').value.trim();
+    const monto = parseFloat(gastoMontoStr);
+    if (!concepto) { mostrarToast('⚠️ Escribe el concepto'); return; }
+    if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa el monto'); return; }
+    const hora = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    gastos.push({id:Date.now(), concepto, monto, hora, tipo:tipoGastoSeleccionado});
     guardarGastos();
-    document.getElementById('gasto-concepto').value='';
-    document.getElementById('gasto-monto').value='';
-    renderGastos(); mostrarToast('💸 Gasto registrado');
+    document.getElementById('gasto-concepto').value = '';
+    gastoMontoStr = '';
+    document.getElementById('gasto-monto-display').textContent = '$0';
+    document.getElementById('gasto-monto-display').style.borderColor = 'var(--rojo)';
+    renderGastos();
+    mostrarToast('💸 Gasto registrado');
   }
 
   function eliminarMov(id){ movimientos=movimientos.filter(m=>m.id!==id); guardarMov(); renderMovimientos(); actualizarTotalesRapidos(); }
@@ -872,9 +1041,9 @@
   }
 
   function renderMovimientos() {
-    const cont=document.getElementById('lista-movimientos');
-    if(!movimientos.length){ cont.innerHTML='<div class="empty-state"><div class="icon">📋</div>Aún no hay ventas registradas</div>'; return; }
-    cont.innerHTML=[...movimientos].reverse().map(m=>`
+    const cont = document.getElementById('lista-movimientos');
+    if (!movimientos.length) { cont.innerHTML='<div class="empty-state"><div class="icon">📋</div>Aún no hay ventas registradas</div>'; return; }
+    cont.innerHTML = [...movimientos].reverse().map(m=>`
       <div class="movimiento ${m.metodo}">
         <div class="info"><div class="nombre-mov">${m.producto}</div><div class="detalle-mov">${nombreMetodo(m.metodo)} · ${m.hora}</div></div>
         <div class="monto-mov">$${m.precio.toFixed(2)}</div>
@@ -884,18 +1053,21 @@
   }
 
   function actualizarTotalesRapidos() {
-    const ef=movimientos.filter(m=>['efectivo','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
-    const pl=movimientos.filter(m=>['tarjeta','didi_tarjeta','rappi','uber'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
-    document.getElementById('tot-efectivo').textContent='$'+ef.toFixed(0);
-    document.getElementById('tot-plataformas').textContent='$'+pl.toFixed(0);
+    const ef = movimientos.filter(m=>['efectivo','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
+    const pl = movimientos.filter(m=>['tarjeta','didi_tarjeta','rappi','uber'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
+    document.getElementById('tot-efectivo').textContent = '$'+ef.toFixed(0);
+    document.getElementById('tot-plataformas').textContent = '$'+pl.toFixed(0);
   }
 
   function renderGastos() {
-    const cont=document.getElementById('lista-gastos');
-    if(!gastos.length){ cont.innerHTML='<div class="empty-state"><div class="icon">💸</div>Sin gastos registrados</div>'; return; }
-    cont.innerHTML=[...gastos].reverse().map(g=>`
+    const cont = document.getElementById('lista-gastos');
+    if (!gastos.length) { cont.innerHTML='<div class="empty-state"><div class="icon">💸</div>Sin gastos registrados</div>'; return; }
+    cont.innerHTML = [...gastos].reverse().map(g=>`
       <div class="movimiento gasto">
-        <div class="info">
+        <div class="gasto-check">
+          <input type="checkbox" id="chk-gasto-${g.id}" value="${g.id}">
+        </div>
+        <div class="info" style="margin-left:4px;">
           <div class="nombre-mov">${g.concepto}
             <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin-left:6px;${g.tipo==='personal'?'background:rgba(155,93,229,0.2);color:#9b5de5;':'background:rgba(244,162,97,0.2);color:#f4a261;'}">
               ${g.tipo==='personal'?'🧍 Personal':'📦 Negocio'}
@@ -908,76 +1080,88 @@
       </div>`).join('');
   }
 
+  function copiarGastosSeleccionados() {
+    const checks = document.querySelectorAll('#lista-gastos input[type="checkbox"]:checked');
+    if (!checks.length) { mostrarToast('⚠️ Selecciona al menos un gasto'); return; }
+    const ids = Array.from(checks).map(c => parseInt(c.value));
+    const seleccionados = gastos.filter(g => ids.includes(g.id));
+    const texto = seleccionados.map(g => `${g.concepto}: $${g.monto.toFixed(2)}`).join('\n');
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(texto).then(() => mostrarToast('✓ ' + seleccionados.length + ' gastos copiados'));
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = texto; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      mostrarToast('✓ ' + seleccionados.length + ' gastos copiados');
+    }
+  }
+
   function calcularTotales() {
     const tots={efectivo:0,tarjeta:0,didi_efectivo:0,didi_tarjeta:0,rappi:0,uber:0,facebook:0,whatsapp:0};
-    movimientos.forEach(m=>{
-      const k = (m.metodo==='facebook'||m.metodo==='whatsapp') ? m.metodo : m.metodo;
-      tots[k]=(tots[k]||0)+m.precio;
-    });
-    // facebook y whatsapp cuentan como efectivo para distribución/resumen en mano
+    movimientos.forEach(m=>{ tots[m.metodo]=(tots[m.metodo]||0)+m.precio; });
     const totalGasNeg = gastos.filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
     const totalGasPer = gastos.filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
     const totalGastos = totalGasNeg + totalGasPer;
     const totalVenta = movimientos.reduce((s,m)=>s+m.precio,0);
-    return{...tots,
-      totalGastos,
-      totalGastosNegocio: totalGasNeg,
-      totalGastosPersonal: totalGasPer,
-      totalVenta};
+    return{...tots, totalGastos, totalGastosNegocio:totalGasNeg, totalGastosPersonal:totalGasPer, totalVenta};
   }
 
   function renderResumen() {
-    const t=calcularTotales();
+    const t = calcularTotales();
     document.getElementById('res-efectivo').textContent='$'+t.efectivo.toFixed(2);
     document.getElementById('res-tarjeta').textContent='$'+t.tarjeta.toFixed(2);
     document.getElementById('res-didi-ef').textContent='$'+t.didi_efectivo.toFixed(2);
     document.getElementById('res-didi-tar').textContent='$'+t.didi_tarjeta.toFixed(2);
     document.getElementById('res-rappi').textContent='$'+t.rappi.toFixed(2);
     document.getElementById('res-uber').textContent='$'+t.uber.toFixed(2);
-    // Mostrar Facebook y WhatsApp si existen
-    const fbEl=document.getElementById('res-facebook');
-    if(fbEl) fbEl.textContent='$'+t.facebook.toFixed(2);
-    const waEl=document.getElementById('res-whatsapp');
-    if(waEl) waEl.textContent='$'+t.whatsapp.toFixed(2);
+    const fbEl=document.getElementById('res-facebook'); if(fbEl) fbEl.textContent='$'+t.facebook.toFixed(2);
+    const waEl=document.getElementById('res-whatsapp'); if(waEl) waEl.textContent='$'+t.whatsapp.toFixed(2);
     document.getElementById('res-gastos').textContent='-$'+t.totalGastos.toFixed(2);
     document.getElementById('res-total').textContent='$'+t.totalVenta.toFixed(2);
-    // En mano = efectivo físico (efectivo + didi_efectivo + facebook + whatsapp) MENOS gastos
     const brutoFisico = t.efectivo + t.didi_efectivo + t.facebook + t.whatsapp;
     const enMano = Math.max(0, brutoFisico - t.totalGastos);
-    const elMano=document.getElementById('res-en-mano');
-    elMano.textContent='$'+enMano.toFixed(2);
+    const elMano = document.getElementById('res-en-mano');
+    elMano.textContent = '$'+enMano.toFixed(2);
     elMano.style.color = enMano > 0 ? 'var(--verde)' : 'var(--rojo)';
-    // Detalle adicional
-    const detEl=document.getElementById('res-en-mano-det');
-    if(detEl){
-      detEl.textContent = `(Efectivo $${brutoFisico.toFixed(2)} − Gastos $${t.totalGastos.toFixed(2)})`;
-    }
+    const detEl = document.getElementById('res-en-mano-det');
+    if(detEl) detEl.textContent = `(Efectivo $${brutoFisico.toFixed(2)} − Gastos $${t.totalGastos.toFixed(2)})`;
   }
 
-  function cerrarDia() {
-    if(!movimientos.length){ mostrarToast('⚠️ No hay ventas registradas hoy'); return; }
-    if(!confirm('¿Cerrar el día? Los datos se guardarán en el historial y empezará un día nuevo.')) return;
+  // ── CERRAR DÍA CON CONFIRMACIÓN ──
+  function pedirCerrarDia() {
+    if (!movimientos.length) { mostrarToast('⚠️ No hay ventas registradas hoy'); return; }
+    document.getElementById('overlay-confirm').classList.add('visible');
+  }
 
-    const t=calcularTotales();
-    const diaGuardado={
-      id:Date.now(), fecha:fechaApertura,
-      totales:t, movimientos:[...movimientos], gastos:[...gastos]
+  function confirmarCerrarDia() {
+    document.getElementById('overlay-confirm').classList.remove('visible');
+    const t = calcularTotales();
+    const diaGuardado = {
+      id: Date.now(), fecha: fechaApertura,
+      totales: t, movimientos:[...movimientos], gastos:[...gastos]
     };
     historial.unshift(diaGuardado);
     guardarHistorial();
-
-    // Limpiar día actual
     movimientos=[]; gastos=[]; ticketItems=[];
     guardarMov(); guardarGastos();
-    localStorage.removeItem('bajon_fecha_apertura'); // nueva fecha cuando abra mañana
+    localStorage.removeItem('bajon_fecha_apertura');
     renderResumen(); actualizarTotalesRapidos(); renderTicket();
     mostrarToast('✅ Día cerrado y guardado');
   }
 
   function renderHistorial() {
-    const cont=document.getElementById('lista-historial');
-    if(!historial.length){ cont.innerHTML='<div class="empty-state"><div class="icon">📅</div>Aún no hay días cerrados</div>'; return; }
-    cont.innerHTML=historial.map(d=>`
+    const cont = document.getElementById('lista-historial');
+    const busqueda = (document.getElementById('historial-busqueda')?.value || '').toLowerCase().trim();
+    let datos = historial;
+    if (busqueda) {
+      datos = historial.filter(d => d.fecha.toLowerCase().includes(busqueda));
+    }
+    if (!datos.length) {
+      cont.innerHTML = busqueda
+        ? '<div class="empty-state"><div class="icon">🔍</div>No se encontraron días con "' + busqueda + '"</div>'
+        : '<div class="empty-state"><div class="icon">📅</div>Aún no hay días cerrados</div>';
+      return;
+    }
+    cont.innerHTML = datos.map(d=>`
       <div class="dia-card">
         <div class="dia-header">
           <div style="display:flex;align-items:center;gap:8px;flex:1;">
@@ -1011,12 +1195,8 @@
   }
 
   function refrescarGraficasSiActivas() {
-    if (document.getElementById('tab-graficas').classList.contains('active')) {
-      renderGraficas();
-    }
-    if (document.getElementById('tab-historico') && document.getElementById('tab-historico').classList.contains('active')) {
-      renderGraficasHistoricas();
-    }
+    if (document.getElementById('tab-graficas').classList.contains('active')) renderGraficas();
+    if (document.getElementById('tab-historico') && document.getElementById('tab-historico').classList.contains('active')) renderGraficasHistoricas();
   }
 
   function recalcularTotalesDia(dia) {
@@ -1028,14 +1208,14 @@
   }
 
   function verDetalleDia(id) {
-    const dia=historial.find(d=>d.id===id);
-    if(!dia) return;
+    const dia = historial.find(d=>d.id===id);
+    if (!dia) return;
     renderModalDetalleDia(dia);
     document.getElementById('overlay-hist').classList.add('visible');
   }
 
   function renderModalDetalleDia(dia) {
-    const movHtml=dia.movimientos.length
+    const movHtml = dia.movimientos.length
       ? [...dia.movimientos].reverse().map(m=>`
         <div class="movimiento ${m.metodo}" style="margin-bottom:6px">
           <div class="info"><div class="nombre-mov" style="font-size:13px">${m.producto}</div><div class="detalle-mov">${nombreMetodo(m.metodo)} · ${m.hora}</div></div>
@@ -1044,7 +1224,7 @@
         </div>`).join('')
       : '<div style="color:var(--gris);font-size:13px">Sin ventas</div>';
 
-    const gasHtml=(dia.gastos||[]).map(g=>`
+    const gasHtml = (dia.gastos||[]).map(g=>`
       <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3e;font-size:13px">
         <span style="color:var(--gris);flex:1">${g.concepto} <span style="font-size:10px;padding:1px 6px;border-radius:8px;${g.tipo==='personal'?'background:rgba(155,93,229,0.2);color:#9b5de5':'background:rgba(244,162,97,0.2);color:#f4a261'}">${g.tipo==='personal'?'Personal':'Negocio'}</span></span>
         <span style="color:var(--rojo);font-weight:700;margin-right:8px">$${g.monto.toFixed(2)}</span>
@@ -1184,20 +1364,7 @@
   function copiarResumen() {
     const t=calcularTotales();
     const fecha=new Date().toLocaleDateString('es-MX');
-    const texto=`EL BAJÓN · ${fecha}
-──────────────────────
-💵 Efectivo:      $${t.efectivo.toFixed(2)}
-💳 Tarjeta:       $${t.tarjeta.toFixed(2)}
-🚗 Didi Efectivo: $${t.didi_efectivo.toFixed(2)}
-🚗 Didi Tarjeta:  $${t.didi_tarjeta.toFixed(2)}
-🛵 Rappi Tarjeta: $${t.rappi.toFixed(2)}
-🚙 Uber Tarjeta:  $${t.uber.toFixed(2)}
-──────────────────────
-💸 Gastos:        $${t.totalGastos.toFixed(2)}
-✅ VENTA TOTAL:   $${t.totalVenta.toFixed(2)}
-──────────────────────
-Detalle gastos:
-${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (sin gastos)'}`;
+    const texto=`EL BAJÓN · ${fecha}\n──────────────────────\n💵 Efectivo:      $${t.efectivo.toFixed(2)}\n💳 Tarjeta:       $${t.tarjeta.toFixed(2)}\n🚗 Didi Efectivo: $${t.didi_efectivo.toFixed(2)}\n🚗 Didi Tarjeta:  $${t.didi_tarjeta.toFixed(2)}\n🛵 Rappi Tarjeta: $${t.rappi.toFixed(2)}\n🚙 Uber Tarjeta:  $${t.uber.toFixed(2)}\n──────────────────────\n💸 Gastos:        $${t.totalGastos.toFixed(2)}\n✅ VENTA TOTAL:   $${t.totalVenta.toFixed(2)}\n──────────────────────\nDetalle gastos:\n${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (sin gastos)'}`;
     if(navigator.clipboard){
       navigator.clipboard.writeText(texto).then(()=>mostrarToast('✓ Copiado al portapapeles'));
     } else {
@@ -1218,26 +1385,26 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     const btnNeg = document.getElementById('btn-tipo-negocio');
     const btnPer = document.getElementById('btn-tipo-personal');
     if (tipo === 'negocio') {
-      btnNeg.style.borderColor = 'var(--amarillo)'; btnNeg.style.background = 'rgba(244,162,97,0.15)'; btnNeg.style.color = 'var(--amarillo)';
-      btnPer.style.borderColor = '#444'; btnPer.style.background = 'transparent'; btnPer.style.color = 'var(--gris)';
+      btnNeg.style.borderColor='var(--amarillo)'; btnNeg.style.background='rgba(244,162,97,0.15)'; btnNeg.style.color='var(--amarillo)';
+      btnPer.style.borderColor='#444'; btnPer.style.background='transparent'; btnPer.style.color='var(--gris)';
     } else {
-      btnPer.style.borderColor = 'var(--morado)'; btnPer.style.background = 'rgba(155,93,229,0.15)'; btnPer.style.color = 'var(--morado)';
-      btnNeg.style.borderColor = '#444'; btnNeg.style.background = 'transparent'; btnNeg.style.color = 'var(--gris)';
+      btnPer.style.borderColor='var(--morado)'; btnPer.style.background='rgba(155,93,229,0.15)'; btnPer.style.color='var(--morado)';
+      btnNeg.style.borderColor='#444'; btnNeg.style.background='transparent'; btnNeg.style.color='var(--gris)';
     }
   }
 
   actualizarTotalesRapidos();
+  actualizarEtiquetasPrecios();
   selTipoGasto('negocio');
   renderMesas();
 
   // ─── GRÁFICAS ────────────────────────────────────────────────────────────────
-  // semanaOffset: 0 = semana actual, -1 = semana anterior, etc.
   let semanaOffset = 0;
   let grafCharts = {};
 
   function getLunesDomingo(offset) {
     const hoy = new Date();
-    const diaSemana = hoy.getDay(); // 0=dom, 1=lun...
+    const diaSemana = hoy.getDay();
     const diffLunes = (diaSemana === 0 ? -6 : 1 - diaSemana);
     const lunes = new Date(hoy);
     lunes.setDate(hoy.getDate() + diffLunes + offset * 7);
@@ -1258,12 +1425,10 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
   function getMovimientosSemana(offset) {
     const { lunes, domingo } = getLunesDomingo(offset);
     const movSemana = [];
-    // Día actual (si entra en el rango de la semana seleccionada)
     const hoyDate = new Date();
     if (hoyDate >= lunes && hoyDate <= domingo) {
       movimientos.forEach(m => movSemana.push({ ...m, _fecha: new Date(hoyDate) }));
     }
-    // Historial cerrado
     historial.forEach(dia => {
       const fecha = parseFechaHistorial(dia.fecha);
       if (fecha && fecha >= lunes && fecha <= domingo) {
@@ -1289,32 +1454,18 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     return gastosSemana;
   }
 
-  function semanaAnterior() {
-    semanaOffset--;
-    renderGraficas();
-  }
+  function semanaAnterior() { semanaOffset--; renderGraficas(); }
+  function semanaSiguiente() { if (semanaOffset < 0) { semanaOffset++; renderGraficas(); } }
 
-  function semanaSiguiente() {
-    if (semanaOffset < 0) { semanaOffset++; renderGraficas(); }
-  }
-
-  function fmtFecha(d) {
-    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
-  }
-
-  function destroyChart(id) {
-    if (grafCharts[id]) { grafCharts[id].destroy(); delete grafCharts[id]; }
-  }
+  function fmtFecha(d) { return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }); }
+  function destroyChart(id) { if (grafCharts[id]) { grafCharts[id].destroy(); delete grafCharts[id]; } }
 
   function renderGraficas() {
     const { movs, lunes, domingo } = getMovimientosSemana(semanaOffset);
     const gastosSem = getGastosSemana(semanaOffset);
 
-    // Labels de semana
     const esActual = semanaOffset === 0;
-    document.getElementById('graf-semana-label').textContent = esActual
-      ? 'Semana actual'
-      : `Hace ${Math.abs(semanaOffset)} semana${Math.abs(semanaOffset) > 1 ? 's' : ''}`;
+    document.getElementById('graf-semana-label').textContent = esActual ? 'Semana actual' : `Hace ${Math.abs(semanaOffset)} semana${Math.abs(semanaOffset) > 1 ? 's' : ''}`;
     document.getElementById('graf-semana-rango').textContent = fmtFecha(lunes) + ' – ' + fmtFecha(domingo);
     const btnSig = document.getElementById('btn-semana-sig');
     btnSig.style.opacity = semanaOffset < 0 ? '1' : '0.3';
@@ -1323,13 +1474,11 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     const cf = { color: '#d0d0e0', gridColor: 'rgba(255,255,255,0.07)' };
     const diasNom = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 
-    // ── RESUMEN RÁPIDO ──
     const totalVentaSem = movs.reduce((s,m) => s + m.precio, 0);
     const totalGastosSem = gastosSem.reduce((s,g) => s + g.monto, 0);
     document.getElementById('graf-total-semana').textContent = '$' + totalVentaSem.toFixed(0);
     document.getElementById('graf-gastos-semana-top').textContent = '$' + totalGastosSem.toFixed(0);
 
-    // Días con venta y mejor día
     const totalPorDia = [0,0,0,0,0,0,0];
     movs.forEach(m => {
       if (!m._fecha) return;
@@ -1346,30 +1495,16 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
       document.getElementById('graf-mejor-dia').textContent = '—';
     }
 
-    // ── 1. TOTAL VENDIDO POR DÍA ──
     destroyChart('total-dia');
     grafCharts['total-dia'] = new Chart(document.getElementById('chart-total-dia'), {
       type: 'bar',
       data: {
         labels: diasNom,
-        datasets: [{
-          data: totalPorDia,
-          backgroundColor: totalPorDia.map(v => v > 0 && v === maxVal ? 'rgba(244,162,97,0.9)' : 'rgba(244,162,97,0.3)'),
-          borderColor: totalPorDia.map(v => v > 0 && v === maxVal ? '#f4a261' : 'rgba(244,162,97,0.5)'),
-          borderWidth: 2, borderRadius: 8
-        }]
+        datasets: [{ data: totalPorDia, backgroundColor: totalPorDia.map(v => v > 0 && v === maxVal ? 'rgba(244,162,97,0.9)' : 'rgba(244,162,97,0.3)'), borderColor: totalPorDia.map(v => v > 0 && v === maxVal ? '#f4a261' : 'rgba(244,162,97,0.5)'), borderWidth: 2, borderRadius: 8 }]
       },
-      options: { responsive:true,
-        plugins:{ legend:{display:false},
-          tooltip:{ callbacks:{ label: ctx => 'Total: $' + ctx.raw.toFixed(2) } } },
-        scales: {
-          x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
-          y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} }
-        }
-      }
+      options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => 'Total: $' + ctx.raw.toFixed(2) } } }, scales: { x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
     });
 
-    // ── 2. DE DÓNDE VIENE EL DINERO (dona unificada) ──
     const canalEfectivo   = movs.filter(m=>m.metodo==='efectivo'||m.metodo==='didi_efectivo').reduce((s,m)=>s+m.precio,0);
     const canalTarjeta    = movs.filter(m=>m.metodo==='tarjeta').reduce((s,m)=>s+m.precio,0);
     const canalPlataforma = movs.filter(m=>['didi_tarjeta','rappi','uber'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
@@ -1378,79 +1513,30 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     destroyChart('canal');
     grafCharts['canal'] = new Chart(document.getElementById('chart-canal'), {
       type: 'doughnut',
-      data: {
-        labels: ['💵 Efectivo', '💳 Tarjeta', '📱 Plataformas', '📲 Redes Sociales'],
-        datasets: [{
-          data: [canalEfectivo, canalTarjeta, canalPlataforma, canalRedes],
-          backgroundColor: ['rgba(46,196,182,0.8)','rgba(155,93,229,0.8)','rgba(244,162,97,0.8)','rgba(24,119,242,0.8)'],
-          borderColor: ['#2ec4b6','#9b5de5','#f4a261','#1877f2'],
-          borderWidth: 2
-        }]
-      },
-      options: { responsive:true, cutout:'55%',
-        plugins:{ legend:{ position:'bottom', labels:{ color:cf.color, font:{size:12}, padding:12, boxWidth:14 } },
-          tooltip:{ callbacks:{ label: ctx => ctx.label + ': $' + ctx.raw.toFixed(2) + (canalTotal>0?' ('+Math.round(ctx.raw/canalTotal*100)+'%)':'') } } } }
+      data: { labels: ['💵 Efectivo', '💳 Tarjeta', '📱 Plataformas', '📲 Redes Sociales'], datasets: [{ data: [canalEfectivo, canalTarjeta, canalPlataforma, canalRedes], backgroundColor: ['rgba(46,196,182,0.8)','rgba(155,93,229,0.8)','rgba(244,162,97,0.8)','rgba(24,119,242,0.8)'], borderColor: ['#2ec4b6','#9b5de5','#f4a261','#1877f2'], borderWidth: 2 }] },
+      options: { responsive:true, cutout:'55%', plugins:{ legend:{ position:'bottom', labels:{ color:cf.color, font:{size:12}, padding:12, boxWidth:14 } }, tooltip:{ callbacks:{ label: ctx => ctx.label + ': $' + ctx.raw.toFixed(2) + (canalTotal>0?' ('+Math.round(ctx.raw/canalTotal*100)+'%)':'') } } } }
     });
     const rCan = document.getElementById('resumen-canal');
     if (canalTotal > 0) {
       const pct = v => Math.round(v/canalTotal*100) + '%';
-      rCan.innerHTML = [
-        ['#2ec4b6','💵 Efectivo', canalEfectivo],
-        ['#9b5de5','💳 Tarjeta', canalTarjeta],
-        ['#f4a261','📱 Plataformas (Didi/Rappi/Uber)', canalPlataforma],
-        ['#1877f2','📲 Redes (FB/WA)', canalRedes]
-      ].map(([c,lbl,v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3e;">
-        <span style="color:${c}">${lbl}</span>
-        <span style="color:${c};font-weight:700;">$${v.toFixed(0)} <span style="opacity:.6;font-size:10px">${pct(v)}</span></span>
-      </div>`).join('');
-    } else {
-      rCan.innerHTML = '<span style="color:var(--gris)">Sin ventas esta semana</span>';
-    }
+      rCan.innerHTML = [['#2ec4b6','💵 Efectivo', canalEfectivo],['#9b5de5','💳 Tarjeta', canalTarjeta],['#f4a261','📱 Plataformas (Didi/Rappi/Uber)', canalPlataforma],['#1877f2','📲 Redes (FB/WA)', canalRedes]].map(([c,lbl,v]) => `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3e;"><span style="color:${c}">${lbl}</span><span style="color:${c};font-weight:700;">$${v.toFixed(0)} <span style="opacity:.6;font-size:10px">${pct(v)}</span></span></div>`).join('');
+    } else { rCan.innerHTML = '<span style="color:var(--gris)">Sin ventas esta semana</span>'; }
 
-    // ── 3. PRODUCTOS MÁS VENDIDOS ──
     const prodMap = {};
-    movs.forEach(m => {
-      const key = m.producto || 'Otro';
-      if (!prodMap[key]) prodMap[key] = 0;
-      prodMap[key] += m.precio;
-    });
+    movs.forEach(m => { const key = m.producto || 'Otro'; if (!prodMap[key]) prodMap[key] = 0; prodMap[key] += m.precio; });
     const prodSorted = Object.entries(prodMap).sort((a,b) => b[1] - a[1]).slice(0,8);
     destroyChart('productos');
     grafCharts['productos'] = new Chart(document.getElementById('chart-productos'), {
       type: 'bar',
-      data: {
-        labels: prodSorted.map(([k]) => k),
-        datasets: [{
-          data: prodSorted.map(([,v]) => v),
-          backgroundColor: 'rgba(230,57,70,0.65)',
-          borderColor: '#e63946',
-          borderWidth: 2, borderRadius: 6
-        }]
-      },
-      options: { indexAxis:'y', responsive:true,
-        plugins:{ legend:{display:false},
-          tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
-        scales: {
-          x:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} },
-          y:{ ticks:{ color:cf.color, font:{size:11} }, grid:{color:cf.gridColor} }
-        }
-      }
+      data: { labels: prodSorted.map(([k]) => k), datasets: [{ data: prodSorted.map(([,v]) => v), backgroundColor: 'rgba(230,57,70,0.65)', borderColor: '#e63946', borderWidth: 2, borderRadius: 6 }] },
+      options: { indexAxis:'y', responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } }, scales: { x:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, font:{size:11} }, grid:{color:cf.gridColor} } } }
     });
 
-    // ── 4. VENTAS POR HORA ──
     const horaMap = {};
     movs.forEach(m => {
       if (!m.hora) return;
-      let h = NaN;
-      const hs = m.hora.trim();
-      const esPM = /p\.?m\.?/i.test(hs);
-      const esAM = /a\.?m\.?/i.test(hs);
-      const nm = hs.match(/^(\d+):(\d+)/);
-      if (nm) {
-        h = parseInt(nm[1]);
-        if (esPM && h < 12) h += 12;
-        else if (esAM && h === 12) h = 0;
-      }
+      let h = NaN; const hs = m.hora.trim(); const esPM = /p\.?m\.?/i.test(hs); const esAM = /a\.?m\.?/i.test(hs); const nm = hs.match(/^(\d+):(\d+)/);
+      if (nm) { h = parseInt(nm[1]); if (esPM && h < 12) h += 12; else if (esAM && h === 12) h = 0; }
       if (!isNaN(h)) horaMap[h] = (horaMap[h]||0) + m.precio;
     });
     const horasLabels = [], horasData = [];
@@ -1459,200 +1545,73 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     destroyChart('horas');
     grafCharts['horas'] = new Chart(document.getElementById('chart-horas'), {
       type: 'line',
-      data: {
-        labels: horasLabels,
-        datasets: [{
-          data: horasData,
-          borderColor: '#e63946',
-          backgroundColor: 'rgba(230,57,70,0.12)',
-          fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#e63946'
-        }]
-      },
-      options: { responsive:true,
-        plugins:{ legend:{display:false},
-          tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
-        scales: {
-          x:{ ticks:{ color:cf.color, font:{size:10} }, grid:{color:cf.gridColor} },
-          y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} }
-        }
-      }
+      data: { labels: horasLabels, datasets: [{ data: horasData, borderColor: '#e63946', backgroundColor: 'rgba(230,57,70,0.12)', fill: true, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#e63946' }] },
+      options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } }, scales: { x:{ ticks:{ color:cf.color, font:{size:10} }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
     });
 
-    // ── 5. GASTOS POR DÍA ──
-    const gasNegDia = [0,0,0,0,0,0,0];
-    const gasPerDia = [0,0,0,0,0,0,0];
-    gastosSem.forEach(g => {
-      const idx = (new Date(g._fecha).getDay() + 6) % 7;
-      if (g.tipo === 'personal') gasPerDia[idx] += g.monto;
-      else gasNegDia[idx] += g.monto;
-    });
-    const totGasNeg = gasNegDia.reduce((a,b)=>a+b,0);
-    const totGasPer = gasPerDia.reduce((a,b)=>a+b,0);
+    const gasNegDia = [0,0,0,0,0,0,0]; const gasPerDia = [0,0,0,0,0,0,0];
+    gastosSem.forEach(g => { const idx = (new Date(g._fecha).getDay() + 6) % 7; if (g.tipo === 'personal') gasPerDia[idx] += g.monto; else gasNegDia[idx] += g.monto; });
+    const totGasNeg = gasNegDia.reduce((a,b)=>a+b,0); const totGasPer = gasPerDia.reduce((a,b)=>a+b,0);
     destroyChart('gastos-semana');
     grafCharts['gastos-semana'] = new Chart(document.getElementById('chart-gastos-semana'), {
       type: 'bar',
-      data: {
-        labels: diasNom,
-        datasets: [
-          { label:'📦 Negocio', data: gasNegDia, backgroundColor:'rgba(244,162,97,0.75)', borderColor:'#f4a261', borderWidth:2, borderRadius:6 },
-          { label:'🧍 Personal', data: gasPerDia, backgroundColor:'rgba(155,93,229,0.75)', borderColor:'#9b5de5', borderWidth:2, borderRadius:6 }
-        ]
-      },
-      options: { responsive:true,
-        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
-          tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
-        scales: {
-          x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
-          y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} }
-        }
-      }
+      data: { labels: diasNom, datasets: [ { label:'📦 Negocio', data: gasNegDia, backgroundColor:'rgba(244,162,97,0.75)', borderColor:'#f4a261', borderWidth:2, borderRadius:6 }, { label:'🧍 Personal', data: gasPerDia, backgroundColor:'rgba(155,93,229,0.75)', borderColor:'#9b5de5', borderWidth:2, borderRadius:6 } ] },
+      options: { responsive:true, plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } }, scales: { x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v => '$'+v }, grid:{color:cf.gridColor} } } }
     });
     const resGasEl = document.getElementById('resumen-gastos-semana');
-    if (totGasNeg === 0 && totGasPer === 0) {
-      resGasEl.innerHTML = '<span style="color:var(--gris)">Sin gastos registrados esta semana</span>';
-    } else {
-      resGasEl.innerHTML = `
-        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3e;">
-          <span style="color:#f4a261;">📦 Gastos negocio</span><span style="color:#f4a261;font-weight:700;">$${totGasNeg.toFixed(2)}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3e;">
-          <span style="color:#9b5de5;">🧍 Gastos personales</span><span style="color:#9b5de5;font-weight:700;">$${totGasPer.toFixed(2)}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:700;">
-          <span>💸 Total</span><span style="color:var(--rojo);">$${(totGasNeg+totGasPer).toFixed(2)}</span>
-        </div>`;
-    }
+    if (totGasNeg === 0 && totGasPer === 0) { resGasEl.innerHTML = '<span style="color:var(--gris)">Sin gastos registrados esta semana</span>'; }
+    else { resGasEl.innerHTML = `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3e;"><span style="color:#f4a261;">📦 Gastos negocio</span><span style="color:#f4a261;font-weight:700;">$${totGasNeg.toFixed(2)}</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #2a2a3e;"><span style="color:#9b5de5;">🧍 Gastos personales</span><span style="color:#9b5de5;font-weight:700;">$${totGasPer.toFixed(2)}</span></div><div style="display:flex;justify-content:space-between;padding:6px 0;font-weight:700;"><span>💸 Total</span><span style="color:var(--rojo);">$${(totGasNeg+totGasPer).toFixed(2)}</span></div>`; }
 
-    // ── 6. INVERSIÓN DE LA SEMANA ──
-    const pctInv    = (parseFloat(document.getElementById('pct-inv').value)||45)/100;
+    const pctInv = (parseFloat(document.getElementById('pct-inv').value)||45)/100;
     const pctSueldo = (parseFloat(document.getElementById('pct-sueldo').value)||40)/100;
-    const semLabel  = esActual ? 'semana actual' : `hace ${Math.abs(semanaOffset)} semana${Math.abs(semanaOffset)>1?'s':''}`;
-
-    const invPorDia    = Array(7).fill(0);
-    const sueldoPorDia = Array(7).fill(0);
-    movs.forEach(m => {
-      if (!m._fecha) return;
-      const idx = (new Date(m._fecha).getDay() + 6) % 7;
-      if (['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)) {
-        invPorDia[idx]    += m.precio * pctInv;
-        sueldoPorDia[idx] += m.precio * pctSueldo;
-      }
-    });
-    const invNetoPorDia    = invPorDia.map((v,i) => Math.max(0, v - gasNegDia[i]));
+    const semLabel = esActual ? 'semana actual' : `hace ${Math.abs(semanaOffset)} semana${Math.abs(semanaOffset)>1?'s':''}`;
+    const invPorDia = Array(7).fill(0); const sueldoPorDia = Array(7).fill(0);
+    movs.forEach(m => { if (!m._fecha) return; const idx = (new Date(m._fecha).getDay() + 6) % 7; if (['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)) { invPorDia[idx] += m.precio * pctInv; sueldoPorDia[idx] += m.precio * pctSueldo; } });
+    const invNetoPorDia = invPorDia.map((v,i) => Math.max(0, v - gasNegDia[i]));
     const sueldoNetoPorDia = sueldoPorDia.map((v,i) => Math.max(0, v - gasPerDia[i]));
-
     document.getElementById('label-inv-semana').textContent = `Lo que apartaste para el negocio vs lo que ya gastaste — ${semLabel}`;
     destroyChart('inversion-semana-actual');
     grafCharts['inversion-semana-actual'] = new Chart(document.getElementById('chart-inversion-semana-actual'), {
       type: 'bar',
-      data: {
-        labels: diasNom,
-        datasets: [
-          { label:'📦 Asignado', data: invPorDia, backgroundColor:'rgba(244,162,97,0.7)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 },
-          { label:'💸 Gastado',  data: gasNegDia, backgroundColor:'rgba(230,57,70,0.7)',  borderColor:'#e63946', borderWidth:2, borderRadius:5 },
-          { label:'✅ Disponible', data: invNetoPorDia, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
-        ]
-      },
-      options: { responsive:true,
-        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
-          tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
-        scales: {
-          x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
-          y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
-        }
-      }
+      data: { labels: diasNom, datasets: [ { label:'📦 Asignado', data: invPorDia, backgroundColor:'rgba(244,162,97,0.7)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 }, { label:'💸 Gastado', data: gasNegDia, backgroundColor:'rgba(230,57,70,0.7)', borderColor:'#e63946', borderWidth:2, borderRadius:5 }, { label:'✅ Disponible', data: invNetoPorDia, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 } ] },
+      options: { responsive:true, plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } }, scales: { x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} } } }
     });
-    const totInvAsig = invPorDia.reduce((s,v)=>s+v,0);
-    const totGasNegS = gasNegDia.reduce((s,v)=>s+v,0);
-    const totInvNet  = invNetoPorDia.reduce((s,v)=>s+v,0);
-    document.getElementById('resumen-inversion-semana-actual').innerHTML = `
-      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding:4px 0;font-size:12px;">
-        <span style="color:#f4a261">📦 Asignado: <b>$${totInvAsig.toFixed(0)}</b></span>
-        <span style="color:#e63946">💸 Gastado: <b>-$${totGasNegS.toFixed(0)}</b></span>
-        <span style="color:#2ec4b6">✅ Disponible: <b>$${totInvNet.toFixed(0)}</b></span>
-      </div>`;
+    const totInvAsig = invPorDia.reduce((s,v)=>s+v,0); const totGasNegS = gasNegDia.reduce((s,v)=>s+v,0); const totInvNet = invNetoPorDia.reduce((s,v)=>s+v,0);
+    document.getElementById('resumen-inversion-semana-actual').innerHTML = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding:4px 0;font-size:12px;"><span style="color:#f4a261">📦 Asignado: <b>$${totInvAsig.toFixed(0)}</b></span><span style="color:#e63946">💸 Gastado: <b>-$${totGasNegS.toFixed(0)}</b></span><span style="color:#2ec4b6">✅ Disponible: <b>$${totInvNet.toFixed(0)}</b></span></div>`;
 
-    // ── 7. SUELDO DE LA SEMANA ──
     document.getElementById('label-sueldo-semana').textContent = `Lo que te toca de sueldo vs lo que ya gastaste de él — ${semLabel}`;
     destroyChart('sueldo-semana-actual');
     grafCharts['sueldo-semana-actual'] = new Chart(document.getElementById('chart-sueldo-semana-actual'), {
       type: 'bar',
-      data: {
-        labels: diasNom,
-        datasets: [
-          { label:'💵 Sueldo', data: sueldoPorDia, backgroundColor:'rgba(155,93,229,0.7)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 },
-          { label:'🧍 Gastos personales', data: gasPerDia, backgroundColor:'rgba(230,57,70,0.7)', borderColor:'#e63946', borderWidth:2, borderRadius:5 },
-          { label:'✅ Sueldo neto', data: sueldoNetoPorDia, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 }
-        ]
-      },
-      options: { responsive:true,
-        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
-          tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
-        scales: {
-          x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} },
-          y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
-        }
-      }
+      data: { labels: diasNom, datasets: [ { label:'💵 Sueldo', data: sueldoPorDia, backgroundColor:'rgba(155,93,229,0.7)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 }, { label:'🧍 Gastos personales', data: gasPerDia, backgroundColor:'rgba(230,57,70,0.7)', borderColor:'#e63946', borderWidth:2, borderRadius:5 }, { label:'✅ Sueldo neto', data: sueldoNetoPorDia, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 } ] },
+      options: { responsive:true, plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } }, scales: { x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} } } }
     });
-    const totSueldoAsig = sueldoPorDia.reduce((s,v)=>s+v,0);
-    const totGasPerS    = gasPerDia.reduce((s,v)=>s+v,0);
-    const totSueldoNet  = sueldoNetoPorDia.reduce((s,v)=>s+v,0);
-    document.getElementById('resumen-sueldo-semana-actual').innerHTML = `
-      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding:4px 0;font-size:12px;">
-        <span style="color:#9b5de5">💵 Sueldo: <b>$${totSueldoAsig.toFixed(0)}</b></span>
-        <span style="color:#e63946">🧍 Gastos: <b>-$${totGasPerS.toFixed(0)}</b></span>
-        <span style="color:#2ec4b6">✅ Neto: <b>$${totSueldoNet.toFixed(0)}</b></span>
-      </div>`;
+    const totSueldoAsig = sueldoPorDia.reduce((s,v)=>s+v,0); const totGasPerS = gasPerDia.reduce((s,v)=>s+v,0); const totSueldoNet = sueldoNetoPorDia.reduce((s,v)=>s+v,0);
+    document.getElementById('resumen-sueldo-semana-actual').innerHTML = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding:4px 0;font-size:12px;"><span style="color:#9b5de5">💵 Sueldo: <b>$${totSueldoAsig.toFixed(0)}</b></span><span style="color:#e63946">🧍 Gastos: <b>-$${totGasPerS.toFixed(0)}</b></span><span style="color:#2ec4b6">✅ Neto: <b>$${totSueldoNet.toFixed(0)}</b></span></div>`;
   }
 
-  // ── HELPER: lunes de una fecha ──
   function lunesDe(fecha) {
-    const d = new Date(fecha);
-    const dia = d.getDay();
-    d.setDate(d.getDate() - (dia === 0 ? 6 : dia - 1));
-    d.setHours(0,0,0,0);
-    return d;
+    const d = new Date(fecha); const dia = d.getDay();
+    d.setDate(d.getDate() - (dia === 0 ? 6 : dia - 1)); d.setHours(0,0,0,0); return d;
   }
+  function labelSemana(lunes) { const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6); return fmtFecha(lunes) + ' – ' + fmtFecha(domingo); }
 
-  function labelSemana(lunes) {
-    const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
-    return fmtFecha(lunes) + ' – ' + fmtFecha(domingo);
-  }
-
-  // ── Agrupa el historial por semana ──
   function calcularSemanasHistoricas() {
     const pctSueldo = (parseFloat(document.getElementById('pct-sueldo').value)||40)/100;
     const pctInv    = (parseFloat(document.getElementById('pct-inv').value)||45)/100;
     const semanasMap = {};
-
-    // Día actual
-    const hoyLunes = lunesDe(new Date());
-    const keyHoy = hoyLunes.getTime();
+    const hoyLunes = lunesDe(new Date()); const keyHoy = hoyLunes.getTime();
     const tHoy = calcularTotales();
     const brutoHoy = tHoy.efectivo + tHoy.tarjeta + tHoy.didi_efectivo + (tHoy.facebook||0) + (tHoy.whatsapp||0);
     if (!semanasMap[keyHoy]) semanasMap[keyHoy] = { lunes:hoyLunes, ventas:0, invAsig:0, invGast:0, sueldoAsig:0, sueldoGast:0 };
-    semanasMap[keyHoy].ventas      += tHoy.totalVenta;
-    semanasMap[keyHoy].invAsig     += brutoHoy * pctInv;
-    semanasMap[keyHoy].sueldoAsig  += brutoHoy * pctSueldo;
-    semanasMap[keyHoy].invGast     += tHoy.totalGastosNegocio||0;
-    semanasMap[keyHoy].sueldoGast  += tHoy.totalGastosPersonal||0;
-
-    // Historial cerrado
+    semanasMap[keyHoy].ventas += tHoy.totalVenta; semanasMap[keyHoy].invAsig += brutoHoy * pctInv; semanasMap[keyHoy].sueldoAsig += brutoHoy * pctSueldo; semanasMap[keyHoy].invGast += tHoy.totalGastosNegocio||0; semanasMap[keyHoy].sueldoGast += tHoy.totalGastosPersonal||0;
     historial.forEach(dia => {
-      const fecha = parseFechaHistorial(dia.fecha);
-      if (!fecha) return;
-      const lunes = lunesDe(fecha);
-      const key = lunes.getTime();
+      const fecha = parseFechaHistorial(dia.fecha); if (!fecha) return;
+      const lunes = lunesDe(fecha); const key = lunes.getTime();
       if (!semanasMap[key]) semanasMap[key] = { lunes, ventas:0, invAsig:0, invGast:0, sueldoAsig:0, sueldoGast:0 };
-      const t = dia.totales;
-      const bruto = (t.efectivo||0)+(t.tarjeta||0)+(t.didi_efectivo||0)+(t.facebook||0)+(t.whatsapp||0);
-      semanasMap[key].ventas     += t.totalVenta||0;
-      semanasMap[key].invAsig    += bruto * pctInv;
-      semanasMap[key].sueldoAsig += bruto * pctSueldo;
-      semanasMap[key].invGast    += t.totalGastosNegocio||0;
-      semanasMap[key].sueldoGast += t.totalGastosPersonal||0;
+      const t = dia.totales; const bruto = (t.efectivo||0)+(t.tarjeta||0)+(t.didi_efectivo||0)+(t.facebook||0)+(t.whatsapp||0);
+      semanasMap[key].ventas += t.totalVenta||0; semanasMap[key].invAsig += bruto * pctInv; semanasMap[key].sueldoAsig += bruto * pctSueldo; semanasMap[key].invGast += t.totalGastosNegocio||0; semanasMap[key].sueldoGast += t.totalGastosPersonal||0;
     });
-
     return Object.values(semanasMap).sort((a,b) => a.lunes - b.lunes);
   }
 
@@ -1660,124 +1619,34 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     if (!document.getElementById('tab-historico').classList.contains('active')) return;
     const semanas = calcularSemanasHistoricas();
     const cf = { color:'#c0c0d8', gridColor:'rgba(255,255,255,0.06)' };
-
-    // Totales globales
-    const totVentas   = semanas.reduce((s,w)=>s+w.ventas,0);
-    const totSueldo   = semanas.reduce((s,w)=>s+Math.max(0,w.sueldoAsig-w.sueldoGast),0);
-    const totInv      = semanas.reduce((s,w)=>s+Math.max(0,w.invAsig-w.invGast),0);
-    document.getElementById('hist-total-ventas').textContent  = '$' + totVentas.toFixed(0);
+    const totVentas = semanas.reduce((s,w)=>s+w.ventas,0); const totSueldo = semanas.reduce((s,w)=>s+Math.max(0,w.sueldoAsig-w.sueldoGast),0); const totInv = semanas.reduce((s,w)=>s+Math.max(0,w.invAsig-w.invGast),0);
+    document.getElementById('hist-total-ventas').textContent = '$' + totVentas.toFixed(0);
     document.getElementById('hist-total-semanas').textContent = semanas.length;
-    document.getElementById('hist-total-sueldo').textContent  = '$' + totSueldo.toFixed(0);
-    document.getElementById('hist-total-inv').textContent     = '$' + totInv.toFixed(0);
-
+    document.getElementById('hist-total-sueldo').textContent = '$' + totSueldo.toFixed(0);
+    document.getElementById('hist-total-inv').textContent = '$' + totInv.toFixed(0);
     if (!semanas.length) return;
     const labels = semanas.map(s => labelSemana(s.lunes));
 
-    // ── Ventas por semana ──
     destroyChart('hist-ventas');
-    grafCharts['hist-ventas'] = new Chart(document.getElementById('chart-hist-ventas'), {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Venta semanal',
-          data: semanas.map(s => parseFloat(s.ventas.toFixed(2))),
-          backgroundColor: 'rgba(46,196,182,0.65)',
-          borderColor: '#2ec4b6',
-          borderWidth: 2, borderRadius: 6
-        }]
-      },
-      options: { responsive:true,
-        plugins:{ legend:{display:false},
-          tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } },
-        scales: {
-          x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:45 }, grid:{color:cf.gridColor} },
-          y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
-        }
-      }
-    });
+    grafCharts['hist-ventas'] = new Chart(document.getElementById('chart-hist-ventas'), { type: 'bar', data: { labels, datasets: [{ label: 'Venta semanal', data: semanas.map(s => parseFloat(s.ventas.toFixed(2))), backgroundColor: 'rgba(46,196,182,0.65)', borderColor: '#2ec4b6', borderWidth: 2, borderRadius: 6 }] }, options: { responsive:true, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => '$' + ctx.raw.toFixed(2) } } }, scales: { x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:45 }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} } } } });
 
-    // ── Inversión histórica ──
-    const invAsig  = semanas.map(s => parseFloat(s.invAsig.toFixed(2)));
-    const invGast  = semanas.map(s => parseFloat(s.invGast.toFixed(2)));
-    const invNeto  = semanas.map(s => parseFloat(Math.max(0,s.invAsig-s.invGast).toFixed(2)));
+    const invAsig = semanas.map(s => parseFloat(s.invAsig.toFixed(2))); const invGast = semanas.map(s => parseFloat(s.invGast.toFixed(2))); const invNeto = semanas.map(s => parseFloat(Math.max(0,s.invAsig-s.invGast).toFixed(2)));
     destroyChart('inversion-historico');
-    grafCharts['inversion-historico'] = new Chart(document.getElementById('chart-inversion-historico'), {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          { label:'📦 Asignado', data:invAsig, backgroundColor:'rgba(244,162,97,0.7)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 },
-          { label:'💸 Gastado',  data:invGast, backgroundColor:'rgba(230,57,70,0.7)',  borderColor:'#e63946', borderWidth:2, borderRadius:5 },
-          { label:'✅ Disponible', data:invNeto, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:4 }
-        ]
-      },
-      options: { responsive:true,
-        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
-          tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
-        scales: {
-          x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:45 }, grid:{color:cf.gridColor} },
-          y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
-        }
-      }
-    });
-    const resInvHist = document.getElementById('resumen-inversion-historico');
-    const totInvAsigH = invAsig.reduce((s,v)=>s+v,0);
-    const totInvGastH = invGast.reduce((s,v)=>s+v,0);
-    const totInvNetoH = invNeto.reduce((s,v)=>s+v,0);
-    resInvHist.innerHTML = `
-      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;">
-        <span style="color:#f4a261">📦 Total asignado: <b>$${totInvAsigH.toFixed(0)}</b></span>
-        <span style="color:#e63946">💸 Total gastado: <b>$${totInvGastH.toFixed(0)}</b></span>
-        <span style="color:#2ec4b6">✅ Disponible: <b>$${totInvNetoH.toFixed(0)}</b></span>
-      </div>`;
+    grafCharts['inversion-historico'] = new Chart(document.getElementById('chart-inversion-historico'), { type: 'bar', data: { labels, datasets: [ { label:'📦 Asignado', data:invAsig, backgroundColor:'rgba(244,162,97,0.7)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 }, { label:'💸 Gastado', data:invGast, backgroundColor:'rgba(230,57,70,0.7)', borderColor:'#e63946', borderWidth:2, borderRadius:5 }, { label:'✅ Disponible', data:invNeto, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:4 } ] }, options: { responsive:true, plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } }, scales: { x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:45 }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} } } } });
+    const resInvHist = document.getElementById('resumen-inversion-historico'); const totInvAsigH = invAsig.reduce((s,v)=>s+v,0); const totInvGastH = invGast.reduce((s,v)=>s+v,0); const totInvNetoH = invNeto.reduce((s,v)=>s+v,0);
+    resInvHist.innerHTML = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12px;"><span style="color:#f4a261">📦 Total asignado: <b>$${totInvAsigH.toFixed(0)}</b></span><span style="color:#e63946">💸 Total gastado: <b>$${totInvGastH.toFixed(0)}</b></span><span style="color:#2ec4b6">✅ Disponible: <b>$${totInvNetoH.toFixed(0)}</b></span></div>`;
 
-    // ── Sueldo histórico ──
-    const sueldoAsig = semanas.map(s => parseFloat(s.sueldoAsig.toFixed(2)));
-    const sueldoGast = semanas.map(s => parseFloat(s.sueldoGast.toFixed(2)));
-    const sueldoNeto = semanas.map(s => parseFloat(Math.max(0,s.sueldoAsig-s.sueldoGast).toFixed(2)));
+    const sueldoAsig = semanas.map(s => parseFloat(s.sueldoAsig.toFixed(2))); const sueldoGast = semanas.map(s => parseFloat(s.sueldoGast.toFixed(2))); const sueldoNeto = semanas.map(s => parseFloat(Math.max(0,s.sueldoAsig-s.sueldoGast).toFixed(2)));
     destroyChart('sueldo-historico');
-    grafCharts['sueldo-historico'] = new Chart(document.getElementById('chart-sueldo-historico'), {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          { label:'💵 Sueldo', data:sueldoAsig, backgroundColor:'rgba(155,93,229,0.7)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 },
-          { label:'🧍 Gastos', data:sueldoGast, backgroundColor:'rgba(230,57,70,0.7)',  borderColor:'#e63946', borderWidth:2, borderRadius:5 },
-          { label:'✅ Lo que quedó', data:sueldoNeto, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:4 }
-        ]
-      },
-      options: { responsive:true,
-        plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } },
-          tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } },
-        scales: {
-          x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:45 }, grid:{color:cf.gridColor} },
-          y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} }
-        }
-      }
-    });
+    grafCharts['sueldo-historico'] = new Chart(document.getElementById('chart-sueldo-historico'), { type: 'bar', data: { labels, datasets: [ { label:'💵 Sueldo', data:sueldoAsig, backgroundColor:'rgba(155,93,229,0.7)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 }, { label:'🧍 Gastos', data:sueldoGast, backgroundColor:'rgba(230,57,70,0.7)', borderColor:'#e63946', borderWidth:2, borderRadius:5 }, { label:'✅ Lo que quedó', data:sueldoNeto, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:4 } ] }, options: { responsive:true, plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } }, scales: { x:{ ticks:{ color:cf.color, font:{size:10}, maxRotation:45 }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} } } } });
     const totSueldoNetoH = sueldoNeto.reduce((s,v)=>s+v,0);
-    document.getElementById('resumen-sueldo-historico').innerHTML =
-      `<div style="text-align:center;font-size:13px;color:#2ec4b6;">Total acumulado en tu bolsillo: <b>$${totSueldoNetoH.toFixed(2)}</b></div>`;
+    document.getElementById('resumen-sueldo-historico').innerHTML = `<div style="text-align:center;font-size:13px;color:#2ec4b6;">Total acumulado en tu bolsillo: <b>$${totSueldoNetoH.toFixed(2)}</b></div>`;
 
-    // ── Tabla por semana ──
     const tablaEl = document.getElementById('hist-tabla-semanas');
-    tablaEl.innerHTML = semanas.slice().reverse().map(s => {
-      const invNet = Math.max(0,s.invAsig-s.invGast);
-      const sueldoNet = Math.max(0,s.sueldoAsig-s.sueldoGast);
-      return `<div style="padding:8px 0;border-bottom:1px solid #2a2a3e;">
-        <div style="font-weight:700;color:var(--amarillo);margin-bottom:4px;">${labelSemana(s.lunes)}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;">
-          <span style="color:#2ec4b6">💰 Venta: <b>$${s.ventas.toFixed(0)}</b></span>
-          <span style="color:#f4a261">📦 Inv: <b>$${invNet.toFixed(0)}</b></span>
-          <span style="color:#9b5de5">💵 Sueldo: <b>$${sueldoNet.toFixed(0)}</b></span>
-          <span style="color:#e63946">💸 Gastos: <b>$${(s.invGast+s.sueldoGast).toFixed(0)}</b></span>
-        </div>
-      </div>`;
-    }).join('') || '<span style="color:var(--gris)">Sin datos históricos aún</span>';
+    tablaEl.innerHTML = semanas.slice().reverse().map(s => { const invNet = Math.max(0,s.invAsig-s.invGast); const sueldoNet = Math.max(0,s.sueldoAsig-s.sueldoGast); return `<div style="padding:8px 0;border-bottom:1px solid #2a2a3e;"><div style="font-weight:700;color:var(--amarillo);margin-bottom:4px;">${labelSemana(s.lunes)}</div><div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;"><span style="color:#2ec4b6">💰 Venta: <b>$${s.ventas.toFixed(0)}</b></span><span style="color:#f4a261">📦 Inv: <b>$${invNet.toFixed(0)}</b></span><span style="color:#9b5de5">💵 Sueldo: <b>$${sueldoNet.toFixed(0)}</b></span><span style="color:#e63946">💸 Gastos: <b>$${(s.invGast+s.sueldoGast).toFixed(0)}</b></span></div></div>`; }).join('') || '<span style="color:var(--gris)">Sin datos históricos aún</span>';
   }
 
-    // ── DISTRIBUCIÓN ──
+  // ── DISTRIBUCIÓN ──
   function renderDistribucion() {
     const t = calcularTotales();
     const bruto = t.efectivo + t.tarjeta + t.didi_efectivo + t.facebook + t.whatsapp;
@@ -1796,8 +1665,7 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     const sueldoBase  = bruto * pctSueldo;
     const invBase     = bruto * pctInv;
     const colchonBase = bruto * pctColchon;
-    let invFinal = invBase - totalGasNeg;
-    let descontadoDeColchon = 0, descontadoDeSueldo = 0;
+    let invFinal = invBase - totalGasNeg; let descontadoDeColchon = 0, descontadoDeSueldo = 0;
     if (invFinal < 0) { descontadoDeColchon = Math.abs(invFinal); invFinal = 0; }
     let colchonFinal = colchonBase - descontadoDeColchon;
     if (colchonFinal < 0) { descontadoDeSueldo = Math.abs(colchonFinal); colchonFinal = 0; }
@@ -1810,178 +1678,79 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     document.getElementById('dist-inv-det').textContent     = Math.round(pctInv*100)     + '% de $' + bruto.toFixed(2);
     document.getElementById('dist-colchon-det').textContent = Math.round(pctColchon*100) + '% de $' + bruto.toFixed(2);
     const elSueldoG = document.getElementById('dist-sueldo-gastos');
-    if (elSueldoG) {
-      let html = gastosPersonal.map(g=>`<div>\u00b7 ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('');
-      if (totalGasPer > sueldoBase) html += `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f Exceden sueldo en $${(totalGasPer-sueldoBase).toFixed(2)}</div>`;
-      if (descontadoDeSueldo > 0)   html += `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f $${descontadoDeSueldo.toFixed(2)} tomado para cubrir negocio</div>`;
-      elSueldoG.innerHTML = html;
-    }
+    if (elSueldoG) { let html = gastosPersonal.map(g=>`<div>\u00b7 ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join(''); if (totalGasPer > sueldoBase) html += `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f Exceden sueldo en $${(totalGasPer-sueldoBase).toFixed(2)}</div>`; if (descontadoDeSueldo > 0) html += `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f $${descontadoDeSueldo.toFixed(2)} tomado para cubrir negocio</div>`; elSueldoG.innerHTML = html; }
     const elInvG = document.getElementById('dist-inv-gastos');
-    if (elInvG) {
-      elInvG.innerHTML = gastosNegocio.map(g=>`<div>\u00b7 ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('') +
-        (descontadoDeColchon > 0 ? `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f $${descontadoDeColchon.toFixed(2)} tomado del Colch\u00f3n</div>` : '');
-    }
+    if (elInvG) { elInvG.innerHTML = gastosNegocio.map(g=>`<div>\u00b7 ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('') + (descontadoDeColchon > 0 ? `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f $${descontadoDeColchon.toFixed(2)} tomado del Colch\u00f3n</div>` : ''); }
     const elColchonG = document.getElementById('dist-colchon-gastos');
-    if (elColchonG) {
-      elColchonG.innerHTML = descontadoDeColchon > 0
-        ? `<div style="color:var(--rojo);">\u00b7 Cubri\u00f3 faltante: <b>-$${descontadoDeColchon.toFixed(2)}</b></div>` +
-          (descontadoDeSueldo > 0 ? `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f Colch\u00f3n insuficiente. $${descontadoDeSueldo.toFixed(2)} tomados del Sueldo</div>` : '')
-        : '';
-    }
+    if (elColchonG) { elColchonG.innerHTML = descontadoDeColchon > 0 ? `<div style="color:var(--rojo);">\u00b7 Cubri\u00f3 faltante: <b>-$${descontadoDeColchon.toFixed(2)}</b></div>` + (descontadoDeSueldo > 0 ? `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f Colch\u00f3n insuficiente. $${descontadoDeSueldo.toFixed(2)} tomados del Sueldo</div>` : '') : ''; }
   }
 
-  // ─── BACKUP ──────────────────────────────────────────────────────────────────
-
+  // ─── BACKUP ───────────────────────────────────────────────────────────────────
   function initBackupFechas() {
-    const hoy = new Date();
-    const fmt = d => d.toISOString().split('T')[0];
-    const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    const hoy = new Date(); const fmt = d => d.toISOString().split('T')[0]; const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
     document.getElementById('backup-fecha-desde').value = fmt(primerDiaMes);
     document.getElementById('backup-fecha-hasta').value = fmt(hoy);
   }
-
-  function setRangoHoy() {
-    const hoy = new Date().toISOString().split('T')[0];
-    document.getElementById('backup-fecha-desde').value = hoy;
-    document.getElementById('backup-fecha-hasta').value = hoy;
-  }
-
-  function setRangoSemana() {
-    const hoy = new Date();
-    const dia = hoy.getDay();
-    const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - (dia===0?6:dia-1));
-    const fmt = d => d.toISOString().split('T')[0];
-    document.getElementById('backup-fecha-desde').value = fmt(lunes);
-    document.getElementById('backup-fecha-hasta').value = fmt(hoy);
-  }
-
-  function setRangoMes() {
-    const hoy = new Date();
-    const fmt = d => d.toISOString().split('T')[0];
-    document.getElementById('backup-fecha-desde').value = fmt(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
-    document.getElementById('backup-fecha-hasta').value = fmt(hoy);
-  }
-
-  function setRangoTodo() {
-    document.getElementById('backup-fecha-desde').value = '2020-01-01';
-    document.getElementById('backup-fecha-hasta').value = new Date().toISOString().split('T')[0];
-  }
+  function setRangoHoy() { const hoy = new Date().toISOString().split('T')[0]; document.getElementById('backup-fecha-desde').value = hoy; document.getElementById('backup-fecha-hasta').value = hoy; }
+  function setRangoSemana() { const hoy = new Date(); const dia = hoy.getDay(); const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - (dia===0?6:dia-1)); const fmt = d => d.toISOString().split('T')[0]; document.getElementById('backup-fecha-desde').value = fmt(lunes); document.getElementById('backup-fecha-hasta').value = fmt(hoy); }
+  function setRangoMes() { const hoy = new Date(); const fmt = d => d.toISOString().split('T')[0]; document.getElementById('backup-fecha-desde').value = fmt(new Date(hoy.getFullYear(), hoy.getMonth(), 1)); document.getElementById('backup-fecha-hasta').value = fmt(hoy); }
+  function setRangoTodo() { document.getElementById('backup-fecha-desde').value = '2020-01-01'; document.getElementById('backup-fecha-hasta').value = new Date().toISOString().split('T')[0]; }
 
   function fechaEnRango(fechaStr, desde, hasta) {
-    // Intenta parsear tanto formato ISO (2025-01-14) como formato historial ("lunes, 14 de enero de 2025")
     let d;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
-      d = new Date(fechaStr + 'T12:00:00');
-    } else {
-      d = parseFechaHistorial(fechaStr);
-    }
-    if (!d) return false;
-    return d >= desde && d <= hasta;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) { d = new Date(fechaStr + 'T12:00:00'); } else { d = parseFechaHistorial(fechaStr); }
+    if (!d) return false; return d >= desde && d <= hasta;
   }
 
-  function descargarArchivo(contenido, nombre, tipo) {
-    const blob = new Blob([contenido], { type: tipo });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = nombre; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
+  function descargarArchivo(contenido, nombre, tipo) { const blob = new Blob([contenido], { type: tipo }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = nombre; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
   function toCSV(filas) {
     if (!filas.length) return '';
-    const cols = Object.keys(filas[0]);
-    const esc = v => {
-      const s = String(v === null || v === undefined ? '' : v);
-      return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g,'""') + '"' : s;
-    };
+    const cols = Object.keys(filas[0]); const esc = v => { const s = String(v === null || v === undefined ? '' : v); return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g,'""') + '"' : s; };
     return [cols.join(','), ...filas.map(r => cols.map(c => esc(r[c])).join(','))].join('\n');
   }
 
   function exportarDatos() {
-    const desdeStr = document.getElementById('backup-fecha-desde').value;
-    const hastaStr = document.getElementById('backup-fecha-hasta').value;
+    const desdeStr = document.getElementById('backup-fecha-desde').value; const hastaStr = document.getElementById('backup-fecha-hasta').value;
     if (!desdeStr || !hastaStr) { mostrarToast('\u26a0\ufe0f Selecciona las fechas'); return; }
-    const desde = new Date(desdeStr + 'T00:00:00');
-    const hasta  = new Date(hastaStr + 'T23:59:59');
-
-    const hoyEnRango = new Date() >= desde && new Date() <= hasta;
-    const hoyStr = new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-
-    // ── Ventas CSV ──
+    const desde = new Date(desdeStr + 'T00:00:00'); const hasta = new Date(hastaStr + 'T23:59:59');
+    const hoyEnRango = new Date() >= desde && new Date() <= hasta; const hoyStr = new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
     let ventas = [];
     if (hoyEnRango) movimientos.forEach(m => ventas.push({ Fecha:hoyStr, Hora:m.hora||'', Producto:m.producto, 'Precio ($)':m.precio, Metodo:nombreMetodo(m.metodo) }));
-    historial.forEach(dia => {
-      if (!fechaEnRango(dia.fecha, desde, hasta)) return;
-      dia.movimientos.forEach(m => ventas.push({ Fecha:dia.fecha, Hora:m.hora||'', Producto:m.producto, 'Precio ($)':m.precio, Metodo:nombreMetodo(m.metodo) }));
-    });
-
-    // ── Gastos CSV ──
+    historial.forEach(dia => { if (!fechaEnRango(dia.fecha, desde, hasta)) return; dia.movimientos.forEach(m => ventas.push({ Fecha:dia.fecha, Hora:m.hora||'', Producto:m.producto, 'Precio ($)':m.precio, Metodo:nombreMetodo(m.metodo) })); });
     let gastosList = [];
     if (hoyEnRango) gastos.forEach(g => gastosList.push({ Fecha:hoyStr, Hora:g.hora||'', Concepto:g.concepto, 'Monto ($)':g.monto, Tipo:g.tipo==='personal'?'Personal':'Negocio' }));
-    historial.forEach(dia => {
-      if (!fechaEnRango(dia.fecha, desde, hasta)) return;
-      (dia.gastos||[]).forEach(g => gastosList.push({ Fecha:dia.fecha, Hora:g.hora||'', Concepto:g.concepto, 'Monto ($)':g.monto, Tipo:g.tipo==='personal'?'Personal':'Negocio' }));
-    });
-
+    historial.forEach(dia => { if (!fechaEnRango(dia.fecha, desde, hasta)) return; (dia.gastos||[]).forEach(g => gastosList.push({ Fecha:dia.fecha, Hora:g.hora||'', Concepto:g.concepto, 'Monto ($)':g.monto, Tipo:g.tipo==='personal'?'Personal':'Negocio' })); });
     if (!ventas.length && !gastosList.length) { mostrarToast('\u26a0\ufe0f No hay datos en ese rango'); return; }
-
     const prefijo = 'ElBajon_' + desdeStr + '_' + hastaStr;
-    if (ventas.length)      descargarArchivo(toCSV(ventas),      prefijo + '_Ventas.csv',  'text/csv;charset=utf-8;');
-    if (gastosList.length)  descargarArchivo(toCSV(gastosList),  prefijo + '_Gastos.csv',  'text/csv;charset=utf-8;');
-
-    // ── Backup JSON completo (para reimportar) ──
-    const backupObj = {
-      tipo: 'BACKUP_BAJON_V1',
-      fecha_exportacion: new Date().toISOString(),
-      historial, movimientos_hoy: movimientos, gastos_hoy: gastos, mesas
-    };
+    if (ventas.length) descargarArchivo(toCSV(ventas), prefijo + '_Ventas.csv', 'text/csv;charset=utf-8;');
+    if (gastosList.length) descargarArchivo(toCSV(gastosList), prefijo + '_Gastos.csv', 'text/csv;charset=utf-8;');
+    const backupObj = { tipo: 'BACKUP_BAJON_V1', fecha_exportacion: new Date().toISOString(), historial, movimientos_hoy: movimientos, gastos_hoy: gastos, mesas };
     descargarArchivo(JSON.stringify(backupObj, null, 2), prefijo + '_BACKUP.json', 'application/json');
-
     const info = document.getElementById('backup-export-info');
     info.textContent = '\u2705 Descargados: ' + ventas.length + ' ventas, ' + gastosList.length + ' gastos + backup.json';
     mostrarToast('\ud83d\udce5 Archivos descargados');
   }
 
   function importarExcel(input) {
-    const file = input.files[0];
-    if (!file) return;
+    const file = input.files[0]; if (!file) return;
     const info = document.getElementById('backup-import-info');
     info.innerHTML = '<span style="color:var(--amarillo)">\u23f3 Leyendo archivo...</span>';
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
         const backup = JSON.parse(e.target.result);
-        if (backup.tipo !== 'BACKUP_BAJON_V1') {
-          info.innerHTML = '<span style="color:var(--rojo)">\u274c Formato no reconocido. Usa el archivo _BACKUP.json exportado desde esta p\u00e1gina.</span>';
-          return;
-        }
-        const histBackup  = backup.historial || [];
-        const movBackup   = backup.movimientos_hoy || [];
-        const gasBackup   = backup.gastos_hoy || [];
-        const mesasBackup = backup.mesas || [];
-
-        const idsHist = new Set(historial.map(d=>d.id));
-        let diasAg = 0;
+        if (backup.tipo !== 'BACKUP_BAJON_V1') { info.innerHTML = '<span style="color:var(--rojo)">\u274c Formato no reconocido. Usa el archivo _BACKUP.json exportado desde esta p\u00e1gina.</span>'; return; }
+        const histBackup = backup.historial || []; const movBackup = backup.movimientos_hoy || []; const gasBackup = backup.gastos_hoy || []; const mesasBackup = backup.mesas || [];
+        const idsHist = new Set(historial.map(d=>d.id)); let diasAg = 0;
         histBackup.forEach(d => { if (!idsHist.has(d.id)) { historial.unshift(d); diasAg++; } });
-
-        let movAg = 0;
-        if (!movimientos.length && movBackup.length) { movimientos = movBackup; movAg = movBackup.length; }
-
-        let gasAg = 0;
-        if (!gastos.length && gasBackup.length) { gastos = gasBackup; gasAg = gasBackup.length; }
-
-        const idsMesas = new Set(mesas.map(m=>m.id));
-        let mesasAg = 0;
+        let movAg = 0; if (!movimientos.length && movBackup.length) { movimientos = movBackup; movAg = movBackup.length; }
+        let gasAg = 0; if (!gastos.length && gasBackup.length) { gastos = gasBackup; gasAg = gasBackup.length; }
+        const idsMesas = new Set(mesas.map(m=>m.id)); let mesasAg = 0;
         mesasBackup.forEach(m => { if (!idsMesas.has(m.id)) { mesas.push(m); mesasAg++; } });
-
         guardarHistorial(); guardarMov(); guardarGastos(); guardarMesas();
         actualizarTotalesRapidos(); renderMesas();
-
-        info.innerHTML = '<span style="color:var(--verde);">✅ Importación exitosa:<br>' +
-          '📅 ' + diasAg + ' días del historial agregados<br>' +
-          '🧾 ' + movAg + ' ventas del día cargadas<br>' +
-          '💸 ' + gasAg + ' gastos del día cargados<br>' +
-          '🪑 ' + mesasAg + ' mesas restauradas</span>';
+        info.innerHTML = '<span style="color:var(--verde);">✅ Importación exitosa:<br>📅 ' + diasAg + ' días del historial agregados<br>🧾 ' + movAg + ' ventas del día cargadas<br>💸 ' + gasAg + ' gastos del día cargados<br>🪑 ' + mesasAg + ' mesas restauradas</span>';
         mostrarToast('\u2705 Datos restaurados');
       } catch(err) {
         info.innerHTML = '<span style="color:var(--rojo)">\u274c Error: ' + err.message + '. Aseg\u00farate de subir el archivo _BACKUP.json</span>';
@@ -1991,11 +1760,7 @@ ${gastos.map(g=>`  · ${g.concepto}: $${g.monto.toFixed(2)}`).join('\n')||'  (si
     reader.readAsText(file, 'utf-8');
   }
 
-  // Inicializar fechas del backup
   initBackupFechas();
-
-  // ─── FIN BACKUP ───────────────────────────────────────────────────────────────
-
 </script>
 </body>
 </html>
