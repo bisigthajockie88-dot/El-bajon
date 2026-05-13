@@ -198,6 +198,12 @@
   .precio-input{width:90px;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:9px 10px;color:var(--verde);font-size:16px;font-weight:700;text-align:center;outline:none;}
   .precio-input:focus{border-color:var(--amarillo);}
 
+  /* AHORROS */
+  .ahorro-item{background:var(--oscuro);border:1px solid #333;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .ahorro-nombre{font-size:13px;font-weight:600;flex:1;color:var(--texto);}
+  .ahorro-barra-wrap{height:6px;background:#2a2a3e;border-radius:4px;margin-top:4px;overflow:hidden;}
+  .ahorro-barra{height:100%;border-radius:4px;background:var(--verde);transition:width 0.4s;}
+
   /* GASTOS SELECCIÓN */
   .gasto-check{display:flex;align-items:center;gap:8px;padding:4px 0;}
   .gasto-check input[type="checkbox"]{width:18px;height:18px;accent-color:var(--verde);cursor:pointer;flex-shrink:0;}
@@ -232,6 +238,7 @@
   <div class="tab" onclick="cambiarTab('graficas',this)">📈 Gráficas</div>
   <div class="tab" onclick="cambiarTab('historico',this)">📊 Histórico</div>
   <div class="tab" onclick="cambiarTab('precios',this)">🏷️ Precios</div>
+  <div class="tab" onclick="cambiarTab('ahorros',this)">🏦 Ahorros</div>
   <div class="tab" onclick="cambiarTab('backup',this)">💾 Backup</div>
 </div>
 
@@ -398,6 +405,57 @@
   </div>
 
   <div class="dist-nota">* Las ventas de Didi TAR, Rappi y Uber no se incluyen — ese dinero aún no está en tu mano</div>
+
+  <!-- AHORROS PERSONALIZABLES -->
+  <div class="dist-config" style="margin-top:16px;">
+    <h3>🏦 Ahorros del Sueldo</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:14px;line-height:1.6;">Define metas de ahorro que se pagan de tu sueldo restante (después de gastos). Ejemplo: moto, vacaciones, emergencias.</p>
+    <div id="ahorros-lista"></div>
+    <!-- Nombre -->
+    <input type="text" id="ahorro-nombre-input" placeholder="Nombre de la meta (ej: Moto, Viaje...)"
+      style="width:100%;margin-top:10px;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 12px;color:var(--texto);font-size:13px;outline:none;">
+
+    <!-- Modo: porcentaje o fijo -->
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button id="btn-modo-pct" onclick="selModoAhorro('pct')"
+        style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(244,162,97,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">
+        % Porcentaje
+      </button>
+      <button id="btn-modo-fijo" onclick="selModoAhorro('fijo')"
+        style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">
+        $ Cantidad fija
+      </button>
+    </div>
+
+    <!-- Input porcentaje -->
+    <div id="ahorro-modo-pct-wrap" style="margin-top:8px;">
+      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">% del sueldo restante (después de gastos)</div>
+      <input type="number" id="ahorro-pct-input" placeholder="Ej: 20 = 20%" min="0" max="100" inputmode="decimal"
+        style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:12px 14px;color:var(--amarillo);font-size:20px;font-weight:700;text-align:center;outline:none;">
+    </div>
+
+    <!-- Input cantidad fija -->
+    <div id="ahorro-modo-fijo-wrap" style="margin-top:8px;display:none;">
+      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Cantidad fija a guardar por día ($)</div>
+      <input type="number" id="ahorro-fijo-input" placeholder="Ej: 50" min="0" inputmode="decimal"
+        style="width:100%;background:var(--oscuro);border:1px solid var(--morado);border-radius:8px;padding:12px 14px;color:var(--morado);font-size:20px;font-weight:700;text-align:center;outline:none;">
+    </div>
+
+    <!-- Meta total en pesos -->
+    <div style="margin-top:8px;">
+      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Meta total en $ (opcional — para ver tu progreso)</div>
+      <input type="number" id="ahorro-meta-input" placeholder="Ej: 5000 para la moto · 0 = sin meta" min="0" inputmode="decimal"
+        style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 14px;color:var(--verde);font-size:15px;font-weight:700;outline:none;">
+    </div>
+
+    <button onclick="agregarAhorro()" style="width:100%;margin-top:10px;background:var(--verde);border:none;border-radius:8px;padding:13px;color:var(--oscuro);font-size:14px;font-weight:700;cursor:pointer;">+ Agregar Meta de Ahorro</button>
+    <div id="dist-ahorros-resumen" style="margin-top:12px;"></div>
+    <button onclick="guardarAhorroHoy()" id="btn-guardar-ahorro"
+      style="width:100%;margin-top:10px;background:var(--morado);border:none;border-radius:10px;padding:14px;color:white;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.5px;display:none;">
+      💾 Guardar ahorro de hoy
+    </button>
+    <div id="ahorro-guardado-msg" style="font-size:11px;color:var(--verde);text-align:center;margin-top:6px;"></div>
+  </div>
 </div>
 
 <!-- TAB GRÁFICAS -->
@@ -590,6 +648,22 @@
   <button class="btn-cancelar" onclick="cancelarTicket()" style="width:100%;margin-top:8px;">✕ Cancelar ticket</button>
 </div>
 
+
+<!-- TAB AHORROS -->
+<div class="seccion" id="tab-ahorros">
+  <div class="dist-header">🏦 Mis Ahorros</div>
+  <div class="dist-sub">Progreso de cada meta día con día</div>
+
+  <div id="ahorros-tab-lista"></div>
+
+  <div class="resumen-box" style="margin-top:4px;">
+    <h3>📈 Crecimiento de ahorros</h3>
+    <p style="font-size:11px;color:var(--gris);margin-bottom:10px;">Acumulado total de todas tus metas día con día.</p>
+    <canvas id="chart-ahorros-hist" height="220"></canvas>
+    <div id="ahorros-hist-resumen" style="margin-top:10px;font-size:12px;"></div>
+  </div>
+</div>
+
 <!-- TAB BACKUP -->
 <div class="seccion" id="tab-backup">
   <div class="dist-header">💾 Respaldo de Datos</div>
@@ -697,6 +771,16 @@
     'Fresca 600ml': 23,
     'Otro': 0
   };
+
+  // Costos de refrescos (precio de compra) para calcular ganancia real
+  const COSTOS_REFRESCOS = {
+    'Coca Cola 600ml': 20,
+    'Pepsi 600ml': 15,
+    'Fresca 600ml': 18
+  };
+  let costosRefrescos = JSON.parse(localStorage.getItem('bajon_costos_refrescos') || 'null') || { ...COSTOS_REFRESCOS };
+  function guardarCostosRefrescos() { localStorage.setItem('bajon_costos_refrescos', JSON.stringify(costosRefrescos)); }
+  function getCosto(nombre) { return costosRefrescos[nombre] !== undefined ? costosRefrescos[nombre] : (COSTOS_REFRESCOS[nombre] || null); }
   let preciosEditables = JSON.parse(localStorage.getItem('bajon_precios') || 'null') || { ...PRECIOS_DEFAULT };
 
   function guardarPrecios() { localStorage.setItem('bajon_precios', JSON.stringify(preciosEditables)); }
@@ -707,16 +791,45 @@
 
   function renderPrecios() {
     const lista = document.getElementById('precios-lista');
-    lista.innerHTML = Object.keys(PRECIOS_DEFAULT).filter(n => n !== 'Otro').map(nombre => `
-      <div class="precio-item">
-        <span class="precio-nombre">${nombre}</span>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="font-size:12px;color:var(--gris);">$</span>
-          <input class="precio-input" type="number" min="0" value="${getPrecio(nombre)}"
-            oninput="actualizarPrecio('${nombre}', this.value)"
-            inputmode="decimal">
+    lista.innerHTML = Object.keys(PRECIOS_DEFAULT).filter(n => n !== 'Otro').map(nombre => {
+      const costo = getCosto(nombre);
+      const venta = getPrecio(nombre);
+      const ganancia = costo !== null ? venta - costo : null;
+      const esRefresco = COSTOS_REFRESCOS.hasOwnProperty(nombre);
+      return `<div class="precio-item" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span class="precio-nombre">${nombre}${esRefresco ? ' 🥤' : ''}</span>
+          ${ganancia !== null ? `<span style="font-size:11px;color:var(--verde);font-weight:700;">+$${ganancia.toFixed(0)} ganancia</span>` : ''}
         </div>
-      </div>`).join('');
+        <div style="display:flex;gap:8px;align-items:center;">
+          ${esRefresco ? `<div style="flex:1;text-align:center;">
+            <div style="font-size:10px;color:var(--gris);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;">Costo compra</div>
+            <div style="display:flex;align-items:center;gap:4px;justify-content:center;">
+              <span style="font-size:12px;color:var(--rojo);">$</span>
+              <input class="precio-input" style="color:var(--rojo);" type="number" min="0" value="${costo}"
+                oninput="actualizarCostoRefresco('${nombre}', this.value)" inputmode="decimal">
+            </div>
+          </div>` : ''}
+          <div style="flex:1;text-align:center;">
+            <div style="font-size:10px;color:var(--gris);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;">${esRefresco ? 'Precio venta' : 'Precio ref.'}</div>
+            <div style="display:flex;align-items:center;gap:4px;justify-content:center;">
+              <span style="font-size:12px;color:var(--gris);">$</span>
+              <input class="precio-input" type="number" min="0" value="${venta}"
+                oninput="actualizarPrecio('${nombre}', this.value)" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function actualizarCostoRefresco(nombre, valor) {
+    const v = parseFloat(valor);
+    if (!isNaN(v) && v >= 0) {
+      costosRefrescos[nombre] = v;
+      guardarCostosRefrescos();
+      renderPrecios();
+    }
   }
 
   function actualizarPrecio(nombre, valor) {
@@ -758,6 +871,152 @@
     ahora.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'}) + '<br>' +
     ahora.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
 
+  // ── AHORROS PERSONALIZABLES ──
+  let ahorros = JSON.parse(localStorage.getItem('bajon_ahorros') || '[]');
+  // ahorros: [{id, nombre, pct, acumulado}]
+  function guardarAhorros() { localStorage.setItem('bajon_ahorros', JSON.stringify(ahorros)); }
+
+  let _modoAhorro = 'pct'; // 'pct' o 'fijo'
+
+  function selModoAhorro(modo) {
+    _modoAhorro = modo;
+    const btnPct  = document.getElementById('btn-modo-pct');
+    const btnFijo = document.getElementById('btn-modo-fijo');
+    const wrapPct  = document.getElementById('ahorro-modo-pct-wrap');
+    const wrapFijo = document.getElementById('ahorro-modo-fijo-wrap');
+    if (modo === 'pct') {
+      btnPct.style.borderColor='var(--amarillo)'; btnPct.style.background='rgba(244,162,97,0.15)'; btnPct.style.color='var(--amarillo)';
+      btnFijo.style.borderColor='#444'; btnFijo.style.background='transparent'; btnFijo.style.color='var(--gris)';
+      wrapPct.style.display='block'; wrapFijo.style.display='none';
+    } else {
+      btnFijo.style.borderColor='var(--morado)'; btnFijo.style.background='rgba(155,93,229,0.15)'; btnFijo.style.color='var(--morado)';
+      btnPct.style.borderColor='#444'; btnPct.style.background='transparent'; btnPct.style.color='var(--gris)';
+      wrapFijo.style.display='block'; wrapPct.style.display='none';
+    }
+  }
+
+  function agregarAhorro() {
+    const nombre = document.getElementById('ahorro-nombre-input').value.trim();
+    const meta   = parseFloat(document.getElementById('ahorro-meta-input').value) || 0;
+    if (!nombre) { mostrarToast('⚠️ Escribe el nombre del ahorro'); return; }
+    let pct = 0, montoFijo = 0;
+    if (_modoAhorro === 'pct') {
+      pct = parseFloat(document.getElementById('ahorro-pct-input').value);
+      if (!pct || pct <= 0 || pct > 100) { mostrarToast('⚠️ Ingresa un porcentaje válido (1-100)'); return; }
+    } else {
+      montoFijo = parseFloat(document.getElementById('ahorro-fijo-input').value);
+      if (!montoFijo || montoFijo <= 0) { mostrarToast('⚠️ Ingresa una cantidad válida'); return; }
+    }
+    ahorros.push({ id: Date.now(), nombre, modo: _modoAhorro, pct, montoFijo, meta_total: meta, acumulado: 0, registros: [] });
+    guardarAhorros();
+    document.getElementById('ahorro-nombre-input').value = '';
+    document.getElementById('ahorro-pct-input').value = '';
+    document.getElementById('ahorro-fijo-input').value = '';
+    document.getElementById('ahorro-meta-input').value = '';
+    renderDistribucion();
+    mostrarToast('✅ Meta "' + nombre + '" agregada');
+  }
+
+  function eliminarAhorro(id) {
+    ahorros = ahorros.filter(a => a.id !== id);
+    guardarAhorros();
+    renderDistribucion();
+  }
+
+  // Store current sueldoDisponible for saving
+  let _sueldoDisponibleActual = 0;
+
+  function calcMontoAhorro(a, sueldoDisponible) {
+    // Returns how much to save today for this meta
+    if (a.modo === 'fijo') return a.montoFijo || 0;
+    return sueldoDisponible * ((a.pct || 0) / 100);
+  }
+
+  function renderAhorros(sueldoDisponible) {
+    _sueldoDisponibleActual = sueldoDisponible;
+    const lista = document.getElementById('ahorros-lista');
+    if (!lista) return;
+    const btnGuardar = document.getElementById('btn-guardar-ahorro');
+    const msgEl = document.getElementById('ahorro-guardado-msg');
+    if (!ahorros.length) {
+      lista.innerHTML = '<div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">Sin metas de ahorro. Agrega una abajo.</div>';
+      const resEl = document.getElementById('dist-ahorros-resumen');
+      if (resEl) resEl.innerHTML = '';
+      if (btnGuardar) btnGuardar.style.display = 'none';
+      return;
+    }
+    const hoyKey = new Date().toISOString().split('T')[0];
+    const yaGuardadoHoy = ahorros.some(a => (a.registros||[]).some(r => r.fecha === hoyKey));
+    const totalPctAhorros = ahorros.filter(a => a.modo !== 'fijo').reduce((s,a) => s + (a.pct||0), 0);
+
+    lista.innerHTML = ahorros.map(a => {
+      const montoHoy = calcMontoAhorro(a, sueldoDisponible);
+      const acumulado = a.acumulado || 0;
+      const meta = a.meta_total || 0;
+      const pctProgreso = meta > 0 ? Math.min(100, (acumulado / meta) * 100) : 0;
+      const metaStr = meta > 0 ? `$${acumulado.toFixed(0)} / $${meta.toFixed(0)}` : `$${acumulado.toFixed(0)} ahorrados`;
+      const esFijo = a.modo === 'fijo';
+      const modoLabel = esFijo
+        ? `<span style="background:rgba(155,93,229,0.2);color:var(--morado);font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px;">$ Fijo</span>`
+        : `<span style="background:rgba(244,162,97,0.2);color:var(--amarillo);font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px;">% Pct</span>`;
+      const ultimos = (a.registros||[]).slice(-3).reverse();
+      return `<div class="ahorro-item" style="flex-direction:column;align-items:stretch;gap:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div><span class="ahorro-nombre">${a.nombre}</span>${modoLabel}</div>
+          <button onclick="eliminarAhorro(${a.id})" style="background:transparent;border:none;color:#555;font-size:14px;cursor:pointer;padding:2px 6px;">✕</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+          <div>
+            <div style="font-size:11px;color:var(--gris);">
+              ${esFijo ? `$${a.montoFijo} fijos por día` : `${a.pct}% del sueldo restante`} · hoy: <b style="color:var(--verde);">+$${montoHoy.toFixed(0)}</b>
+            </div>
+            <div style="font-size:13px;color:var(--verde);font-weight:700;margin-top:2px;">Total: ${metaStr}</div>
+          </div>
+          ${meta > 0 ? `<div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${pctProgreso>=100?'var(--amarillo)':'var(--morado)'};">${pctProgreso.toFixed(0)}%</div>` : ''}
+        </div>
+        ${meta > 0 ? `<div class="ahorro-barra-wrap"><div class="ahorro-barra" style="width:${pctProgreso.toFixed(1)}%;background:${pctProgreso>=100?'var(--amarillo)':'var(--verde)'};"></div></div>` : ''}
+        ${ultimos.length ? `<div style="font-size:10px;color:var(--gris);margin-top:2px;">Últimos: ${ultimos.map(r=>`+$${r.monto.toFixed(0)} (${r.fecha})`).join(' · ')}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    const totalAhorradoHoy = ahorros.reduce((s,a) => s + calcMontoAhorro(a, sueldoDisponible), 0);
+    const resEl = document.getElementById('dist-ahorros-resumen');
+    if (resEl) {
+      const alertaPct = totalPctAhorros > 100 ? `<div style="color:var(--rojo);font-size:11px;margin-top:4px;">⚠️ Los % suman ${totalPctAhorros}% — ajústalos</div>` : '';
+      resEl.innerHTML = `<div style="padding:8px 12px;background:rgba(46,196,182,0.08);border:1px solid var(--verde);border-radius:10px;font-size:13px;">${alertaPct}<div style="display:flex;justify-content:space-between;"><span style="color:var(--gris);">Total a guardar hoy:</span><span style="color:var(--verde);font-weight:700;">$${totalAhorradoHoy.toFixed(2)}</span></div></div>`;
+    }
+    if (btnGuardar) {
+      if (totalAhorradoHoy > 0 && !yaGuardadoHoy) {
+        btnGuardar.style.display = 'block';
+        btnGuardar.textContent = '💾 Guardar ahorro de hoy ($' + totalAhorradoHoy.toFixed(0) + ')';
+      } else {
+        btnGuardar.style.display = 'none';
+      }
+    }
+    if (msgEl) {
+      msgEl.textContent = yaGuardadoHoy ? '✅ Ya registraste el ahorro de hoy' : '';
+    }
+  }
+
+  function guardarAhorroHoy() {
+    const hoyKey = new Date().toISOString().split('T')[0];
+    const hoyLabel = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
+    const yaGuardado = ahorros.some(a => (a.registros||[]).some(r => r.fecha === hoyKey));
+    if (yaGuardado) { mostrarToast('⚠️ Ya guardaste el ahorro de hoy'); return; }
+    const totalHoy = ahorros.reduce((s,a) => s + calcMontoAhorro(a, _sueldoDisponibleActual), 0);
+    if (totalHoy <= 0) { mostrarToast('⚠️ No hay nada para guardar hoy'); return; }
+    ahorros.forEach(a => {
+      const monto = calcMontoAhorro(a, _sueldoDisponibleActual);
+      if (!a.registros) a.registros = [];
+      if (!a.acumulado) a.acumulado = 0;
+      a.registros.push({ fecha: hoyKey, label: hoyLabel, monto });
+      a.acumulado += monto;
+    });
+    guardarAhorros();
+    renderDistribucion();
+    mostrarToast('✅ ¡Ahorros del día guardados!');
+  }
+
   function guardarMov(){ localStorage.setItem('bajon_mov', JSON.stringify(movimientos)); }
   function guardarGastos(){ localStorage.setItem('bajon_gastos', JSON.stringify(gastos)); }
   function guardarHistorial(){ localStorage.setItem('bajon_historial', JSON.stringify(historial)); }
@@ -776,6 +1035,7 @@
     if(tab==='graficas') { renderGraficas(); }
     if(tab==='historico') { renderGraficasHistoricas(); }
     if(tab==='precios') { renderPrecios(); }
+    if(tab==='ahorros') { renderTabAhorros(); }
   }
 
   // ── TECLADO NUMÉRICO (modal venta) ──
@@ -1567,8 +1827,19 @@
     const semLabel = esActual ? 'semana actual' : `hace ${Math.abs(semanaOffset)} semana${Math.abs(semanaOffset)>1?'s':''}`;
     const invPorDia = Array(7).fill(0); const sueldoPorDia = Array(7).fill(0);
     movs.forEach(m => { if (!m._fecha) return; const idx = (new Date(m._fecha).getDay() + 6) % 7; if (['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)) { invPorDia[idx] += m.precio * pctInv; sueldoPorDia[idx] += m.precio * pctSueldo; } });
+    const pctColchon = (parseFloat(document.getElementById('pct-colchon').value)||15)/100;
+    const colchonPorDia = Array(7).fill(0);
+    movs.forEach(m => { if (!m._fecha) return; const idx = (new Date(m._fecha).getDay() + 6) % 7; if (['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)) { colchonPorDia[idx] += m.precio * pctColchon; } });
     const invNetoPorDia = invPorDia.map((v,i) => Math.max(0, v - gasNegDia[i]));
-    const sueldoNetoPorDia = sueldoPorDia.map((v,i) => Math.max(0, v - gasPerDia[i]));
+    // Si los gastos de negocio superan inversión+colchón, el resto sale del sueldo
+    const descontadoDelSueldoPorDia = invPorDia.map((v,i) => {
+      let faltante = gasNegDia[i] - v;
+      if (faltante <= 0) return 0;
+      const cubreColchon = Math.min(colchonPorDia[i], faltante);
+      faltante -= cubreColchon;
+      return Math.max(0, faltante);
+    });
+    const sueldoNetoPorDia = sueldoPorDia.map((v,i) => Math.max(0, v - gasPerDia[i] - descontadoDelSueldoPorDia[i]));
     document.getElementById('label-inv-semana').textContent = `Lo que apartaste para el negocio vs lo que ya gastaste — ${semLabel}`;
     destroyChart('inversion-semana-actual');
     grafCharts['inversion-semana-actual'] = new Chart(document.getElementById('chart-inversion-semana-actual'), {
@@ -1583,11 +1854,11 @@
     destroyChart('sueldo-semana-actual');
     grafCharts['sueldo-semana-actual'] = new Chart(document.getElementById('chart-sueldo-semana-actual'), {
       type: 'bar',
-      data: { labels: diasNom, datasets: [ { label:'💵 Sueldo', data: sueldoPorDia, backgroundColor:'rgba(155,93,229,0.7)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 }, { label:'🧍 Gastos personales', data: gasPerDia, backgroundColor:'rgba(230,57,70,0.7)', borderColor:'#e63946', borderWidth:2, borderRadius:5 }, { label:'✅ Sueldo neto', data: sueldoNetoPorDia, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 } ] },
+      data: { labels: diasNom, datasets: [ { label:'💵 Sueldo', data: sueldoPorDia, backgroundColor:'rgba(155,93,229,0.7)', borderColor:'#9b5de5', borderWidth:2, borderRadius:5 }, { label:'🧍 Gastos personales', data: gasPerDia, backgroundColor:'rgba(230,57,70,0.7)', borderColor:'#e63946', borderWidth:2, borderRadius:5 }, { label:'🏭 Tomado p/negocio', data: descontadoDelSueldoPorDia, backgroundColor:'rgba(244,162,97,0.6)', borderColor:'#f4a261', borderWidth:2, borderRadius:5 }, { label:'✅ Sueldo neto', data: sueldoNetoPorDia, type:'line', borderColor:'#2ec4b6', backgroundColor:'rgba(46,196,182,0.1)', pointBackgroundColor:'#2ec4b6', tension:0.3, fill:false, pointRadius:5 } ] },
       options: { responsive:true, plugins:{ legend:{ display:true, position:'top', labels:{ color:cf.color, font:{size:11}, padding:10 } }, tooltip:{ callbacks:{ label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } } }, scales: { x:{ ticks:{ color:cf.color }, grid:{color:cf.gridColor} }, y:{ ticks:{ color:cf.color, callback: v=>'$'+v }, grid:{color:cf.gridColor} } } }
     });
-    const totSueldoAsig = sueldoPorDia.reduce((s,v)=>s+v,0); const totGasPerS = gasPerDia.reduce((s,v)=>s+v,0); const totSueldoNet = sueldoNetoPorDia.reduce((s,v)=>s+v,0);
-    document.getElementById('resumen-sueldo-semana-actual').innerHTML = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding:4px 0;font-size:12px;"><span style="color:#9b5de5">💵 Sueldo: <b>$${totSueldoAsig.toFixed(0)}</b></span><span style="color:#e63946">🧍 Gastos: <b>-$${totGasPerS.toFixed(0)}</b></span><span style="color:#2ec4b6">✅ Neto: <b>$${totSueldoNet.toFixed(0)}</b></span></div>`;
+    const totSueldoAsig = sueldoPorDia.reduce((s,v)=>s+v,0); const totGasPerS = gasPerDia.reduce((s,v)=>s+v,0); const totSueldoNet = sueldoNetoPorDia.reduce((s,v)=>s+v,0); const totDescontadoNeg = descontadoDelSueldoPorDia.reduce((s,v)=>s+v,0);
+    document.getElementById('resumen-sueldo-semana-actual').innerHTML = `<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding:4px 0;font-size:12px;"><span style="color:#9b5de5">💵 Sueldo: <b>$${totSueldoAsig.toFixed(0)}</b></span><span style="color:#e63946">🧍 Gastos: <b>-$${totGasPerS.toFixed(0)}</b></span>${totDescontadoNeg>0?`<span style="color:#f4a261">🏭 P/negocio: <b>-$${totDescontadoNeg.toFixed(0)}</b></span>`:''}<span style="color:#2ec4b6">✅ Neto: <b>$${totSueldoNet.toFixed(0)}</b></span></div>`;
   }
 
   function lunesDe(fecha) {
@@ -1683,9 +1954,117 @@
     if (elInvG) { elInvG.innerHTML = gastosNegocio.map(g=>`<div>\u00b7 ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('') + (descontadoDeColchon > 0 ? `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f $${descontadoDeColchon.toFixed(2)} tomado del Colch\u00f3n</div>` : ''); }
     const elColchonG = document.getElementById('dist-colchon-gastos');
     if (elColchonG) { elColchonG.innerHTML = descontadoDeColchon > 0 ? `<div style="color:var(--rojo);">\u00b7 Cubri\u00f3 faltante: <b>-$${descontadoDeColchon.toFixed(2)}</b></div>` + (descontadoDeSueldo > 0 ? `<div style="color:var(--rojo);margin-top:4px;">\u26a0\ufe0f Colch\u00f3n insuficiente. $${descontadoDeSueldo.toFixed(2)} tomados del Sueldo</div>` : '') : ''; }
+    // Render ahorros con el sueldo neto real disponible
+    renderAhorros(sueldoFinalReal);
   }
 
-  // ─── BACKUP ───────────────────────────────────────────────────────────────────
+  // ─── TAB AHORROS ──────────────────────────────────────────────────────────────
+  function renderTabAhorros() {
+    const listaEl = document.getElementById('ahorros-tab-lista');
+    if (!listaEl) return;
+    if (!ahorros.length) {
+      listaEl.innerHTML = '<div class="empty-state"><div class="icon">🏦</div>Aún no tienes metas de ahorro.<br>Agrégalas en la tab 💰 Dist.</div>';
+      const canvasEl = document.getElementById('chart-ahorros-hist');
+      if (canvasEl) { destroyChart('ahorros-hist'); canvasEl.style.display='none'; }
+      document.getElementById('ahorros-hist-resumen').innerHTML = '';
+      return;
+    }
+
+    const colores = ['#2ec4b6','#9b5de5','#f4a261','#e63946','#1877f2','#25d366','#ff6b35','#ff9500'];
+
+    // Cards por meta
+    listaEl.innerHTML = ahorros.map((a, i) => {
+      const color = colores[i % colores.length];
+      const meta = a.meta_total || 0;
+      const acum = a.acumulado || 0;
+      const pct = meta > 0 ? Math.min(100, (acum/meta)*100) : 0;
+      const falta = meta > 0 ? Math.max(0, meta - acum) : null;
+      const registros = a.registros || [];
+      const ultimoReg = registros.length ? registros[registros.length-1] : null;
+      return `<div style="background:var(--medio);border:2px solid ${color};border-radius:14px;padding:16px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${color};letter-spacing:1px;">${a.nombre}</div>
+          <div style="text-align:right;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${color};">$${acum.toFixed(0)}</div>
+            <div style="font-size:10px;color:var(--gris);">ahorrado${meta>0?` de $${meta.toFixed(0)}`:''}</div>
+          </div>
+        </div>
+        ${meta > 0 ? `
+        <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;">
+          <div style="height:100%;width:${pct.toFixed(1)}%;background:${color};border-radius:6px;transition:width 0.5s;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gris);">
+          <span style="color:${color};font-weight:700;">${pct.toFixed(0)}% completado</span>
+          ${falta !== null ? `<span>Faltan: <b style="color:var(--rojo);">$${falta.toFixed(0)}</b></span>` : ''}
+        </div>` : '<div style="font-size:11px;color:var(--gris);">Sin meta definida — cada peso que guardas suma</div>'}
+        <div style="margin-top:10px;font-size:11px;color:var(--gris);">
+          📅 ${registros.length} día${registros.length!==1?'s':''} guardado${registros.length!==1?'s':''}
+          ${ultimoReg ? ` · Último: ${ultimoReg.label} (+$${ultimoReg.monto.toFixed(0)})` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    // Chart acumulado total
+    const todosRegistros = [];
+    ahorros.forEach(a => { (a.registros||[]).forEach(r => { todosRegistros.push({ fecha: r.fecha, label: r.label, monto: r.monto }); }); });
+    todosRegistros.sort((a,b) => a.fecha.localeCompare(b.fecha));
+
+    const canvasEl = document.getElementById('chart-ahorros-hist');
+    if (!todosRegistros.length) {
+      if (canvasEl) canvasEl.style.display = 'none';
+      document.getElementById('ahorros-hist-resumen').innerHTML = '<span style="color:var(--gris);font-size:12px;">Aún no has guardado ningún ahorro. Usa el botón "💾 Guardar ahorro de hoy" en la tab 💰 Dist.</span>';
+      return;
+    }
+    if (canvasEl) canvasEl.style.display = 'block';
+
+    // Build cumulative per-ahorro datasets
+    const cf = { color:'#c0c0d8', gridColor:'rgba(255,255,255,0.06)' };
+    const todasFechas = [...new Set(todosRegistros.map(r => r.fecha))].sort();
+    const datasets = ahorros.map((a, i) => {
+      const color = colores[i % colores.length];
+      let acumRun = 0;
+      const data = todasFechas.map(f => {
+        const reg = (a.registros||[]).find(r => r.fecha === f);
+        if (reg) acumRun += reg.monto;
+        return parseFloat(acumRun.toFixed(2));
+      });
+      return { label: a.nombre, data, borderColor: color, backgroundColor: color+'22', fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: color };
+    });
+
+    // Total acumulado line
+    const totalData = todasFechas.map((f, fi) => datasets.reduce((s,d) => s + d.data[fi], 0));
+
+    destroyChart('ahorros-hist');
+    grafCharts['ahorros-hist'] = new Chart(canvasEl, {
+      type: 'line',
+      data: {
+        labels: todasFechas,
+        datasets: [
+          ...datasets,
+          { label: '💰 Total', data: totalData, borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.04)', fill: false, tension: 0.3, pointRadius: 5, pointBackgroundColor: '#ffffff', borderWidth: 2, borderDash: [5,3] }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { color: cf.color, font: { size: 11 }, padding: 10, boxWidth: 14 } },
+          tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': $' + ctx.raw.toFixed(2) } }
+        },
+        scales: {
+          x: { ticks: { color: cf.color, font: { size: 10 }, maxRotation: 45 }, grid: { color: cf.gridColor } },
+          y: { ticks: { color: cf.color, callback: v => '$' + v }, grid: { color: cf.gridColor } }
+        }
+      }
+    });
+
+    const totalAcum = ahorros.reduce((s,a) => s + (a.acumulado||0), 0);
+    document.getElementById('ahorros-hist-resumen').innerHTML =
+      `<div style="display:flex;flex-wrap:wrap;gap:10px;padding:4px 0;font-size:12px;">` +
+      ahorros.map((a,i) => `<span style="color:${colores[i%colores.length]};">${a.nombre}: <b>$${(a.acumulado||0).toFixed(0)}</b></span>`).join('') +
+      `<span style="color:#fff;font-weight:700;border-top:1px solid #444;width:100%;padding-top:6px;margin-top:2px;">💰 Total ahorrado: $${totalAcum.toFixed(2)}</span></div>`;
+  }
+
+    // ─── BACKUP ───────────────────────────────────────────────────────────────────
   function initBackupFechas() {
     const hoy = new Date(); const fmt = d => d.toISOString().split('T')[0]; const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
     document.getElementById('backup-fecha-desde').value = fmt(primerDiaMes);
@@ -1725,7 +2104,7 @@
     const prefijo = 'ElBajon_' + desdeStr + '_' + hastaStr;
     if (ventas.length) descargarArchivo(toCSV(ventas), prefijo + '_Ventas.csv', 'text/csv;charset=utf-8;');
     if (gastosList.length) descargarArchivo(toCSV(gastosList), prefijo + '_Gastos.csv', 'text/csv;charset=utf-8;');
-    const backupObj = { tipo: 'BACKUP_BAJON_V1', fecha_exportacion: new Date().toISOString(), historial, movimientos_hoy: movimientos, gastos_hoy: gastos, mesas };
+    const backupObj = { tipo: 'BACKUP_BAJON_V1', fecha_exportacion: new Date().toISOString(), historial, movimientos_hoy: movimientos, gastos_hoy: gastos, mesas, ahorros, costos_refrescos: costosRefrescos };
     descargarArchivo(JSON.stringify(backupObj, null, 2), prefijo + '_BACKUP.json', 'application/json');
     const info = document.getElementById('backup-export-info');
     info.textContent = '\u2705 Descargados: ' + ventas.length + ' ventas, ' + gastosList.length + ' gastos + backup.json';
@@ -1741,14 +2120,14 @@
       try {
         const backup = JSON.parse(e.target.result);
         if (backup.tipo !== 'BACKUP_BAJON_V1') { info.innerHTML = '<span style="color:var(--rojo)">\u274c Formato no reconocido. Usa el archivo _BACKUP.json exportado desde esta p\u00e1gina.</span>'; return; }
-        const histBackup = backup.historial || []; const movBackup = backup.movimientos_hoy || []; const gasBackup = backup.gastos_hoy || []; const mesasBackup = backup.mesas || [];
+        const histBackup = backup.historial || []; const movBackup = backup.movimientos_hoy || []; const gasBackup = backup.gastos_hoy || []; const mesasBackup = backup.mesas || []; const ahorrosBackup = backup.ahorros || []; const costosRefBk = backup.costos_refrescos || null;
         const idsHist = new Set(historial.map(d=>d.id)); let diasAg = 0;
         histBackup.forEach(d => { if (!idsHist.has(d.id)) { historial.unshift(d); diasAg++; } });
         let movAg = 0; if (!movimientos.length && movBackup.length) { movimientos = movBackup; movAg = movBackup.length; }
         let gasAg = 0; if (!gastos.length && gasBackup.length) { gastos = gasBackup; gasAg = gasBackup.length; }
         const idsMesas = new Set(mesas.map(m=>m.id)); let mesasAg = 0;
         mesasBackup.forEach(m => { if (!idsMesas.has(m.id)) { mesas.push(m); mesasAg++; } });
-        guardarHistorial(); guardarMov(); guardarGastos(); guardarMesas();
+        if (ahorrosBackup.length && !ahorros.length) { ahorros = ahorrosBackup; guardarAhorros(); } if (costosRefBk) { costosRefrescos = costosRefBk; guardarCostosRefrescos(); } guardarHistorial(); guardarMov(); guardarGastos(); guardarMesas();
         actualizarTotalesRapidos(); renderMesas();
         info.innerHTML = '<span style="color:var(--verde);">✅ Importación exitosa:<br>📅 ' + diasAg + ' días del historial agregados<br>🧾 ' + movAg + ' ventas del día cargadas<br>💸 ' + gasAg + ' gastos del día cargados<br>🪑 ' + mesasAg + ' mesas restauradas</span>';
         mostrarToast('\u2705 Datos restaurados');
