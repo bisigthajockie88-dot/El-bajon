@@ -929,28 +929,15 @@
     _montoFijoTemp[id] = (!isNaN(v) && v > 0) ? v : 0;
     // Re-render sólo el resumen y el botón sin redibujar toda la lista (evita perder el foco)
     const sueldo = _sueldoDisponibleActual;
-    let presupuestoRestante = sueldo;
-    const montosHoy = {};
-    // Fijos topados al presupuesto disponible
-    ahorros.filter(a => a.modo === 'fijo').forEach(a => {
-      const pedido = _montoFijoTemp[a.id] || 0;
-      const asignado = Math.min(pedido, Math.max(0, presupuestoRestante));
-      montosHoy[a.id] = asignado;
-      presupuestoRestante = Math.max(0, presupuestoRestante - asignado);
-    });
-    // Porcentuales sobre el remanente
-    let rem = presupuestoRestante;
-    ahorros.filter(a => a.modo !== 'fijo').forEach(a => {
-      const m = rem * ((a.pct || 0) / 100);
-      montosHoy[a.id] = m;
-      rem = Math.max(0, rem - m);
-    });
+    const { montosHoy } = calcularMontosAhorros(sueldo);
     const totalHoy = Object.values(montosHoy).reduce((s, v) => s + v, 0);
     const hoyKey = new Date().toISOString().split('T')[0];
     const yaGuardadoHoy = ahorros.some(a => (a.registros||[]).some(r => r.fecha === hoyKey));
-    // Actualizar etiqueta "hoy:" de cada ahorro % (los fijos los muestra su propio input)
+    // Actualizar etiqueta "hoy:" de cada ahorro % en tiempo real
+    const { montosHoy: montosActualizados, baseParaPct: baseActual } = calcularMontosAhorros(sueldo);
     ahorros.filter(a => a.modo !== 'fijo').forEach(a => {
-      // no hay IDs únicos fáciles en el HTML generado; se re-renderiza completo al guardar
+      const el = document.getElementById('lbl-pct-hoy-' + a.id);
+      if (el) el.textContent = `${a.pct}% de $${baseActual.toFixed(0)} (base después de fijos) · hoy: +$${(montosActualizados[a.id]||0).toFixed(0)}`;
     });
     const resEl = document.getElementById('dist-ahorros-resumen');
     if (resEl) {
@@ -977,6 +964,33 @@
     return sueldoDisponible * ((a.pct || 0) / 100);
   }
 
+  // Calcula montos de todos los ahorros:
+  // 1) Primero se descuentan TODOS los fijos (sin importar su posición en la lista)
+  // 2) Lo que sobre es la base para TODOS los porcentuales (todos calculados sobre la misma base)
+  function calcularMontosAhorros(sueldoDisponible) {
+    const montosHoy = {};
+    // Paso 1: sumar todos los fijos pedidos y descontarlos del sueldo
+    let totalFijos = 0;
+    ahorros.filter(a => a.modo === 'fijo').forEach(a => {
+      const pedido = _montoFijoTemp[a.id] || 0;
+      totalFijos += pedido;
+    });
+    const baseParaPct = Math.max(0, sueldoDisponible - totalFijos);
+    // Asignar fijos (topados si exceden el sueldo)
+    let restanteFijos = sueldoDisponible;
+    ahorros.filter(a => a.modo === 'fijo').forEach(a => {
+      const pedido = _montoFijoTemp[a.id] || 0;
+      const asignado = Math.min(pedido, Math.max(0, restanteFijos));
+      montosHoy[a.id] = asignado;
+      restanteFijos = Math.max(0, restanteFijos - asignado);
+    });
+    // Paso 2: todos los % calculados sobre la misma base (lo que queda después de fijos)
+    ahorros.filter(a => a.modo !== 'fijo').forEach(a => {
+      montosHoy[a.id] = baseParaPct * ((a.pct || 0) / 100);
+    });
+    return { montosHoy, baseParaPct };
+  }
+
   // Almacena los montos ingresados manualmente para ahorros de cantidad fija
   let _montoFijoTemp = {};
 
@@ -997,25 +1011,8 @@
     const yaGuardadoHoy = ahorros.some(a => (a.registros||[]).some(r => r.fecha === hoyKey));
     const totalPctAhorros = ahorros.filter(a => a.modo !== 'fijo').reduce((s,a) => s + (a.pct||0), 0);
 
-    // ── Calcular montos en cascada ──
-    // 1) Primero descuentan los fijos (ingresados manualmente), topados al sueldo disponible
-    // 2) El remanente es la base para los % en orden de lista
-    let presupuestoRestante = sueldoDisponible;
-    const montosHoy = {};
-    // Primero asignar fijos (topados al presupuesto restante)
-    ahorros.filter(a => a.modo === 'fijo').forEach(a => {
-      const pedido = _montoFijoTemp[a.id] || 0;
-      const asignado = Math.min(pedido, Math.max(0, presupuestoRestante));
-      montosHoy[a.id] = asignado;
-      presupuestoRestante = Math.max(0, presupuestoRestante - asignado);
-    });
-    // Luego los porcentuales sobre lo que queda
-    let remanentePct = presupuestoRestante;
-    ahorros.filter(a => a.modo !== 'fijo').forEach(a => {
-      const monto = remanentePct * ((a.pct || 0) / 100);
-      montosHoy[a.id] = monto;
-      remanentePct = Math.max(0, remanentePct - monto);
-    });
+    // ── Calcular montos: fijos primero, luego % todos sobre la misma base ──
+    const { montosHoy, baseParaPct } = calcularMontosAhorros(sueldoDisponible);
 
     lista.innerHTML = ahorros.map(a => {
       const montoHoy = montosHoy[a.id] || 0;
@@ -1048,7 +1045,7 @@
             <div style="font-size:11px;color:var(--gris);">
               ${esFijo
                 ? `Tú decides cuánto guardar cada día${montoFijoHoy > 0 ? ` · hoy: <b style="color:var(--verde);">+$${montoFijoHoy.toFixed(0)}</b>` : ''}`
-                : `${a.pct}% del sueldo restante · hoy: <b style="color:var(--verde);">+$${montoHoy.toFixed(0)}</b>`}
+                : `<span id="lbl-pct-hoy-${a.id}">${a.pct}% de $${baseParaPct.toFixed(0)} (base después de fijos) · hoy: <b style="color:var(--verde);">+$${montoHoy.toFixed(0)}</b></span>`}
             </div>
             <div style="font-size:13px;color:var(--verde);font-weight:700;margin-top:2px;">Total: ${metaStr}</div>
           </div>
@@ -1088,21 +1085,11 @@
     const yaGuardado = ahorros.some(a => (a.registros||[]).some(r => r.fecha === hoyKey));
     if (yaGuardado) { mostrarToast('⚠️ Ya guardaste el ahorro de hoy'); return; }
 
-    // Calcular en cascada igual que en renderAhorros (fijos topados al sueldo disponible)
-    let presupuestoRestante = _sueldoDisponibleActual;
-    const montosGuardar = {};
-    ahorros.filter(a => a.modo === 'fijo').forEach(a => {
-      const pedido = _montoFijoTemp[a.id] || 0;
-      const asignado = Math.min(pedido, Math.max(0, presupuestoRestante));
-      montosGuardar[a.id] = asignado;
-      presupuestoRestante = Math.max(0, presupuestoRestante - asignado);
-    });
-    let remanentePct = presupuestoRestante;
-    ahorros.filter(a => a.modo !== 'fijo').forEach(a => {
-      const monto = remanentePct * ((a.pct || 0) / 100);
-      montosGuardar[a.id] = monto;
-      remanentePct = Math.max(0, remanentePct - monto);
-    });
+    // Calcular igual que en renderAhorros: fijos primero, luego % todos sobre la misma base
+    const { montosGuardar } = (() => {
+      const { montosHoy } = calcularMontosAhorros(_sueldoDisponibleActual);
+      return { montosGuardar: montosHoy };
+    })();
 
     const totalHoy = Object.values(montosGuardar).reduce((s, v) => s + v, 0);
     if (totalHoy <= 0) { mostrarToast('⚠️ No hay nada para guardar hoy'); return; }
