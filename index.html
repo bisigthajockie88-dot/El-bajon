@@ -2253,22 +2253,20 @@
     document.getElementById('overlay-ahorro-mov').classList.add('visible');
   }
 
-  // Distribuye un monto global entre los ahorros proporcional a sus porcentajes de meta configurados
-  // Si ninguno tiene meta, reparte igual. Devuelve array [{ahorro, monto}]
+  // Redondea hacia abajo al 50 centavo más cercano
+  function redondear50Abajo(valor) {
+    return Math.floor(valor * 2) / 2;
+  }
+
+  // Distribuye un monto global en partes iguales redondeadas a 50 centavos hacia abajo.
+  // El sobrante (centavos que no alcanzan para otro 50¢) se suma al primer ahorro para que el total cuadre exacto.
   function calcularDistribucionGlobal(montoTotal) {
     if (!ahorros.length) return [];
-    const totalMeta = ahorros.reduce((s, a) => s + (a.meta_total || 0), 0);
-    let pesos;
-    if (totalMeta > 0) {
-      pesos = ahorros.map(a => a.meta_total || 0);
-    } else {
-      pesos = ahorros.map(() => 1);
-    }
-    const sumPesos = pesos.reduce((s, p) => s + p, 0);
-    return ahorros.map((a, i) => ({
-      ahorro: a,
-      monto: sumPesos > 0 ? (pesos[i] / sumPesos) * montoTotal : 0
-    }));
+    const base = redondear50Abajo(montoTotal / ahorros.length);
+    const resultado = ahorros.map(a => ({ ahorro: a, monto: base }));
+    const sobrante = parseFloat((montoTotal - base * ahorros.length).toFixed(2));
+    if (sobrante > 0) resultado[0].monto = parseFloat((resultado[0].monto + sobrante).toFixed(2));
+    return resultado;
   }
 
   function ahorroMovNumpad(key) {
