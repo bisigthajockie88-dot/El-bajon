@@ -919,8 +919,48 @@
 
   function eliminarAhorro(id) {
     ahorros = ahorros.filter(a => a.id !== id);
+    delete _montoFijoTemp[id];
     guardarAhorros();
     renderDistribucion();
+  }
+
+  function actualizarMontoFijoTemp(id, valor) {
+    const v = parseFloat(valor);
+    _montoFijoTemp[id] = (!isNaN(v) && v > 0) ? v : 0;
+    // Re-render sólo el resumen y el botón sin redibujar toda la lista (evita perder el foco)
+    const sueldo = _sueldoDisponibleActual;
+    const totalFijos = ahorros.filter(a => a.modo === 'fijo').reduce((s, a) => s + (_montoFijoTemp[a.id] || 0), 0);
+    let rem = Math.max(0, sueldo - totalFijos);
+    const montosHoy = {};
+    ahorros.forEach(a => {
+      if (a.modo === 'fijo') {
+        montosHoy[a.id] = _montoFijoTemp[a.id] || 0;
+      } else {
+        const m = rem * ((a.pct || 0) / 100);
+        montosHoy[a.id] = m;
+        rem = Math.max(0, rem - m);
+      }
+    });
+    const totalHoy = Object.values(montosHoy).reduce((s, v) => s + v, 0);
+    const hoyKey = new Date().toISOString().split('T')[0];
+    const yaGuardadoHoy = ahorros.some(a => (a.registros||[]).some(r => r.fecha === hoyKey));
+    // Actualizar etiqueta "hoy:" de cada ahorro % (los fijos los muestra su propio input)
+    ahorros.filter(a => a.modo !== 'fijo').forEach(a => {
+      // no hay IDs únicos fáciles en el HTML generado; se re-renderiza completo al guardar
+    });
+    const resEl = document.getElementById('dist-ahorros-resumen');
+    if (resEl) {
+      resEl.innerHTML = `<div style="padding:8px 12px;background:rgba(46,196,182,0.08);border:1px solid var(--verde);border-radius:10px;font-size:13px;"><div style="display:flex;justify-content:space-between;"><span style="color:var(--gris);">Total a guardar hoy:</span><span style="color:var(--verde);font-weight:700;">$${totalHoy.toFixed(2)}</span></div></div>`;
+    }
+    const btnGuardar = document.getElementById('btn-guardar-ahorro');
+    if (btnGuardar) {
+      if (totalHoy > 0 && !yaGuardadoHoy) {
+        btnGuardar.style.display = 'block';
+        btnGuardar.textContent = '💾 Guardar ahorro de hoy ($' + totalHoy.toFixed(0) + ')';
+      } else {
+        btnGuardar.style.display = 'none';
+      }
+    }
   }
 
   // Store current sueldoDisponible for saving
@@ -928,9 +968,13 @@
 
   function calcMontoAhorro(a, sueldoDisponible) {
     // Returns how much to save today for this meta
-    if (a.modo === 'fijo') return a.montoFijo || 0;
+    // Para modo fijo: el usuario elige cuánto guardar cada día (se lee del input temporal)
+    if (a.modo === 'fijo') return _montoFijoTemp[a.id] || 0;
     return sueldoDisponible * ((a.pct || 0) / 100);
   }
+
+  // Almacena los montos ingresados manualmente para ahorros de cantidad fija
+  let _montoFijoTemp = {};
 
   function renderAhorros(sueldoDisponible) {
     _sueldoDisponibleActual = sueldoDisponible;
@@ -949,8 +993,28 @@
     const yaGuardadoHoy = ahorros.some(a => (a.registros||[]).some(r => r.fecha === hoyKey));
     const totalPctAhorros = ahorros.filter(a => a.modo !== 'fijo').reduce((s,a) => s + (a.pct||0), 0);
 
+    // ── Calcular montos en cascada ──
+    // 1) Primero descuentan los fijos (ingresados manualmente)
+    // 2) El remanente es la base para los % en orden de lista
+    const totalFijos = ahorros
+      .filter(a => a.modo === 'fijo')
+      .reduce((s, a) => s + (_montoFijoTemp[a.id] || 0), 0);
+    let remanentePct = Math.max(0, sueldoDisponible - totalFijos);
+
+    // Calcular monto de cada ahorro con el remanente correcto
+    const montosHoy = {};
+    ahorros.forEach(a => {
+      if (a.modo === 'fijo') {
+        montosHoy[a.id] = _montoFijoTemp[a.id] || 0;
+      } else {
+        const monto = remanentePct * ((a.pct || 0) / 100);
+        montosHoy[a.id] = monto;
+        remanentePct = Math.max(0, remanentePct - monto);
+      }
+    });
+
     lista.innerHTML = ahorros.map(a => {
-      const montoHoy = calcMontoAhorro(a, sueldoDisponible);
+      const montoHoy = montosHoy[a.id] || 0;
       const acumulado = a.acumulado || 0;
       const meta = a.meta_total || 0;
       const pctProgreso = meta > 0 ? Math.min(100, (acumulado / meta) * 100) : 0;
@@ -960,6 +1024,16 @@
         ? `<span style="background:rgba(155,93,229,0.2);color:var(--morado);font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px;">$ Fijo</span>`
         : `<span style="background:rgba(244,162,97,0.2);color:var(--amarillo);font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px;">% Pct</span>`;
       const ultimos = (a.registros||[]).slice(-3).reverse();
+      const montoFijoHoy = _montoFijoTemp[a.id] || 0;
+      const inputFijoHtml = esFijo ? `
+        <div style="margin-top:6px;">
+          <div style="font-size:10px;color:var(--gris);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;">¿Cuánto guardas hoy? ($)</div>
+          <input type="number" min="0" inputmode="decimal" placeholder="Ej: 50"
+            value="${montoFijoHoy > 0 ? montoFijoHoy : ''}"
+            onchange="actualizarMontoFijoTemp(${a.id}, this.value)"
+            oninput="actualizarMontoFijoTemp(${a.id}, this.value)"
+            style="width:100%;background:var(--oscuro);border:1px solid var(--morado);border-radius:8px;padding:10px 12px;color:var(--morado);font-size:18px;font-weight:700;text-align:center;outline:none;">
+        </div>` : '';
       return `<div class="ahorro-item" style="flex-direction:column;align-items:stretch;gap:6px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div><span class="ahorro-nombre">${a.nombre}</span>${modoLabel}</div>
@@ -968,18 +1042,21 @@
         <div style="display:flex;justify-content:space-between;align-items:flex-end;">
           <div>
             <div style="font-size:11px;color:var(--gris);">
-              ${esFijo ? `$${a.montoFijo} fijos por día` : `${a.pct}% del sueldo restante`} · hoy: <b style="color:var(--verde);">+$${montoHoy.toFixed(0)}</b>
+              ${esFijo
+                ? `Tú decides cuánto guardar cada día${montoFijoHoy > 0 ? ` · hoy: <b style="color:var(--verde);">+$${montoFijoHoy.toFixed(0)}</b>` : ''}`
+                : `${a.pct}% del sueldo restante · hoy: <b style="color:var(--verde);">+$${montoHoy.toFixed(0)}</b>`}
             </div>
             <div style="font-size:13px;color:var(--verde);font-weight:700;margin-top:2px;">Total: ${metaStr}</div>
           </div>
           ${meta > 0 ? `<div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${pctProgreso>=100?'var(--amarillo)':'var(--morado)'};">${pctProgreso.toFixed(0)}%</div>` : ''}
         </div>
         ${meta > 0 ? `<div class="ahorro-barra-wrap"><div class="ahorro-barra" style="width:${pctProgreso.toFixed(1)}%;background:${pctProgreso>=100?'var(--amarillo)':'var(--verde)'};"></div></div>` : ''}
+        ${inputFijoHtml}
         ${ultimos.length ? `<div style="font-size:10px;color:var(--gris);margin-top:2px;">Últimos: ${ultimos.map(r=>`+$${r.monto.toFixed(0)} (${r.fecha})`).join(' · ')}</div>` : ''}
       </div>`;
     }).join('');
 
-    const totalAhorradoHoy = ahorros.reduce((s,a) => s + calcMontoAhorro(a, sueldoDisponible), 0);
+    const totalAhorradoHoy = Object.values(montosHoy).reduce((s, v) => s + v, 0);
     const resEl = document.getElementById('dist-ahorros-resumen');
     if (resEl) {
       const alertaPct = totalPctAhorros > 100 ? `<div style="color:var(--rojo);font-size:11px;margin-top:4px;">⚠️ Los % suman ${totalPctAhorros}% — ajústalos</div>` : '';
@@ -1003,15 +1080,36 @@
     const hoyLabel = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
     const yaGuardado = ahorros.some(a => (a.registros||[]).some(r => r.fecha === hoyKey));
     if (yaGuardado) { mostrarToast('⚠️ Ya guardaste el ahorro de hoy'); return; }
-    const totalHoy = ahorros.reduce((s,a) => s + calcMontoAhorro(a, _sueldoDisponibleActual), 0);
-    if (totalHoy <= 0) { mostrarToast('⚠️ No hay nada para guardar hoy'); return; }
+
+    // Calcular en cascada igual que en renderAhorros
+    const totalFijos = ahorros
+      .filter(a => a.modo === 'fijo')
+      .reduce((s, a) => s + (_montoFijoTemp[a.id] || 0), 0);
+    let remanentePct = Math.max(0, _sueldoDisponibleActual - totalFijos);
+    const montosGuardar = {};
     ahorros.forEach(a => {
-      const monto = calcMontoAhorro(a, _sueldoDisponibleActual);
+      if (a.modo === 'fijo') {
+        montosGuardar[a.id] = _montoFijoTemp[a.id] || 0;
+      } else {
+        const monto = remanentePct * ((a.pct || 0) / 100);
+        montosGuardar[a.id] = monto;
+        remanentePct = Math.max(0, remanentePct - monto);
+      }
+    });
+
+    const totalHoy = Object.values(montosGuardar).reduce((s, v) => s + v, 0);
+    if (totalHoy <= 0) { mostrarToast('⚠️ No hay nada para guardar hoy'); return; }
+
+    ahorros.forEach(a => {
+      const monto = montosGuardar[a.id] || 0;
+      if (monto <= 0) return;
       if (!a.registros) a.registros = [];
       if (!a.acumulado) a.acumulado = 0;
       a.registros.push({ fecha: hoyKey, label: hoyLabel, monto });
       a.acumulado += monto;
     });
+    // Limpiar los montos fijos temporales del día
+    _montoFijoTemp = {};
     guardarAhorros();
     renderDistribucion();
     mostrarToast('✅ ¡Ahorros del día guardados!');
@@ -1540,6 +1638,53 @@
         <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--verde)">$${dia.totales.totalVenta.toFixed(2)}</div>
         <div style="font-size:11px;color:var(--rojo);margin-top:2px;">Gastos: -$${dia.totales.totalGastos.toFixed(2)}</div>
       </div>
+
+      ${(()=>{
+        // Calcular distribución de ese día con los porcentajes actuales
+        const t = dia.totales;
+        const bruto = (t.efectivo||0) + (t.tarjeta||0) + (t.didi_efectivo||0) + (t.facebook||0) + (t.whatsapp||0);
+        const pctS = (parseFloat(document.getElementById('pct-sueldo').value)  || 0) / 100;
+        const pctI = (parseFloat(document.getElementById('pct-inv').value)     || 0) / 100;
+        const pctC = (parseFloat(document.getElementById('pct-colchon').value) || 0) / 100;
+        const totalGasNeg = (t.totalGastosNegocio !== undefined ? t.totalGastosNegocio : (dia.gastos||[]).filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0));
+        const totalGasPer = (t.totalGastosPersonal !== undefined ? t.totalGastosPersonal : (dia.gastos||[]).filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0));
+        const sueldoBase  = bruto * pctS;
+        let invFinal = bruto * pctI - totalGasNeg;
+        let descontadoDeColchon = 0, descontadoDeSueldo = 0;
+        if (invFinal < 0) { descontadoDeColchon = Math.abs(invFinal); invFinal = 0; }
+        let colchonFinal = bruto * pctC - descontadoDeColchon;
+        if (colchonFinal < 0) { descontadoDeSueldo = Math.abs(colchonFinal); colchonFinal = 0; }
+        const sueldoFinal = Math.max(0, sueldoBase - totalGasPer - descontadoDeSueldo);
+        return `
+        <div style="margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid #333;">
+          <div style="background:var(--claro);padding:10px 14px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:var(--amarillo);">
+            💰 Distribución de este día
+            <span style="font-size:10px;color:var(--gris);font-family:'Inter',sans-serif;font-weight:400;margin-left:6px;">(con tus % actuales)</span>
+          </div>
+          <div style="background:var(--oscuro);padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:rgba(46,196,182,0.08);border:1px solid var(--verde);border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:10px;color:var(--verde);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">💵 Tienes en mano</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--verde);">$${bruto.toFixed(2)}</div>
+            </div>
+            <div style="background:rgba(155,93,229,0.1);border:1px solid var(--morado);border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:10px;color:var(--morado);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">🧍 Sueldo neto</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--morado);">$${sueldoFinal.toFixed(2)}</div>
+              <div style="font-size:10px;color:var(--gris);">${Math.round(pctS*100)}% · -$${totalGasPer.toFixed(0)} gtos</div>
+            </div>
+            <div style="background:rgba(244,162,97,0.08);border:1px solid var(--amarillo);border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:10px;color:var(--amarillo);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">📦 Inversión</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--amarillo);">$${invFinal.toFixed(2)}</div>
+              <div style="font-size:10px;color:var(--gris);">${Math.round(pctI*100)}% · -$${totalGasNeg.toFixed(0)} gtos</div>
+            </div>
+            <div style="background:rgba(230,57,70,0.08);border:1px solid var(--rojo);border-radius:10px;padding:10px;text-align:center;">
+              <div style="font-size:10px;color:var(--rojo);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">🛡️ Colchón</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--rojo);">$${colchonFinal.toFixed(2)}</div>
+              <div style="font-size:10px;color:var(--gris);">${Math.round(pctC*100)}%${descontadoDeColchon>0?` · -$${descontadoDeColchon.toFixed(0)} prestado`:''}</div>
+            </div>
+          </div>
+        </div>`;
+      })()}
+
       <button class="btn-cancelar" onclick="document.getElementById('overlay-hist').classList.remove('visible');renderHistorial();refrescarGraficasSiActivas();" style="width:100%;margin-top:16px">Cerrar</button>`;
   }
 
