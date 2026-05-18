@@ -2249,8 +2249,14 @@
   }
   function eliminarAhorro(id) { ahorros=ahorros.filter(a=>a.id!==id); delete _montoFijoTemp[id]; guardarAhorros(); renderDistribucion(); }
   function actualizarMontoFijoTemp(id,valor) {
-    const v=parseFloat(valor); _montoFijoTemp[id]=(!isNaN(v)&&v>0)?v:0;
-    // Solo actualizar resumen y botón, sin reconstruir toda la lista
+    const v=parseFloat(valor); _montoFijoTemp[String(id)]=(!isNaN(v)&&v>0)?v:0;
+    // Recalcular totales leyendo todos los inputs fijos activos en pantalla
+    let totalFijosInput=0;
+    ahorros.filter(a=>a.modo==='fijo'&&a.activo!==false).forEach(a=>{
+      const inp=document.querySelector(`input[data-ahorro-fijo="${a.id}"]`);
+      const v2=inp?parseFloat(inp.value)||0:(_montoFijoTemp[String(a.id)]||0);
+      totalFijosInput+=v2;
+    });
     const{montosHoy}=calcularMontosAhorros(_sueldoDisponibleActual);
     const totalAhorradoHoy=Object.values(montosHoy).reduce((s,v)=>s+v,0);
     const sueldoRestante=Math.max(0,_sueldoDisponibleActual-totalAhorradoHoy);
@@ -2269,10 +2275,20 @@
   function calcularMontosAhorros(sueldoDisponible) {
     const montosHoy={};
     let totalFijos=0;
-    ahorros.filter(a=>a.modo==='fijo'&&a.activo!==false).forEach(a=>{ totalFijos+=_montoFijoTemp[a.id]||0; });
+    ahorros.filter(a=>a.modo==='fijo'&&a.activo!==false).forEach(a=>{
+      const inp=document.querySelector(`input[data-ahorro-fijo="${a.id}"]`);
+      const v=inp?parseFloat(inp.value)||0:(_montoFijoTemp[String(a.id)]||0);
+      totalFijos+=v;
+    });
     const baseParaPct=Math.max(0,sueldoDisponible-totalFijos);
     let restanteFijos=sueldoDisponible;
-    ahorros.filter(a=>a.modo==='fijo').forEach(a=>{ if(a.activo===false){montosHoy[a.id]=0;return;} const pedido=_montoFijoTemp[a.id]||0; const asignado=Math.min(pedido,Math.max(0,restanteFijos)); montosHoy[a.id]=asignado; restanteFijos=Math.max(0,restanteFijos-asignado); });
+    ahorros.filter(a=>a.modo==='fijo').forEach(a=>{
+      if(a.activo===false){montosHoy[a.id]=0;return;}
+      const inp=document.querySelector(`input[data-ahorro-fijo="${a.id}"]`);
+      const pedido=inp?parseFloat(inp.value)||0:(_montoFijoTemp[String(a.id)]||0);
+      const asignado=Math.min(pedido,Math.max(0,restanteFijos));
+      montosHoy[a.id]=asignado; restanteFijos=Math.max(0,restanteFijos-asignado);
+    });
     ahorros.filter(a=>a.modo!=='fijo').forEach(a=>{ montosHoy[a.id]=a.activo===false?0:baseParaPct*((a.pct||0)/100); });
     return{montosHoy,baseParaPct};
   }
@@ -2294,7 +2310,7 @@
       const montoFijoHoy=_montoFijoTemp[a.id]||0;
       const modoLabel=esFijo?`<span style="font-size:10px;padding:2px 6px;border-radius:8px;background:rgba(245,200,66,0.2);color:#f5c842;margin-left:4px;">$ fijo</span>`:`<span style="font-size:10px;padding:2px 6px;border-radius:8px;background:rgba(245,200,66,0.15);color:#f5c842;margin-left:4px;">${a.pct}%</span>`;
       const ultimos=(a.registros||[]).slice(-2);
-      const inputFijoHtml=esFijo&&activo?`<div style="margin-top:6px;"><div style="font-size:10px;color:var(--gris);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;">¿Cuánto guardas hoy? ($)</div><input type="number" min="0" inputmode="decimal" placeholder="Ej: 50" value="${montoFijoHoy>0?montoFijoHoy:''}" onchange="actualizarMontoFijoTemp(${a.id},this.value)" oninput="actualizarMontoFijoTemp(${a.id},this.value)" style="width:100%;background:var(--oscuro);border:1px solid var(--morado);border-radius:8px;padding:10px 12px;color:var(--morado);font-size:18px;font-weight:700;text-align:center;outline:none;"></div>`:'';
+      const inputFijoHtml=esFijo&&activo?`<div style="margin-top:6px;"><div style="font-size:10px;color:var(--gris);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;">¿Cuánto guardas hoy? ($)</div><input type="number" min="0" inputmode="decimal" placeholder="Ej: 50" data-ahorro-fijo="${a.id}" value="${montoFijoHoy>0?montoFijoHoy:''}" oninput="actualizarMontoFijoTemp(${a.id},this.value)" style="width:100%;background:var(--oscuro);border:1px solid var(--morado);border-radius:8px;padding:10px 12px;color:var(--morado);font-size:18px;font-weight:700;text-align:center;outline:none;"></div>`:'';
       const toggleBtn=`<button onclick="toggleAhorro(${a.id})" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;border:1px solid ${activo?'var(--verde)':'#555'};background:${activo?'rgba(34,197,94,0.15)':'transparent'};color:${activo?'var(--verde)':'#555'};cursor:pointer;">${activo?'✓ Activo':'✗ Pausado'}</button>`;
       const cardOpacity=activo?'1':'0.45';
       const montoStr=activo?(esFijo?`Tú decides cuánto guardar cada día`:`${a.pct}% de $${baseParaPct.toFixed(0)} · hoy: <b style="color:var(--verde);">+$${montoHoy.toFixed(0)}</b>`):`<span style="color:#666;font-style:italic;">Pausado — no se guardará hoy</span>`;
