@@ -2248,7 +2248,19 @@
     mostrarToast('✅ Meta "'+nombre+'" agregada');
   }
   function eliminarAhorro(id) { ahorros=ahorros.filter(a=>a.id!==id); delete _montoFijoTemp[id]; guardarAhorros(); renderDistribucion(); }
-  function actualizarMontoFijoTemp(id,valor) { const v=parseFloat(valor); _montoFijoTemp[id]=(!isNaN(v)&&v>0)?v:0; renderAhorros(_sueldoDisponibleActual); }
+  function actualizarMontoFijoTemp(id,valor) {
+    const v=parseFloat(valor); _montoFijoTemp[id]=(!isNaN(v)&&v>0)?v:0;
+    // Solo actualizar resumen y botón, sin reconstruir toda la lista
+    const{montosHoy}=calcularMontosAhorros(_sueldoDisponibleActual);
+    const totalAhorradoHoy=Object.values(montosHoy).reduce((s,v)=>s+v,0);
+    const sueldoRestante=Math.max(0,_sueldoDisponibleActual-totalAhorradoHoy);
+    const hoyKey=new Date().toISOString().split('T')[0];
+    const yaGuardadoHoy=ahorros.filter(a=>a.activo!==false).some(a=>(a.registros||[]).some(r=>r.fecha===hoyKey));
+    const resEl=document.getElementById('dist-ahorros-resumen');
+    if(resEl){resEl.innerHTML=`<div style="padding:10px 12px;background:rgba(34,197,94,0.08);border:1px solid var(--verde);border-radius:10px;font-size:13px;display:flex;flex-direction:column;gap:6px;"><div style="display:flex;justify-content:space-between;"><span style="color:var(--gris);">Total a guardar hoy:</span><span style="color:var(--verde);font-weight:700;">$${totalAhorradoHoy.toFixed(2)}</span></div><div style="display:flex;justify-content:space-between;border-top:1px solid rgba(34,197,94,0.25);padding-top:6px;"><span style="color:var(--gris);">Sueldo restante tras ahorros:</span><span style="color:var(--amarillo);font-weight:700;">$${sueldoRestante.toFixed(2)}</span></div></div>`;}
+    const btnGuardar=document.getElementById('btn-guardar-ahorro');
+    if(btnGuardar){if(totalAhorradoHoy>0&&!yaGuardadoHoy){btnGuardar.style.display='block';btnGuardar.textContent='💾 Guardar ahorro de hoy ($'+totalAhorradoHoy.toFixed(0)+')';}else{btnGuardar.style.display='none';}}
+  }
   function toggleAhorro(id) {
     const a = ahorros.find(x=>x.id===id); if(!a) return;
     a.activo = (a.activo === false) ? true : false;
@@ -2271,7 +2283,7 @@
     const msgEl=document.getElementById('ahorro-guardado-msg');
     if(!ahorros.length){lista.innerHTML='<div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">Sin metas. Agrégalas abajo.</div>';const resEl=document.getElementById('dist-ahorros-resumen');if(resEl)resEl.innerHTML='';if(btnGuardar)btnGuardar.style.display='none';return;}
     const hoyKey=new Date().toISOString().split('T')[0];
-    const yaGuardadoHoy=ahorros.some(a=>(a.registros||[]).some(r=>r.fecha===hoyKey));
+    const yaGuardadoHoy=ahorros.filter(a=>a.activo!==false).some(a=>(a.registros||[]).some(r=>r.fecha===hoyKey));
     const{montosHoy,baseParaPct}=calcularMontosAhorros(sueldoDisponible);
     lista.innerHTML=ahorros.map(a=>{
       const activo=a.activo!==false;
@@ -2298,7 +2310,7 @@
   function guardarAhorroHoy() {
     const hoyKey=new Date().toISOString().split('T')[0];
     const hoyLabel=new Date().toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
-    if(ahorros.some(a=>(a.registros||[]).some(r=>r.fecha===hoyKey))){mostrarToast('⚠️ Ya guardaste el ahorro de hoy');return;}
+    if(ahorros.filter(a=>a.activo!==false).some(a=>(a.registros||[]).some(r=>r.fecha===hoyKey))){mostrarToast('⚠️ Ya guardaste el ahorro de hoy');return;}
     const{montosHoy}=calcularMontosAhorros(_sueldoDisponibleActual);
     const totalHoy=Object.values(montosHoy).reduce((s,v)=>s+v,0);
     if(totalHoy<=0){mostrarToast('⚠️ No hay nada para guardar hoy');return;}
