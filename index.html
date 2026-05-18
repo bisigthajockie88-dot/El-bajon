@@ -254,6 +254,40 @@
   .mesa-chip .mc-total{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--verde);}
   .mesa-chip .mc-items{font-size:10px;color:var(--gris);}
 
+  /* ── CUENTAS PLATAFORMAS PENDIENTES ── */
+  .plats-bar{padding:10px 14px 0;display:none;}
+  .plats-bar.visible{display:block;}
+  .plats-bar-label{font-size:10px;color:var(--amarillo);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:700;}
+  .plats-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;}
+  .plat-chip{flex-shrink:0;border:2px solid;border-radius:12px;padding:8px 12px;cursor:pointer;text-align:center;min-width:90px;transition:all 0.15s;}
+  .plat-chip:active{transform:scale(0.95);}
+  .plat-chip.rappi{border-color:var(--rappi-color);background:rgba(255,48,8,0.1);}
+  .plat-chip.uber{border-color:var(--uber-color);background:rgba(6,193,103,0.1);}
+  .plat-chip.didi_tarjeta{border-color:var(--didi-color);background:rgba(255,102,0,0.1);}
+  .plat-chip .pc-plat{font-size:11px;font-weight:700;}
+  .plat-chip.rappi .pc-plat{color:var(--rappi-color);}
+  .plat-chip.uber .pc-plat{color:var(--uber-color);}
+  .plat-chip.didi_tarjeta .pc-plat{color:var(--didi-color);}
+  .plat-chip .pc-monto{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--texto);}
+  .plat-chip .pc-fecha{font-size:10px;color:var(--gris);}
+
+  /* ── CUENTAS PLATAFORMAS PENDIENTES ── */
+  .plats-bar{padding:10px 14px 0;display:none;}
+  .plats-bar.visible{display:block;}
+  .plats-bar-label{font-size:10px;color:var(--amarillo);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:700;}
+  .plats-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;}
+  .plat-chip{flex-shrink:0;border:2px solid;border-radius:12px;padding:8px 12px;cursor:pointer;text-align:center;min-width:90px;transition:all 0.15s;}
+  .plat-chip:active{transform:scale(0.95);}
+  .plat-chip.rappi{border-color:var(--rappi-color);background:rgba(255,48,8,0.1);}
+  .plat-chip.uber{border-color:var(--uber-color);background:rgba(6,193,103,0.1);}
+  .plat-chip.didi_tarjeta{border-color:var(--didi-color);background:rgba(255,102,0,0.1);}
+  .plat-chip .pc-plat{font-size:11px;font-weight:700;}
+  .plat-chip.rappi .pc-plat{color:var(--rappi-color);}
+  .plat-chip.uber .pc-plat{color:var(--uber-color);}
+  .plat-chip.didi_tarjeta .pc-plat{color:var(--didi-color);}
+  .plat-chip .pc-monto{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--texto);}
+  .plat-chip .pc-fecha{font-size:10px;color:var(--gris);}
+
   /* ── AHORROS ── */
   .ahorro-item{background:var(--oscuro);border:1px solid #333;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
   .ahorro-nombre{font-size:13px;font-weight:600;flex:1;color:var(--texto);}
@@ -345,6 +379,10 @@
 
 <!-- TAB VENTA -->
 <div class="seccion active" id="tab-venta">
+  <div class="plats-bar" id="plats-bar">
+    <div class="plats-bar-label">⏳ Cobros de apps pendientes — toca para cobrar</div>
+    <div class="plats-scroll" id="plats-scroll"></div>
+  </div>
   <div class="fiados-bar" id="fiados-bar">
     <div class="fiados-bar-label">📒 Fiados pendientes — toca para abonar</div>
     <div class="mesas-scroll" id="fiados-scroll"></div>
@@ -807,6 +845,11 @@
   <div class="modal-hist" id="modal-hist-content"></div>
 </div>
 
+<!-- MODAL COBRAR PLATAFORMA PENDIENTE -->
+<div class="overlay" id="overlay-plat" onclick="if(event.target===this)this.classList.remove('visible')">
+  <div class="modal" style="border-top-color:var(--amarillo);" id="modal-plat-content"></div>
+</div>
+
 <!-- MODAL NOMBRAR MESA -->
 <div class="overlay" id="overlay-mesa" onclick="cerrarModalMesa(event)">
   <div class="modal" style="border-top-color:var(--amarillo);">
@@ -881,6 +924,16 @@
   let historial = JSON.parse(localStorage.getItem('bajon_historial') || '[]');
   let mesas = JSON.parse(localStorage.getItem('bajon_mesas') || '[]');
   let fiados = JSON.parse(localStorage.getItem('bajon_fiados') || '[]');
+  let cuentasPlat = JSON.parse(localStorage.getItem('bajon_cuentas_plat') || '[]');
+  function guardarCuentasPlat() { localStorage.setItem('bajon_cuentas_plat', JSON.stringify(cuentasPlat)); }
+
+  // Plataformas que pagan por semana (pendientes)
+  const METODOS_PLAT = ['rappi','uber','didi_tarjeta'];
+  const PLAT_INFO = {
+    rappi:       { nombre:'🛵 Rappi',      color:'var(--rappi-color)', cls:'rappi' },
+    uber:        { nombre:'🚙 Uber',       color:'var(--uber-color)',  cls:'uber' },
+    didi_tarjeta:{ nombre:'🚗 DiDi Tar.', color:'var(--didi-color)',  cls:'didi_tarjeta' },
+  };
   let metodoSeleccionado = '';
   let metodoCobro = '';
   let ticketItems = [];
@@ -1378,6 +1431,16 @@
     const totalPrecio = precio * cantidadActual;
     const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit', hour12:false});
     const label = cantidadActual > 1 ? `${cantidadActual}x ${productoActual}` : productoActual;
+    // Si es plataforma que paga por semana, registrar como cuenta pendiente
+    if (METODOS_PLAT.includes(metodoSeleccionado)) {
+      registrarCuentaPlat(metodoSeleccionado, totalPrecio, label);
+      // Igual registrar como movimiento para el historial de ventas del día
+      movimientos.push({ id: Date.now(), producto: label, precio: totalPrecio, metodo: metodoSeleccionado, hora, esPlatPendiente: true });
+      guardarMov(); actualizarTotalesRapidos(); actualizarHeaderTotal();
+      cerrarModalBtn();
+      mostrarToast('⏳ Pendiente de cobro: $' + totalPrecio.toFixed(0));
+      return;
+    }
     // Si viene de red social, agregar tag al label
     const labelFinal = _redCanalProd ? `${label} [${_redCanalProd==='facebook'?'FB':'WA'}]` : label;
     movimientos.push({ id: Date.now(), producto: labelFinal, precio: totalPrecio, metodo: metodoSeleccionado, hora, canal: _redCanalProd || null });
@@ -1525,6 +1588,22 @@
     if (['facebook','whatsapp'].includes(metodoCobro)) { mostrarToast('⚠️ Elige si paga en Efectivo o Tarjeta'); return; }
     const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit', hour12:false});
     const ticketId = Date.now();
+    const total = ticketItems.reduce((s,i) => s + i.precio * i.cant, 0);
+    // Si es plataforma pendiente, registrar cuenta pendiente
+    if (METODOS_PLAT.includes(metodoCobro)) {
+      const labelTicket = ticketItems.map(it=>(it.cant>1?it.cant+'x ':'')+it.producto).join(', ');
+      registrarCuentaPlat(metodoCobro, total, labelTicket);
+      ticketItems.forEach((item, idx) => {
+        movimientos.push({ id: ticketId + idx, producto: item.producto, precio: item.precio * item.cant, metodo: metodoCobro, hora, ticketId, esPlatPendiente: true });
+      });
+      if (mesaActiva !== null) { mesas = mesas.filter(m => m.id !== mesaActiva); guardarMesas(); mesaActiva = null; }
+      guardarMov(); actualizarTotalesRapidos(); actualizarHeaderTotal();
+      ticketItems = []; metodoCobro = ''; _redCanalCobro = '';
+      renderTicket(); renderMesas();
+      document.getElementById('overlay-cobro').classList.remove('visible');
+      mostrarToast('⏳ Pendiente de cobro: $' + total.toFixed(0));
+      return;
+    }
     ticketItems.forEach((item, idx) => {
       const labelFinal = _redCanalCobro ? `${item.producto} [${_redCanalCobro==='facebook'?'FB':'WA'}]` : item.producto;
       movimientos.push({ id: ticketId + idx, producto: labelFinal, precio: item.precio * item.cant, metodo: metodoCobro, hora, ticketId, canal: _redCanalCobro || null });
@@ -1533,7 +1612,6 @@
     guardarMov();
     actualizarTotalesRapidos();
     actualizarHeaderTotal();
-    const total = ticketItems.reduce((s,i) => s + i.precio * i.cant, 0);
     mostrarToast('✅ Cobrado $' + total.toFixed(2));
     ticketItems = []; metodoCobro = ''; _redCanalCobro = '';
     renderTicket(); renderMesas();
@@ -2045,6 +2123,75 @@
   // ════════════════════════════════════════════════════
   // DISTRIBUCIÓN
   // ════════════════════════════════════════════════════
+  // ════════════════════════════════════════════════════
+  // CASCADA DE DISTRIBUCIÓN CON COLCHÓN SEMANAL
+  // ════════════════════════════════════════════════════
+  // Calcula el colchón disponible de días anteriores de la misma semana
+  function colchonDiasAnterioresSemana() {
+    const pctI = (parseFloat(document.getElementById('pct-inv').value) || 0) / 100;
+    const pctC = (parseFloat(document.getElementById('pct-colchon').value) || 0) / 100;
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const dia = hoy.getDay();
+    const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - (dia === 0 ? 6 : dia - 1));
+    // Recopilar días anteriores de la semana del historial
+    const diasAnteriores = historial.filter(d => {
+      const f = parseFechaHistorial(d.fecha);
+      return f && f >= lunes && f < hoy;
+    }).sort((a, b) => {
+      const fa = parseFechaHistorial(a.fecha), fb = parseFechaHistorial(b.fecha);
+      return fb - fa; // más reciente primero
+    });
+    // Para cada día, calcular el colchón neto (después de que ese día cubrió sus propios gastos)
+    let colchonAcum = 0;
+    diasAnteriores.forEach(d => {
+      const t = d.totales;
+      const bruto = (t.efectivo||0)+(t.tarjeta||0)+(t.didi_efectivo||0)+(t.facebook||0)+(t.whatsapp||0);
+      const gasNeg = t.totalGastosNegocio || 0;
+      const invBase = bruto * pctI;
+      const colchonBase = bruto * pctC;
+      let invFinal = invBase - gasNeg;
+      if (invFinal < 0) {
+        const faltaInv = Math.abs(invFinal);
+        const colchonRestante = Math.max(0, colchonBase - faltaInv);
+        colchonAcum += colchonRestante;
+      } else {
+        colchonAcum += colchonBase;
+      }
+    });
+    return Math.max(0, colchonAcum);
+  }
+
+  // Aplica la cascada completa: inv → colchón días ant. → colchón hoy → sueldo
+  function calcularCascada(bruto, totalGasNeg, totalGasPer) {
+    const pctS = (parseFloat(document.getElementById('pct-sueldo').value) || 0) / 100;
+    const pctI = (parseFloat(document.getElementById('pct-inv').value) || 0) / 100;
+    const pctC = (parseFloat(document.getElementById('pct-colchon').value) || 0) / 100;
+    const sueldoBase  = bruto * pctS;
+    const invBase     = bruto * pctI;
+    const colchonBase = bruto * pctC;
+    let faltante = Math.max(0, totalGasNeg - invBase); // lo que excede la inversión del día
+    let colchonAntUsado = 0;
+    if (faltante > 0) {
+      const colchonAnt = colchonDiasAnterioresSemana();
+      colchonAntUsado = Math.min(faltante, colchonAnt);
+      faltante -= colchonAntUsado;
+    }
+    let colchonHoyUsado = 0;
+    if (faltante > 0) {
+      colchonHoyUsado = Math.min(faltante, colchonBase);
+      faltante -= colchonHoyUsado;
+    }
+    let sueldoUsado = 0;
+    if (faltante > 0) {
+      sueldoUsado = Math.min(faltante, sueldoBase);
+      faltante -= sueldoUsado;
+    }
+    const invFinal     = Math.max(0, invBase - totalGasNeg + colchonAntUsado + colchonHoyUsado + sueldoUsado - faltante);
+    const colchonFinal = Math.max(0, colchonBase - colchonHoyUsado);
+    const sueldoFinal  = Math.max(0, sueldoBase - totalGasPer - sueldoUsado);
+    return { sueldoBase, invBase, colchonBase, invFinal, colchonFinal, sueldoFinal, colchonAntUsado, colchonHoyUsado, sueldoUsado, pctS, pctI, pctC };
+  }
+
   function renderDistribucion() {
     const t=calcularTotales();
     const bruto=t.efectivo+t.tarjeta+t.didi_efectivo+(t.facebook||0)+(t.whatsapp||0);
@@ -2057,25 +2204,21 @@
     document.getElementById('dist-alerta').style.display=(pctS+pctI+pctC)>1.001?'block':'none';
     const gasN=gastos.filter(g=>!g.tipo||g.tipo==='negocio'),gasP=gastos.filter(g=>g.tipo==='personal');
     const totalGasNeg=gasN.reduce((s,g)=>s+g.monto,0),totalGasPer=gasP.reduce((s,g)=>s+g.monto,0);
-    const sueldoBase=bruto*pctS,invBase=bruto*pctI,colchonBase=bruto*pctC;
-    let invFinal=invBase-totalGasNeg,desCC=0;
-    if(invFinal<0){desCC=Math.abs(invFinal);invFinal=0;} let colchonFinal=colchonBase-desCC,desCS=0;
-    if(colchonFinal<0){desCS=Math.abs(colchonFinal);colchonFinal=0;}
-    const sueldoFinalReal=Math.max(0,sueldoBase-totalGasPer-desCS);
+    const cas = calcularCascada(bruto, totalGasNeg, totalGasPer);
     document.getElementById('dist-en-mano').textContent='$'+bruto.toFixed(2);
-    document.getElementById('dist-sueldo').textContent='$'+sueldoFinalReal.toFixed(2);
-    document.getElementById('dist-inv').textContent='$'+invFinal.toFixed(2);
-    document.getElementById('dist-colchon').textContent='$'+colchonFinal.toFixed(2);
-    document.getElementById('dist-sueldo-det').textContent=Math.round(pctS*100)+'% de $'+bruto.toFixed(2);
-    document.getElementById('dist-inv-det').textContent=Math.round(pctI*100)+'% de $'+bruto.toFixed(2);
-    document.getElementById('dist-colchon-det').textContent=Math.round(pctC*100)+'% de $'+bruto.toFixed(2);
+    document.getElementById('dist-sueldo').textContent='$'+cas.sueldoFinal.toFixed(2);
+    document.getElementById('dist-inv').textContent='$'+cas.invFinal.toFixed(2);
+    document.getElementById('dist-colchon').textContent='$'+cas.colchonFinal.toFixed(2);
+    document.getElementById('dist-sueldo-det').textContent=Math.round(cas.pctS*100)+'% de $'+bruto.toFixed(2);
+    document.getElementById('dist-inv-det').textContent=Math.round(cas.pctI*100)+'% de $'+bruto.toFixed(2);
+    document.getElementById('dist-colchon-det').textContent=Math.round(cas.pctC*100)+'% de $'+bruto.toFixed(2);
     const elSueldoG=document.getElementById('dist-sueldo-gastos');
-    if(elSueldoG){let html=gasP.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('');if(totalGasPer>sueldoBase)html+=`<div style="color:var(--rojo);margin-top:4px;">⚠️ Exceden sueldo en $${(totalGasPer-sueldoBase).toFixed(2)}</div>`;if(desCS>0)html+=`<div style="color:var(--rojo);margin-top:4px;">⚠️ $${desCS.toFixed(2)} tomado para cubrir negocio</div>`;elSueldoG.innerHTML=html;}
+    if(elSueldoG){let html=gasP.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('');if(cas.sueldoUsado>0)html+=`<div style="color:var(--rojo);margin-top:4px;">⚠️ $${cas.sueldoUsado.toFixed(2)} tomado para cubrir inversión</div>`;elSueldoG.innerHTML=html;}
     const elInvG=document.getElementById('dist-inv-gastos');
-    if(elInvG){elInvG.innerHTML=gasN.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('')+(desCC>0?`<div style="color:var(--rojo);margin-top:4px;">⚠️ $${desCC.toFixed(2)} tomado del Colchón</div>`:'');}
+    if(elInvG){let html=gasN.map(g=>`<div>· ${g.concepto}: <b>-$${g.monto.toFixed(2)}</b></div>`).join('');if(cas.colchonAntUsado>0)html+=`<div style="color:var(--rojo);margin-top:4px;">⚠️ $${cas.colchonAntUsado.toFixed(2)} del colchón de días anteriores</div>`;if(cas.colchonHoyUsado>0)html+=`<div style="color:var(--rojo);margin-top:4px;">⚠️ $${cas.colchonHoyUsado.toFixed(2)} del colchón de hoy</div>`;if(cas.sueldoUsado>0)html+=`<div style="color:var(--rojo);margin-top:4px;">⚠️ $${cas.sueldoUsado.toFixed(2)} del sueldo de hoy</div>`;elInvG.innerHTML=html;}
     const elColchonG=document.getElementById('dist-colchon-gastos');
-    if(elColchonG){elColchonG.innerHTML=desCC>0?`<div style="color:var(--rojo);">· Cubrió faltante: <b>-$${desCC.toFixed(2)}</b></div>`+(desCS>0?`<div style="color:var(--rojo);margin-top:4px;">⚠️ Colchón insuficiente. $${desCS.toFixed(2)} del Sueldo</div>`:''):'';}
-    renderAhorros(sueldoFinalReal);
+    if(elColchonG){elColchonG.innerHTML=cas.colchonHoyUsado>0?`<div style="color:var(--rojo);">· Cubrió faltante inversión: <b>-$${cas.colchonHoyUsado.toFixed(2)}</b></div>`:'';}
+    renderAhorros(cas.sueldoFinal);
   }
 
   // ════════════════════════════════════════════════════
@@ -2333,14 +2476,38 @@
         </div>
       </div>`;
     const sueldoPorDia=diasFechas.map(d=>{const b=movs.filter(m=>m._fecha.toDateString()===d.toDateString()&&['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);return b*pctS;});
-    const sueldoNetoPorDia=sueldoPorDia.map((v,i)=>Math.max(0,v-gasPerDia[i]));
+    // Calcular cuánto del sueldo se usó para cubrir inversión (cascada) por día
+    const sueldoUsadoPorDia=diasFechas.map((d,i)=>{
+      const bruto=movs.filter(m=>m._fecha.toDateString()===d.toDateString()&&['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
+      const gasNegDiaLocal=gastosSem.filter(g=>g._fecha.toDateString()===d.toDateString()&&(!g.tipo||g.tipo==='negocio')).reduce((s,g)=>s+g.monto,0);
+      const invBase=bruto*pctI; const colchonBase=bruto*(parseFloat(document.getElementById('pct-colchon').value)||15)/100;
+      let faltante=Math.max(0,gasNegDiaLocal-invBase);
+      // Colchón de días anteriores de la semana (solo los días anteriores a este día en la semana)
+      const diasAntDIndex=diasFechas.slice(0,i);
+      let colchonAntDisp=diasAntDIndex.reduce((sum,da)=>{
+        const bDA=movs.filter(m=>m._fecha.toDateString()===da.toDateString()&&['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
+        const gDA=gastosSem.filter(g=>g._fecha.toDateString()===da.toDateString()&&(!g.tipo||g.tipo==='negocio')).reduce((s,g)=>s+g.monto,0);
+        const invDA=bDA*pctI; const colDA=bDA*(parseFloat(document.getElementById('pct-colchon').value)||15)/100;
+        return sum+Math.max(0,colDA-Math.max(0,gDA-invDA));
+      },0);
+      let colchonAntUsado=Math.min(faltante,colchonAntDisp); faltante-=colchonAntUsado;
+      let colchonHoyUsado=Math.min(faltante,colchonBase); faltante-=colchonHoyUsado;
+      return Math.min(faltante, bruto*pctS); // sueldo usado = lo que aún falta, limitado al sueldo del día
+    });
+    const sueldoNetoPorDia=sueldoPorDia.map((v,i)=>Math.max(0,v-gasPerDia[i]-sueldoUsadoPorDia[i]));
     document.getElementById('label-sueldo-semana').textContent='Semana: '+semLabel;
     const sueldoAsigSem=sueldoPorDia.reduce((s,v)=>s+v,0);
     const sueldoGastSem=gasPerDia.reduce((s,v)=>s+v,0);
-    const sueldoNetoSem=Math.max(0,sueldoAsigSem-sueldoGastSem);
+    const sueldoUsadoInvSem=sueldoUsadoPorDia.reduce((s,v)=>s+v,0);
+    const sueldoNetoSem=Math.max(0,sueldoAsigSem-sueldoGastSem-sueldoUsadoInvSem);
     destroyChart('sueldo-semana-actual');
     if(sueldoAsigSem>0){
-      grafCharts['sueldo-semana-actual']=new Chart(document.getElementById('chart-sueldo-semana-actual'),{type:'doughnut',data:{labels:['✅ Tu bolsillo','💸 Gastado personal'],datasets:[{data:[parseFloat(sueldoNetoSem.toFixed(2)),parseFloat(sueldoGastSem.toFixed(2))],backgroundColor:['rgba(245,200,66,0.75)','rgba(230,57,70,0.75)'],borderColor:['#f5c842','#e63946'],borderWidth:2,hoverOffset:6}]},options:{responsive:true,cutout:'60%',plugins:{legend:{display:true,position:'bottom',labels:{color:cf.color,font:{size:12},padding:14}},tooltip:{callbacks:{label:ctx=>'$'+ctx.raw.toFixed(2)+' ('+Math.round(ctx.raw/sueldoAsigSem*100)+'%)'}}}}});
+      const dataSueldo=[parseFloat(sueldoNetoSem.toFixed(2)),parseFloat(sueldoGastSem.toFixed(2))];
+      const labelsSueldo=['✅ Tu bolsillo','💸 Gastado personal'];
+      const bgSueldo=['rgba(245,200,66,0.75)','rgba(230,57,70,0.75)'];
+      const bcSueldo=['#f5c842','#e63946'];
+      if(sueldoUsadoInvSem>0){dataSueldo.push(parseFloat(sueldoUsadoInvSem.toFixed(2)));labelsSueldo.push('📦 Cubrió inversión');bgSueldo.push('rgba(255,102,0,0.75)');bcSueldo.push('#ff6600');}
+      grafCharts['sueldo-semana-actual']=new Chart(document.getElementById('chart-sueldo-semana-actual'),{type:'doughnut',data:{labels:labelsSueldo,datasets:[{data:dataSueldo,backgroundColor:bgSueldo,borderColor:bcSueldo,borderWidth:2,hoverOffset:6}]},options:{responsive:true,cutout:'60%',plugins:{legend:{display:true,position:'bottom',labels:{color:cf.color,font:{size:12},padding:14}},tooltip:{callbacks:{label:ctx=>'$'+ctx.raw.toFixed(2)+' ('+Math.round(ctx.raw/sueldoAsigSem*100)+'%)'}}}}});
     } else {
       document.getElementById('chart-sueldo-semana-actual').style.display='none';
     }
@@ -2355,6 +2522,10 @@
           <span style="color:var(--gris);">💸 Menos gastos personales</span>
           <span style="color:var(--rojo);font-weight:700;">− $${sueldoGastSem.toFixed(0)}</span>
         </div>
+        ${sueldoUsadoInvSem>0?`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #2a2a2a;">
+          <span style="color:var(--gris);">📦 Cubrió faltante de inversión</span>
+          <span style="color:#ff6600;font-weight:700;">− $${sueldoUsadoInvSem.toFixed(0)}</span>
+        </div>`:''}
         <div style="display:flex;justify-content:space-between;padding:10px 12px;background:rgba(245,200,66,0.08);border:1px solid var(--amarillo);border-radius:10px;">
           <span style="color:var(--amarillo);font-weight:700;">✅ Lo que te queda esta semana</span>
           <span style="color:var(--amarillo);font-weight:700;font-family:'Bebas Neue',sans-serif;font-size:22px;">$${sueldoNetoSem.toFixed(0)}</span>
@@ -2540,6 +2711,93 @@
   }
 
   // ════════════════════════════════════════════════════
+  // CUENTAS PLATAFORMAS PENDIENTES (Rappi / Uber / Didi Tar.)
+  // ════════════════════════════════════════════════════
+  // Interceptar confirmarVentaDirecta para capturar ventas de plataforma
+  const _confirmarVentaDirecta_orig = window.confirmarVentaDirecta;
+
+  function registrarCuentaPlat(metodo, precio, producto) {
+    const fecha = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
+    const hora  = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});
+    cuentasPlat.push({ id: Date.now(), metodo, montoEsperado: precio, producto: producto || '', fecha, hora, cobrado: false });
+    guardarCuentasPlat();
+    renderPlats();
+  }
+
+  function renderPlats() {
+    const bar    = document.getElementById('plats-bar');
+    const scroll = document.getElementById('plats-scroll');
+    if (!bar || !scroll) return;
+    const pendientes = cuentasPlat.filter(p => !p.cobrado);
+    if (!pendientes.length) { bar.classList.remove('visible'); return; }
+    bar.classList.add('visible');
+    scroll.innerHTML = pendientes.map(p => {
+      const info = PLAT_INFO[p.metodo] || { nombre: p.metodo, cls: 'rappi' };
+      return `<div class="plat-chip ${info.cls}" onclick="abrirModalPlat(${p.id})">
+        <div class="pc-plat">${info.nombre}</div>
+        <div class="pc-monto">$${p.montoEsperado.toFixed(0)}</div>
+        <div class="pc-fecha">${p.fecha}</div>
+      </div>`;
+    }).join('');
+  }
+
+  let _platMontoStr = '';
+  function abrirModalPlat(id) {
+    const p = cuentasPlat.find(x => x.id === id);
+    if (!p) return;
+    _platMontoStr = String(p.montoEsperado);
+    const info = PLAT_INFO[p.metodo] || { nombre: p.metodo, color:'var(--amarillo)' };
+    document.getElementById('modal-plat-content').innerHTML = `
+      <h2 style="color:${info.color};">${info.nombre}</h2>
+      <div style="font-size:12px;color:var(--gris);margin-bottom:14px;">Venta registrada el ${p.fecha} a las ${p.hora}${p.producto?' · '+p.producto:''}</div>
+      <div style="font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Monto a cobrar (ajústalo si la app descontó más)</div>
+      <div id="plat-monto-display" style="background:var(--oscuro);border:2px solid ${info.color};border-radius:14px;padding:16px;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:44px;color:${info.color};letter-spacing:2px;margin-bottom:14px;">$${p.montoEsperado.toFixed(2)}</div>
+      <div class="numpad" style="margin-bottom:14px;">
+        ${'7 8 9 4 5 6 1 2 3 . 0 DEL'.split(' ').map(k=>`<div class="numpad-btn${k==='DEL'?' btn-borrar':''}" onclick="platNumpad('${k}')">${k==='DEL'?'⌫':k}</div>`).join('')}
+      </div>
+      <div class="modal-btns">
+        <button class="btn-cancelar" onclick="document.getElementById('overlay-plat').classList.remove('visible')">Cancelar</button>
+        <button class="btn-confirmar" style="background:${info.color};" onclick="cobrarPlat(${id})">💰 Registrar cobro</button>
+      </div>
+      <button onclick="eliminarCuentaPlat(${id})" style="width:100%;margin-top:10px;background:transparent;border:1px solid #444;border-radius:10px;padding:12px;color:var(--gris);font-size:13px;cursor:pointer;">🗑️ Eliminar (no se cobró)</button>`;
+    document.getElementById('overlay-plat').classList.add('visible');
+  }
+
+  function platNumpad(key) {
+    if (key === 'DEL') _platMontoStr = _platMontoStr.length > 1 ? _platMontoStr.slice(0,-1) : '';
+    else if (key === '.') { if (!_platMontoStr.includes('.')) _platMontoStr += '.'; }
+    else { if (_platMontoStr === '0' || _platMontoStr === '') _platMontoStr = key; else _platMontoStr += key; }
+    const d = document.getElementById('plat-monto-display');
+    if (d) d.textContent = '$' + (_platMontoStr || '0');
+  }
+
+  function cobrarPlat(id) {
+    const monto = parseFloat(_platMontoStr);
+    if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa un monto válido'); return; }
+    const idx = cuentasPlat.findIndex(p => p.id === id);
+    if (idx === -1) return;
+    const p = cuentasPlat[idx];
+    const info = PLAT_INFO[p.metodo] || { nombre: p.metodo };
+    const hora = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});
+    // Registrar como venta efectivo hoy (ya es el cobro real)
+    movimientos.push({ id: Date.now(), producto: info.nombre + ' (cobro semana)', precio: monto, metodo: 'efectivo', hora });
+    p.cobrado = true;
+    guardarCuentasPlat(); guardarMov();
+    actualizarTotalesRapidos(); actualizarHeaderTotal();
+    document.getElementById('overlay-plat').classList.remove('visible');
+    renderPlats();
+    mostrarToast('✅ Cobro registrado: $' + monto.toFixed(0));
+  }
+
+  function eliminarCuentaPlat(id) {
+    cuentasPlat = cuentasPlat.filter(p => p.id !== id);
+    guardarCuentasPlat();
+    document.getElementById('overlay-plat').classList.remove('visible');
+    renderPlats();
+    mostrarToast('✓ Cuenta eliminada');
+  }
+
+  // ════════════════════════════════════════════════════
   // ESTADO DE CUENTA SEMANAL
   // ════════════════════════════════════════════════════
   function renderEstadoCuenta() {
@@ -2719,7 +2977,7 @@
     const pref='ElBajon_'+desdeStr+'_'+hastaStr;
     if(ventas.length)descargarArchivo(toCSV(ventas),pref+'_Ventas.csv','text/csv;charset=utf-8;');
     if(gastosList.length)descargarArchivo(toCSV(gastosList),pref+'_Gastos.csv','text/csv;charset=utf-8;');
-    const backup={tipo:'BACKUP_BAJON_V1',fecha_exportacion:new Date().toISOString(),historial,movimientos_hoy:movimientos,gastos_hoy:gastos,mesas,ahorros,costos_refrescos:costosRefrescos};
+    const backup={tipo:'BACKUP_BAJON_V1',fecha_exportacion:new Date().toISOString(),historial,movimientos_hoy:movimientos,gastos_hoy:gastos,mesas,ahorros,costos_refrescos:costosRefrescos,cuentas_plat:cuentasPlat};
     descargarArchivo(JSON.stringify(backup,null,2),pref+'_BACKUP.json','application/json');
     const info=document.getElementById('backup-export-info');info.textContent='✅ Descargados: '+ventas.length+' ventas, '+gastosList.length+' gastos + backup.json';mostrarToast('📥 Archivos descargados');
   }
@@ -2731,13 +2989,14 @@
       try{
         const backup=JSON.parse(e.target.result);
         if(backup.tipo!=='BACKUP_BAJON_V1'){info.innerHTML='<span style="color:var(--rojo)">❌ Formato no reconocido. Usa el archivo _BACKUP.json</span>';return;}
-        const histB=backup.historial||[];const movB=backup.movimientos_hoy||[];const gasB=backup.gastos_hoy||[];const mesasB=backup.mesas||[];const ahorrosB=backup.ahorros||[];const costosB=backup.costos_refrescos||null;
+        const histB=backup.historial||[];const movB=backup.movimientos_hoy||[];const gasB=backup.gastos_hoy||[];const mesasB=backup.mesas||[];const ahorrosB=backup.ahorros||[];const costosB=backup.costos_refrescos||null;const platsB=backup.cuentas_plat||[];
         const idsH=new Set(historial.map(d=>d.id));let diasAg=0;histB.forEach(d=>{if(!idsH.has(d.id)){historial.unshift(d);diasAg++;}});
         let movAg=0;if(!movimientos.length&&movB.length){movimientos=movB;movAg=movB.length;}
         let gasAg=0;if(!gastos.length&&gasB.length){gastos=gasB;gasAg=gasB.length;}
         const idM=new Set(mesas.map(m=>m.id));let mesasAg=0;mesasB.forEach(m=>{if(!idM.has(m.id)){mesas.push(m);mesasAg++;}});
+        if(platsB.length&&!cuentasPlat.length){cuentasPlat=platsB;guardarCuentasPlat();}
         if(ahorrosB.length&&!ahorros.length){ahorros=ahorrosB;guardarAhorros();}if(costosB){costosRefrescos=costosB;guardarCostosRefrescos();}
-        guardarHistorial();guardarMov();guardarGastos();guardarMesas();actualizarTotalesRapidos();renderMesas();actualizarHeaderTotal();
+        guardarHistorial();guardarMov();guardarGastos();guardarMesas();actualizarTotalesRapidos();renderMesas();renderPlats();actualizarHeaderTotal();
         info.innerHTML=`<span style="color:var(--verde);">✅ Importación exitosa:<br>📅 ${diasAg} días del historial<br>🧾 ${movAg} ventas del día<br>💸 ${gasAg} gastos del día<br>🪑 ${mesasAg} mesas</span>`;mostrarToast('✅ Datos restaurados');
       }catch(err){info.innerHTML='<span style="color:var(--rojo)">❌ Error: '+err.message+'</span>';}
       input.value='';
@@ -2754,6 +3013,7 @@
   selTipoGasto('negocio');
   renderMesas();
   renderFiados();
+  renderPlats();
   initBackupFechas();
   // Auto-backup al arrancar si corresponde
   setTimeout(autoBackupSiCorresponde, 5000);
