@@ -352,6 +352,9 @@
   /* ── BACKUP ── */
   .btn-copiar-gastos:active{opacity:0.8;}
 
+  .overlay.visible ~ #btn-gasto-rapido,
+  body:has(.overlay.visible) #btn-gasto-rapido { display: none !important; }
+
   /* ── TOGGLE MODO CLARO ── */
   .modo-toggle{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:150;background:var(--claro);border:1px solid #444;border-radius:20px;padding:6px 14px;color:var(--gris);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;}
 </style>
@@ -436,7 +439,7 @@
         <div class="numpad-btn" onclick="gastoNumpadPress('1')">1</div>
         <div class="numpad-btn" onclick="gastoNumpadPress('2')">2</div>
         <div class="numpad-btn" onclick="gastoNumpadPress('3')">3</div>
-        <div class="numpad-btn" onclick="gastoNumpadPress('.')">.</div>
+        <div class="numpad-btn btn-borrar" onclick="gastoNumpadPress('C')" style="color:var(--amarillo);font-size:14px;font-weight:700;">C</div>
         <div class="numpad-btn" onclick="gastoNumpadPress('0')">0</div>
         <div class="numpad-btn btn-borrar" onclick="gastoNumpadPress('DEL')">⌫</div>
       </div>
@@ -511,17 +514,17 @@
     <h3>⚙️ Porcentajes (editables)</h3>
     <div class="dist-row">
       <label>🧍 Tu sueldo</label>
-      <input type="number" id="pct-sueldo" value="40" min="0" max="100" oninput="renderDistribucion()">
+      <input type="number" id="pct-sueldo" value="40" min="0" max="100" oninput="guardarPcts();renderDistribucion()">
       <span class="dist-pct" id="lbl-sueldo">40%</span>
     </div>
     <div class="dist-row">
       <label>📦 Inversión negocio</label>
-      <input type="number" id="pct-inv" value="45" min="0" max="100" oninput="renderDistribucion()">
+      <input type="number" id="pct-inv" value="45" min="0" max="100" oninput="guardarPcts();renderDistribucion()">
       <span class="dist-pct" id="lbl-inv">45%</span>
     </div>
     <div class="dist-row">
       <label>🛡️ Colchón negocio</label>
-      <input type="number" id="pct-colchon" value="15" min="0" max="100" oninput="renderDistribucion()">
+      <input type="number" id="pct-colchon" value="15" min="0" max="100" oninput="guardarPcts();renderDistribucion()">
       <span class="dist-pct" id="lbl-colchon">15%</span>
     </div>
     <div class="dist-alerta" id="dist-alerta">⚠️ Los porcentajes suman más del 100% — ajústalos</div>
@@ -550,39 +553,6 @@
     <div id="dist-colchon-gastos" style="margin-top:8px;font-size:10px;color:rgba(230,57,70,0.85);text-align:left;padding:0 4px;"></div>
   </div>
   <div class="dist-nota">* Las ventas de Didi TAR, Rappi y Uber no se incluyen — ese dinero aún no está en tu mano</div>
-  <div class="dist-config" style="margin-top:16px;">
-    <h3>🏦 Ahorros del Sueldo</h3>
-    <p style="font-size:11px;color:var(--gris);margin-bottom:14px;line-height:1.6;">Define metas de ahorro que se pagan de tu sueldo restante.</p>
-    <div id="ahorros-lista"></div>
-    <input type="text" id="ahorro-nombre-input" placeholder="Nombre de la meta (ej: Moto, Viaje...)"
-      style="width:100%;margin-top:10px;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 12px;color:var(--texto);font-size:13px;outline:none;">
-    <div style="display:flex;gap:8px;margin-top:10px;">
-      <button id="btn-modo-pct" onclick="selModoAhorro('pct')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">% Porcentaje</button>
-      <button id="btn-modo-fijo" onclick="selModoAhorro('fijo')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">$ Cantidad fija</button>
-    </div>
-    <div id="ahorro-modo-pct-wrap" style="margin-top:8px;">
-      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">% del sueldo restante</div>
-      <input type="number" id="ahorro-pct-input" placeholder="Ej: 20 = 20%" min="0" max="100" inputmode="decimal"
-        style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:12px 14px;color:var(--amarillo);font-size:20px;font-weight:700;text-align:center;outline:none;">
-    </div>
-    <div id="ahorro-modo-fijo-wrap" style="margin-top:8px;display:none;">
-      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Cantidad fija a guardar por día ($)</div>
-      <input type="number" id="ahorro-fijo-input" placeholder="Ej: 50" min="0" inputmode="decimal"
-        style="width:100%;background:var(--oscuro);border:1px solid var(--morado);border-radius:8px;padding:12px 14px;color:var(--morado);font-size:20px;font-weight:700;text-align:center;outline:none;">
-    </div>
-    <div style="margin-top:8px;">
-      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">Meta total en $ (opcional)</div>
-      <input type="number" id="ahorro-meta-input" placeholder="Ej: 5000 · 0 = sin meta" min="0" inputmode="decimal"
-        style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 14px;color:var(--verde);font-size:15px;font-weight:700;outline:none;">
-    </div>
-    <button onclick="agregarAhorro()" style="width:100%;margin-top:10px;background:var(--verde);border:none;border-radius:8px;padding:13px;color:var(--oscuro);font-size:14px;font-weight:700;cursor:pointer;">+ Agregar Meta de Ahorro</button>
-    <div id="dist-ahorros-resumen" style="margin-top:12px;"></div>
-    <button onclick="guardarAhorroHoy()" id="btn-guardar-ahorro"
-      style="width:100%;margin-top:10px;background:var(--morado);border:none;border-radius:10px;padding:14px;color:white;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.5px;display:none;">
-      💾 Guardar ahorro de hoy
-    </button>
-    <div id="ahorro-guardado-msg" style="font-size:11px;color:var(--verde);text-align:center;margin-top:6px;"></div>
-  </div>
 </div>
 
 <!-- TAB ANÁLISIS (submenús: Gráficas, Histórico, Ahorros) -->
@@ -635,12 +605,12 @@
   </div>
 </div>
 
-<!-- TAB AJUSTES (submenús: Productos, Precios, Backup) -->
+<!-- TAB AJUSTES (submenús: Productos & Precios, Backup) -->
 <div class="seccion" id="tab-ajustes">
-  <!-- GESTIÓN DE PRODUCTOS -->
+  <!-- GESTIÓN UNIFICADA DE PRODUCTOS Y PRECIOS -->
   <div id="subtab-productos">
-    <div class="dist-header">🍔 Gestión de Productos</div>
-    <div class="dist-sub">Agrega, edita o elimina productos sin tocar código</div>
+    <div class="dist-header">🍔 Productos & Precios</div>
+    <div class="dist-sub">Nombre, categoría, precio de venta y costo</div>
     <div class="resumen-box">
       <h3>Tus productos</h3>
       <p style="font-size:11px;color:var(--gris);margin-bottom:14px;line-height:1.6;">Los cambios se guardan y aparecen inmediatamente en la pantalla de venta.</p>
@@ -648,17 +618,6 @@
       <button class="btn-add-prod" onclick="agregarProductoNuevo()">+ Agregar producto</button>
       <button class="btn-save-prods" onclick="guardarProductos()">💾 Guardar cambios</button>
       <button onclick="resetearProductos()" style="width:100%;margin-top:8px;background:transparent;border:1px solid #444;border-radius:8px;padding:12px;color:var(--gris);font-size:13px;cursor:pointer;">↩️ Restaurar productos originales</button>
-    </div>
-  </div>
-  <!-- PRECIOS -->
-  <div id="subtab-precios" style="display:none;">
-    <div class="dist-header">🏷️ Editar Precios</div>
-    <div class="dist-sub">Cambia el precio de referencia de cada producto</div>
-    <div class="resumen-box">
-      <h3>Precios de referencia</h3>
-      <p style="font-size:11px;color:var(--gris);margin-bottom:14px;line-height:1.6;">Los cambios se guardan automáticamente y se reflejan en los botones de venta.</p>
-      <div class="precios-grid" id="precios-lista"></div>
-      <button onclick="resetearPrecios()" style="width:100%;margin-top:14px;background:transparent;border:1px solid #444;border-radius:8px;padding:12px;color:var(--gris);font-size:13px;cursor:pointer;">↩️ Restaurar precios originales</button>
     </div>
   </div>
   <!-- BACKUP -->
@@ -707,7 +666,7 @@
     <h2 id="modal-titulo">Producto</h2>
     <div class="precio-sugerido" id="modal-sugerido"></div>
 
-    <!-- PASO 1: Precio y cantidad -->
+    <!-- PASO 1: Precio y cantidad — agrega al ticket -->
     <div class="paso-venta activo" id="paso1">
       <div class="precio-grande">
         <div class="precio-grande-display" id="numpad-precio-display">$0</div>
@@ -733,60 +692,18 @@
         <div class="numpad-btn" onclick="numpadPress('1')">1</div>
         <div class="numpad-btn" onclick="numpadPress('2')">2</div>
         <div class="numpad-btn" onclick="numpadPress('3')">3</div>
-        <div class="numpad-btn" onclick="numpadPress('.')">.</div>
+        <div class="numpad-btn btn-borrar" onclick="numpadPress('C')" style="color:var(--amarillo);font-size:14px;font-weight:700;">C</div>
         <div class="numpad-btn" onclick="numpadPress('0')">0</div>
         <div class="numpad-btn btn-borrar" onclick="numpadPress('DEL')">⌫</div>
       </div>
       <div class="modal-btns" style="margin-top:14px;">
         <button class="btn-cancelar" onclick="cerrarModalBtn()">Cancelar</button>
-        <button class="btn-siguiente-pago" onclick="irAPaso2()" style="flex:2;margin:0;">💳 Cobrar ahora</button>
+        <button class="btn-siguiente-pago" onclick="agregarAlTicketDesdeModal()" style="flex:2;margin:0;">➕ Agregar al ticket</button>
       </div>
       <button id="btn-guardar-mesa-modal" onclick="guardarEnMesaDesdeModal()" style="width:100%;margin-top:10px;background:transparent;border:2px solid var(--amarillo);border-radius:10px;padding:13px;color:var(--amarillo);font-size:14px;font-weight:700;cursor:pointer;">🪑 Guardar en Mesa (paga al final)</button>
     </div>
 
-    <!-- PASO 2: Método de pago -->
-    <div class="paso-venta" id="paso2">
-      <div class="paso2-total">
-        <div class="paso2-total-label">Total a cobrar</div>
-        <div class="paso2-total-monto" id="paso2-monto">$0</div>
-        <div class="paso2-nombre" id="paso2-nombre"></div>
-      </div>
-      <button class="btn-volver" onclick="volverAPaso1()">← Cambiar precio</button>
-      <div class="metodos-section">
-        <label>Forma de pago</label>
-        <div class="metodos-grid">
-          <div class="btn-metodo" onclick="selMetodo('efectivo')" id="m-efectivo">💵 Efectivo</div>
-          <div class="btn-metodo" onclick="selMetodo('tarjeta')" id="m-tarjeta">💳 Tarjeta</div>
-          <div class="btn-metodo" onclick="selMetodo('didi_efectivo')" id="m-didi_efectivo">🚗 Didi Ef.</div>
-          <div class="btn-metodo" onclick="selMetodo('didi_tarjeta')" id="m-didi_tarjeta">🚗 Didi Tar.</div>
-          <div class="btn-metodo" onclick="selMetodo('rappi')" id="m-rappi">🛵 Rappi</div>
-          <div class="btn-metodo" onclick="selMetodo('uber')" id="m-uber">🚙 Uber</div>
-          <div class="btn-metodo" onclick="selMetodo('facebook')" id="m-facebook">📘 Facebook</div>
-          <div class="btn-metodo" onclick="selMetodo('whatsapp')" id="m-whatsapp">💬 WhatsApp</div>
-        </div>
-      </div>
-      <div class="vuelto-box" id="vuelto-box" style="display:none;">
-        <label>💵 ¿Con cuánto paga?</label>
-        <input type="number" class="vuelto-input" id="vuelto-pago" inputmode="decimal" placeholder="$0.00" oninput="calcularVuelto()">
-        <div class="vuelto-resultado">
-          <span class="vuelto-label">Vuelto a regresar:</span>
-          <span class="vuelto-monto" id="vuelto-monto">$0.00</span>
-        </div>
-      </div>
-      <!-- Sub-selector de pago para redes sociales (modal producto) -->
-      <div id="prod-redes-pago" style="display:none;margin-top:12px;background:rgba(245,200,66,0.08);border:1px solid var(--amarillo);border-radius:12px;padding:12px;">
-        <div style="font-size:11px;color:var(--amarillo);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:700;">⚠️ ¿Cómo paga el cliente de <span id="prod-red-nombre">la red</span>?</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div class="btn-metodo" id="prod-red-ef" onclick="selPagoRed('prod','efectivo')" style="border-color:var(--verde);color:var(--verde);">💵 Efectivo</div>
-          <div class="btn-metodo" id="prod-red-tar" onclick="selPagoRed('prod','tarjeta')" style="border-color:var(--amarillo);color:var(--amarillo);">💳 Tarjeta</div>
-        </div>
-        <div style="font-size:10px;color:var(--gris);margin-top:6px;text-align:center;">El dinero se contabiliza en Efectivo o Tarjeta. Facebook/WhatsApp solo registra el canal.</div>
-      </div>
-      <div class="modal-btns">
-        <button class="btn-cancelar" onclick="cerrarModalBtn()">Cancelar</button>
-        <button class="btn-confirmar" id="btn-confirmar-venta" onclick="confirmarVentaDirecta()">✅ Confirmar</button>
-      </div>
-    </div>
+    <!-- PASO 2 eliminado — el pago es siempre por ticket completo via COBRAR TICKET -->
   </div>
 </div>
 
@@ -890,6 +807,46 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- BOTÓN FLOTANTE GASTOS RÁPIDOS -->
+<button id="btn-gasto-rapido" onclick="abrirGastoRapido()" title="Gasto rápido"
+  style="position:fixed;bottom:calc(var(--nav-h) + 14px);left:14px;z-index:190;width:48px;height:48px;border-radius:50%;background:var(--rojo);border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;transition:transform 0.15s;">💸</button>
+
+<!-- MINI-MODAL GASTO RÁPIDO -->
+<div class="overlay" id="overlay-gasto-rapido" onclick="cerrarGastoRapido(event)">
+  <div class="modal" style="border-top-color:var(--rojo);">
+    <h2 style="color:var(--rojo);">💸 Gasto Rápido</h2>
+    <div class="input-row" style="margin-bottom:10px;">
+      <input type="text" id="gasto-rapido-concepto" placeholder="Concepto (ej: gas, camión...)" style="flex:1;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:12px 14px;color:var(--texto);font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Monto ($)</div>
+      <div class="gasto-numpad-display" id="gasto-rapido-display" style="border-color:var(--rojo);">$0</div>
+      <div class="numpad" id="gasto-rapido-numpad">
+        <div class="numpad-btn" onclick="gastoRapidoNumpad('7')">7</div>
+        <div class="numpad-btn" onclick="gastoRapidoNumpad('8')">8</div>
+        <div class="numpad-btn" onclick="gastoRapidoNumpad('9')">9</div>
+        <div class="numpad-btn" onclick="gastoRapidoNumpad('4')">4</div>
+        <div class="numpad-btn" onclick="gastoRapidoNumpad('5')">5</div>
+        <div class="numpad-btn" onclick="gastoRapidoNumpad('6')">6</div>
+        <div class="numpad-btn" onclick="gastoRapidoNumpad('1')">1</div>
+        <div class="numpad-btn" onclick="gastoRapidoNumpad('2')">2</div>
+        <div class="numpad-btn" onclick="gastoRapidoNumpad('3')">3</div>
+        <div class="numpad-btn btn-borrar" onclick="gastoRapidoNumpad('C')" style="color:var(--amarillo);font-size:14px;font-weight:700;">C</div>
+        <div class="numpad-btn" onclick="gastoRapidoNumpad('0')">0</div>
+        <div class="numpad-btn btn-borrar" onclick="gastoRapidoNumpad('DEL')">⌫</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button id="grb-negocio" onclick="selTipoGastoRapido('negocio')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">📦 Negocio</button>
+      <button id="grb-personal" onclick="selTipoGastoRapido('personal')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">🧍 Personal</button>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancelar" onclick="document.getElementById('overlay-gasto-rapido').classList.remove('visible')">Cancelar</button>
+      <button class="btn-confirmar" style="background:var(--rojo);" onclick="confirmarGastoRapido()">+ Agregar Gasto</button>
+    </div>
+  </div>
+</div>
 
 <!-- NAVEGACIÓN INFERIOR -->
 <nav class="bottom-nav">
@@ -1042,8 +999,7 @@
       { key:'ahorros', label:'🏦 Ahorros' },
     ],
     ajustes: [
-      { key:'productos', label:'🍔 Productos' },
-      { key:'precios', label:'🏷️ Precios' },
+      { key:'productos', label:'🍔 Productos & Precios' },
       { key:'backup', label:'💾 Backup' },
     ],
     registro: [
@@ -1128,11 +1084,11 @@
   }
 
   function mostrarSubtabAjustes(key) {
-    ['productos','precios','backup'].forEach(k => {
-      document.getElementById('subtab-' + k).style.display = k === key ? 'block' : 'none';
+    ['productos','backup'].forEach(k => {
+      const el = document.getElementById('subtab-' + k);
+      if (el) el.style.display = k === key ? 'block' : 'none';
     });
     if (key === 'productos') renderProductosEdicion();
-    if (key === 'precios') renderPrecios();
     if (key === 'backup') initBackupFechas();
   }
 
@@ -1175,18 +1131,29 @@
   // ════════════════════════════════════════════════════
   function renderProductosEdicion() {
     const cont = document.getElementById('productos-edicion');
-    const cats = [...new Set(productosEditables.map(p=>p.categoria))];
-    cont.innerHTML = productosEditables.map((p,i) => `
+    cont.innerHTML = productosEditables.map((p,i) => {
+      const costo = costosRefrescos[p.nombre] !== undefined ? costosRefrescos[p.nombre] : '';
+      const esCosto = COSTOS_REFRESCOS.hasOwnProperty(p.nombre) || costosRefrescos[p.nombre] !== undefined;
+      return `
       <div class="producto-edit-item" id="pedit-${i}">
         <div class="producto-edit-row">
           <input class="prod-input-nombre" value="${p.nombre}" placeholder="Nombre" oninput="productosEditables[${i}].nombre=this.value">
-          <input class="prod-input-precio" type="number" value="${p.precio}" placeholder="$" inputmode="decimal" oninput="productosEditables[${i}].precio=parseFloat(this.value)||0">
           <button class="btn-prod-del" onclick="eliminarProductoEdit(${i})">✕</button>
         </div>
-        <div style="margin-top:6px;">
-          <input class="prod-input-cat" value="${p.categoria}" placeholder="Categoría (ej: 🍔 Hamburguesas)" oninput="productosEditables[${i}].categoria=this.value" style="width:100%;">
+        <div style="margin-top:6px;display:flex;gap:6px;">
+          <input class="prod-input-cat" value="${p.categoria}" placeholder="Categoría" oninput="productosEditables[${i}].categoria=this.value" style="flex:2;">
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+            <div style="font-size:9px;color:var(--verde);text-transform:uppercase;letter-spacing:0.4px;text-align:center;">$ Venta</div>
+            <input class="prod-input-precio" type="number" value="${p.precio}" placeholder="$" inputmode="decimal" oninput="productosEditables[${i}].precio=parseFloat(this.value)||0;guardarProductos2();renderProductosVenta();" style="width:100%;">
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+            <div style="font-size:9px;color:var(--rojo);text-transform:uppercase;letter-spacing:0.4px;text-align:center;">$ Costo</div>
+            <input class="prod-input-precio" type="number" value="${costo}" placeholder="—" inputmode="decimal" style="width:100%;color:var(--rojo);border-color:${esCosto?'var(--rojo)':'#444'};"
+              oninput="actualizarCostoRefresco('${p.nombre.replace(/'/g,"\\'")}',this.value)">
+          </div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   function agregarProductoNuevo() {
@@ -1289,7 +1256,6 @@
       }
     }
     document.getElementById('paso1').classList.add('activo');
-    document.getElementById('paso2').classList.remove('activo');
     document.getElementById('overlay').classList.add('visible');
   }
 
@@ -1302,6 +1268,8 @@
     let str = numpadPrecioStr;
     if (key === 'DEL') {
       str = str.length > 1 ? str.slice(0,-1) : '';
+    } else if (key === 'C') {
+      str = '';
     } else if (key === '.') {
       if (!str.includes('.')) str += '.';
     } else {
@@ -1312,29 +1280,9 @@
     document.getElementById('numpad-precio-display').textContent = str ? '$' + str : '$0';
   }
 
-  function irAPaso2() {
-    const precio = parseFloat(numpadPrecioStr);
-    if (!precio || precio <= 0) { mostrarToast('⚠️ Ingresa un precio válido'); return; }
-    const total = precio * cantidadActual;
-    document.getElementById('paso2-monto').textContent = '$' + total.toFixed(2);
-    document.getElementById('paso2-nombre').textContent = cantidadActual > 1 ? `${cantidadActual}x ${productoActual}` : productoActual;
-    metodoSeleccionado = '';
-    document.querySelectorAll('#overlay .btn-metodo').forEach(b => { b.classList.remove('selected'); b.style.background=''; });
-    document.getElementById('vuelto-box').style.display = 'none';
-    document.getElementById('paso1').classList.remove('activo');
-    document.getElementById('paso2').classList.add('activo');
-  }
-
-  function volverAPaso1() {
-    document.getElementById('paso1').classList.add('activo');
-    document.getElementById('paso2').classList.remove('activo');
-  }
-
   function cerrarModal(e){ if(e.target===document.getElementById('overlay')) cerrarModalBtn(); }
   function cerrarModalBtn(){
     document.getElementById('overlay').classList.remove('visible');
-    document.getElementById('paso1').classList.add('activo');
-    document.getElementById('paso2').classList.remove('activo');
   }
 
   // Canal de red social pendiente de confirmar pago (prod modal)
@@ -1555,7 +1503,7 @@
 
   function renderTicket() {
     const preview = document.getElementById('ticket-preview');
-    if (!ticketItems.length) { preview.classList.remove('visible'); renderMesas(); return; }
+    if (!ticketItems.length) { preview.classList.remove('visible'); renderMesas(); actualizarBadgeVenta(); return; }
     preview.classList.add('visible');
     const mesaNombre = mesaActiva !== null ? (mesas.find(m=>m.id===mesaActiva)||{}).nombre : null;
     document.getElementById('ticket-count').textContent = mesaNombre ? '🪑 ' + mesaNombre : ticketItems.length + ' producto' + (ticketItems.length > 1 ? 's' : '');
@@ -1569,6 +1517,7 @@
         <button class="ti-del" onclick="quitarDelTicket(${item.id})">✕</button>
       </div>`).join('');
     renderMesas();
+    actualizarBadgeVenta();
   }
 
   function quitarDelTicket(id) {
@@ -1771,6 +1720,7 @@
   function focusGastoNumpad() { document.getElementById('gasto-monto-display').style.borderColor = 'var(--amarillo)'; }
   function gastoNumpadPress(key) {
     if (key === 'DEL') gastoMontoStr = gastoMontoStr.length > 1 ? gastoMontoStr.slice(0,-1) : '';
+    else if (key === 'C') gastoMontoStr = '';
     else if (key === '.') { if (!gastoMontoStr.includes('.')) gastoMontoStr += '.'; }
     else { if (gastoMontoStr === '0' || gastoMontoStr === '') gastoMontoStr = key; else gastoMontoStr += key; }
     document.getElementById('gasto-monto-display').textContent = gastoMontoStr ? '$' + gastoMontoStr : '$0';
@@ -1930,7 +1880,10 @@
       cont.innerHTML = busqueda ? '<div class="empty-state"><div class="icon">🔍</div>No se encontraron días con "' + busqueda + '"</div>' : '<div class="empty-state"><div class="icon">📅</div>Aún no hay días cerrados</div>';
       return;
     }
-    cont.innerHTML = datos.map(d=>`
+    cont.innerHTML = datos.map(d=>{
+      const brutoFisico = (d.totales.efectivo||0)+(d.totales.didi_efectivo||0)+(d.totales.facebook||0)+(d.totales.whatsapp||0);
+      const enMano = Math.max(0, brutoFisico - (d.totales.totalGastos||0));
+      return `
       <div class="dia-card">
         <div class="dia-header">
           <div style="display:flex;align-items:center;gap:8px;flex:1;">
@@ -1948,14 +1901,12 @@
           </div>
         </div>
         <div class="dia-detalle">
-          💵 Efectivo: <span>$${d.totales.efectivo.toFixed(2)}</span> &nbsp; 🚗 Didi Ef: <span>$${d.totales.didi_efectivo.toFixed(2)}</span><br>
-          💳 Tarjeta: <span>$${d.totales.tarjeta.toFixed(2)}</span> &nbsp; 🚗 Didi Tar: <span>$${d.totales.didi_tarjeta.toFixed(2)}</span><br>
-          🛵 Rappi: <span>$${d.totales.rappi.toFixed(2)}</span> &nbsp; 🚙 Uber: <span>$${d.totales.uber.toFixed(2)}</span><br>
-          📘 FB: <span>$${(d.totales.facebook||0).toFixed(2)}</span> &nbsp; 💬 WA: <span>$${(d.totales.whatsapp||0).toFixed(2)}</span><br>
-          💸 Gastos: <span>$${d.totales.totalGastos.toFixed(2)}</span>
+          💵 En mano: <span style="color:var(--verde);">$${enMano.toFixed(2)}</span>
+          &nbsp;·&nbsp; 💸 Gastos: <span>$${(d.totales.totalGastos||0).toFixed(2)}</span>
         </div>
-        <button class="btn-ver-dia" onclick="verDetalleDia(${d.id})">✏️ Ver y editar detalle</button>
-      </div>`).join('');
+        <button class="btn-ver-dia" onclick="verDetalleDia(${d.id})">📋 Ver detalle completo</button>
+      </div>`;
+    }).join('');
   }
 
   function editarFecha(id) { document.getElementById('fecha-txt-'+id).style.display='none'; document.getElementById('fecha-edit-'+id).style.display='block'; document.getElementById('fecha-input-'+id).focus(); }
@@ -2292,7 +2243,7 @@
     const{montosHoy}=calcularMontosAhorros(_sueldoDisponibleActual);
     const totalHoy=Object.values(montosHoy).reduce((s,v)=>s+v,0);
     if(totalHoy<=0){mostrarToast('⚠️ No hay nada para guardar hoy');return;}
-    ahorros.forEach(a=>{const monto=montosHoy[a.id]||0;if(monto<=0)return;if(!a.registros)a.registros=[];if(!a.acumulado)a.acumulado=0;a.registros.push({fecha:hoyKey,label:hoyLabel,monto});a.acumulado+=monto;});
+    ahorros.forEach(a=>{const monto=montosHoy[a.id]||0;if(monto<=0)return;if(!a.registros)a.registros=[];if(!a.acumulado)a.acumulado=0;a.registros.push({fecha:hoyKey,label:hoyLabel,monto});a.acumulado+=monto;registrarMovimientoAhorro(a,monto,'deposito','Ahorro del día');});
     _montoFijoTemp={};guardarAhorros();renderDistribucion();mostrarToast('✅ ¡Ahorros del día guardados!');
   }
 
@@ -2300,7 +2251,7 @@
     const listaEl=document.getElementById('ahorros-tab-lista'); if(!listaEl) return;
     if(!ahorros.length){listaEl.innerHTML='<div class="empty-state"><div class="icon">🏦</div>Aún no tienes metas de ahorro.<br>Agrégalas en 💰 Distribución</div>';const canvasEl=document.getElementById('chart-ahorros-hist');if(canvasEl){destroyChart('ahorros-hist');canvasEl.style.display='none';}document.getElementById('ahorros-hist-resumen').innerHTML='';return;}
     const colores=['#f5c842','#22c55e','#e63946','#ff6600','#f0f0f0','#ff3008','#06c167','#ff9900'];
-    listaEl.innerHTML=`<div class="ahorro-mov-btns"><button class="btn-retirar" onclick="abrirAhorroMov('retirar')">💸 Retirar<br><span style="font-size:10px;font-weight:400;">de un ahorro específico</span></button><button class="btn-depositar" onclick="abrirAhorroMov('depositar')">💰 Depositar<br><span style="font-size:10px;font-weight:400;">global o específico</span></button></div>`+ahorros.map((a,i)=>{const color=colores[i%colores.length];const meta=a.meta_total||0;const acum=a.acumulado||0;const pct=meta>0?Math.min(100,(acum/meta)*100):0;const falta=meta>0?Math.max(0,meta-acum):null;const registros=a.registros||[];const ultimoReg=registros.length?registros[registros.length-1]:null;return`<div style="background:var(--medio);border:2px solid ${color};border-radius:14px;padding:16px;margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${color};letter-spacing:1px;">${a.nombre}</div><div style="text-align:right;"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${color};">$${acum.toFixed(0)}</div><div style="font-size:10px;color:var(--gris);">ahorrado${meta>0?` de $${meta.toFixed(0)}`:''}</div></div></div>${meta>0?`<div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:${color};border-radius:6px;"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gris);"><span style="color:${color};font-weight:700;">${pct.toFixed(0)}% completado</span>${falta!==null?`<span>Faltan: <b style="color:var(--rojo);">$${falta.toFixed(0)}</b></span>`:''}</div>`:'<div style="font-size:11px;color:var(--gris);">Sin meta definida</div>'}<div style="margin-top:10px;font-size:11px;color:var(--gris);">📅 ${registros.length} día${registros.length!==1?'s':''} guardado${registros.length!==1?'s':''}${ultimoReg?` · Último: ${ultimoReg.label} (+$${ultimoReg.monto.toFixed(0)})`:'  '}</div></div>`;}).join('');
+    listaEl.innerHTML=`<div class="ahorro-mov-btns"><button class="btn-retirar" onclick="abrirAhorroMov('retirar')">💸 Retirar<br><span style="font-size:10px;font-weight:400;">de un ahorro específico</span></button><button class="btn-depositar" onclick="abrirAhorroMov('depositar')">💰 Depositar<br><span style="font-size:10px;font-weight:400;">global o específico</span></button></div>`+ahorros.map((a,i)=>{const color=colores[i%colores.length];const meta=a.meta_total||0;const acum=a.acumulado||0;const pct=meta>0?Math.min(100,(acum/meta)*100):0;const falta=meta>0?Math.max(0,meta-acum):null;const historial_mov=(a.historial||[]).slice().reverse();const histHtml=historial_mov.length?historial_mov.map(h=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #2a2a3e;font-size:12px;"><span style="color:var(--gris);">${h.fecha} ${h.hora||''}<br><span style="font-size:10px;opacity:0.7;">${h.concepto||''}</span></span><span style="font-weight:700;color:${h.tipo==='deposito'?'var(--verde)':'var(--rojo)'};">${h.tipo==='deposito'?'+':'-'}$${Math.abs(h.monto).toFixed(0)}</span></div>`).join(''):'<div style="color:var(--gris);font-size:12px;padding:6px 0;">Sin movimientos registrados aún</div>';return`<div style="background:var(--medio);border:2px solid ${color};border-radius:14px;padding:16px;margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${color};letter-spacing:1px;">${a.nombre}</div><div style="text-align:right;"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${color};">$${acum.toFixed(0)}</div><div style="font-size:10px;color:var(--gris);">ahorrado${meta>0?` de $${meta.toFixed(0)}`:''}</div></div></div>${meta>0?`<div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:${color};border-radius:6px;"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gris);"><span style="color:${color};font-weight:700;">${pct.toFixed(0)}% completado</span>${falta!==null?`<span>Faltan: <b style="color:var(--rojo);">$${falta.toFixed(0)}</b></span>`:''}</div>`:'<div style="font-size:11px;color:var(--gris);">Sin meta definida</div>'}<details style="margin-top:10px;"><summary style="font-size:12px;color:${color};cursor:pointer;user-select:none;padding:4px 0;">📋 Ver historial (${historial_mov.length} movimientos)</summary><div style="margin-top:8px;background:var(--oscuro);border-radius:8px;padding:8px;">${histHtml}</div></details></div>`;}).join('');
     const todosRegistros=[];
     ahorros.forEach(a=>{(a.registros||[]).forEach(r=>{todosRegistros.push({fecha:r.fecha,label:r.label,monto:r.monto});});});
     todosRegistros.sort((a,b)=>a.fecha.localeCompare(b.fecha));
@@ -2372,7 +2323,7 @@
       if(!_ahorroSelId){mostrarToast('⚠️ Elige de qué ahorro retirar');return;}
       const a=ahorros.find(x=>x.id===_ahorroSelId);if(!a)return;
       if((a.acumulado||0)<monto&&!_retiroConfirm1){_retiroConfirm1=true;mostrarToast('⚠️ Fondos insuficientes. Toca de nuevo para confirmar');return;}
-      a.acumulado=Math.max(0,(a.acumulado||0)-monto);if(!a.registros)a.registros=[];a.registros.push({fecha:hoyKey,label:hoyLabel+' (retiro)',monto:-monto});mostrarToast(`✅ -$${monto.toFixed(2)} de "${a.nombre}"`);
+      a.acumulado=Math.max(0,(a.acumulado||0)-monto);if(!a.registros)a.registros=[];a.registros.push({fecha:hoyKey,label:hoyLabel+' (retiro)',monto:-monto});registrarMovimientoAhorro(a,monto,'retiro','Retiro manual');mostrarToast(`✅ -$${monto.toFixed(2)} de "${a.nombre}"`);
     } else {
       // Verificar sueldo disponible si el origen es sueldo
       if(_ahorroDepOrigen==='sueldo'&&!_ahorroSueldoForzar){
@@ -2407,8 +2358,8 @@
         gastos.push({id:Date.now(),concepto:'💰 Ahorro: '+nombreMeta,monto,hora,tipo:'personal'});
         guardarGastos();actualizarHeaderTotal();
       }
-      if(_ahorroDepSubtipo==='global'){const dist=calcularDistribucionGlobal(monto);dist.forEach(d=>{d.ahorro.acumulado=(d.ahorro.acumulado||0)+d.monto;if(!d.ahorro.registros)d.ahorro.registros=[];d.ahorro.registros.push({fecha:hoyKey,label:hoyLabel+origenLabel,monto:d.monto,origen:_ahorroDepOrigen});});mostrarToast(`✅ $${monto.toFixed(0)} al ahorro${origenLabel}`);}
-      else{if(!_ahorroSelId){mostrarToast('⚠️ Elige a cuál ahorro depositar');return;}const a=ahorros.find(x=>x.id===_ahorroSelId);if(!a)return;a.acumulado=(a.acumulado||0)+monto;if(!a.registros)a.registros=[];a.registros.push({fecha:hoyKey,label:hoyLabel+origenLabel,monto,origen:_ahorroDepOrigen});mostrarToast(`✅ +$${monto.toFixed(0)} a "${a.nombre}"${origenLabel}`);}
+      if(_ahorroDepSubtipo==='global'){const dist=calcularDistribucionGlobal(monto);dist.forEach(d=>{d.ahorro.acumulado=(d.ahorro.acumulado||0)+d.monto;if(!d.ahorro.registros)d.ahorro.registros=[];d.ahorro.registros.push({fecha:hoyKey,label:hoyLabel+origenLabel,monto:d.monto,origen:_ahorroDepOrigen});registrarMovimientoAhorro(d.ahorro,d.monto,'deposito','Depósito'+origenLabel);});mostrarToast(`✅ $${monto.toFixed(0)} al ahorro${origenLabel}`);}
+      else{if(!_ahorroSelId){mostrarToast('⚠️ Elige a cuál ahorro depositar');return;}const a=ahorros.find(x=>x.id===_ahorroSelId);if(!a)return;a.acumulado=(a.acumulado||0)+monto;if(!a.registros)a.registros=[];a.registros.push({fecha:hoyKey,label:hoyLabel+origenLabel,monto,origen:_ahorroDepOrigen});registrarMovimientoAhorro(a,monto,'deposito','Depósito'+origenLabel);mostrarToast(`✅ +$${monto.toFixed(0)} a "${a.nombre}"${origenLabel}`);}
     }
     guardarAhorros();document.getElementById('overlay-ahorro-mov').classList.remove('visible');renderTabAhorros();
   }
@@ -3122,6 +3073,133 @@
   }
 
   // ════════════════════════════════════════════════════
+  // MEJORA 1 — GUARDAR PORCENTAJES EN LOCALSTORAGE
+  // ════════════════════════════════════════════════════
+  function guardarPcts() {
+    const s = parseFloat(document.getElementById('pct-sueldo').value) || 40;
+    const i = parseFloat(document.getElementById('pct-inv').value) || 45;
+    const c = parseFloat(document.getElementById('pct-colchon').value) || 15;
+    localStorage.setItem('bajon_dist_pcts', JSON.stringify({s,i,c}));
+  }
+  function cargarPcts() {
+    try {
+      const pcts = JSON.parse(localStorage.getItem('bajon_dist_pcts'));
+      if (pcts) {
+        document.getElementById('pct-sueldo').value = pcts.s;
+        document.getElementById('pct-inv').value = pcts.i;
+        document.getElementById('pct-colchon').value = pcts.c;
+      }
+    } catch(e) {}
+  }
+
+  // ════════════════════════════════════════════════════
+  // MEJORA 2 — FLUJO DE VENTA ACUMULATIVO
+  // ════════════════════════════════════════════════════
+  function agregarAlTicketDesdeModal() {
+    const precio = parseFloat(numpadPrecioStr);
+    if (!precio || precio <= 0) { mostrarToast('⚠️ Ingresa un precio válido'); return; }
+    // Agregar al ticket acumulativo
+    const itemExistente = ticketItems.find(it => it.producto === productoActual && it.precio === precio);
+    if (itemExistente) {
+      itemExistente.cant += cantidadActual;
+    } else {
+      ticketItems.push({ producto: productoActual, precio, cant: cantidadActual });
+    }
+    cerrarModalBtn();
+    renderTicket();
+    actualizarBadgeVenta();
+    // Flash del botón producto
+    const btnId = 'btn-prod-' + (productoActual).replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'_');
+    const btnEl = document.getElementById(btnId);
+    if (btnEl) { btnEl.classList.add('vendido'); setTimeout(() => btnEl.classList.remove('vendido'), 600); }
+    mostrarToast('✅ ' + (cantidadActual > 1 ? cantidadActual + 'x ' : '') + productoActual + ' → ticket');
+  }
+
+  function actualizarBadgeVenta() {
+    const badge = document.getElementById('badge-venta');
+    const navVenta = document.getElementById('nav-venta');
+    if (!badge) return;
+    const total = ticketItems.reduce((s, it) => s + it.cant, 0);
+    if (total > 0) {
+      badge.textContent = total;
+      badge.classList.add('visible');
+      if (navVenta) navVenta.style.borderTop = '2px solid var(--amarillo)';
+    } else {
+      badge.classList.remove('visible');
+      if (navVenta) navVenta.style.borderTop = '';
+    }
+  }
+
+  // ════════════════════════════════════════════════════
+  // MEJORA 3 — HISTORIAL DE MOVIMIENTOS EN AHORROS
+  // ════════════════════════════════════════════════════
+  function registrarMovimientoAhorro(ahorro, monto, tipo, concepto) {
+    if (!ahorro.historial) ahorro.historial = [];
+    const now = new Date();
+    ahorro.historial.push({
+      fecha: now.toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'}),
+      hora: now.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit', hour12:false}),
+      monto,
+      tipo,   // 'deposito' | 'retiro'
+      concepto: concepto || (tipo === 'deposito' ? 'Depósito' : 'Retiro')
+    });
+  }
+
+  // ════════════════════════════════════════════════════
+  // MEJORA 5 — ACCESO RÁPIDO A GASTOS
+  // ════════════════════════════════════════════════════
+  let gastoRapidoMontoStr = '';
+  let tipoGastoRapido = 'negocio';
+
+  function abrirGastoRapido() {
+    gastoRapidoMontoStr = '';
+    tipoGastoRapido = 'negocio';
+    document.getElementById('gasto-rapido-concepto').value = '';
+    document.getElementById('gasto-rapido-display').textContent = '$0';
+    selTipoGastoRapido('negocio');
+    document.getElementById('overlay-gasto-rapido').classList.add('visible');
+  }
+
+  function cerrarGastoRapido(e) {
+    if (e.target === document.getElementById('overlay-gasto-rapido'))
+      document.getElementById('overlay-gasto-rapido').classList.remove('visible');
+  }
+
+  function gastoRapidoNumpad(key) {
+    if (key === 'DEL') gastoRapidoMontoStr = gastoRapidoMontoStr.length > 1 ? gastoRapidoMontoStr.slice(0,-1) : '';
+    else if (key === 'C') gastoRapidoMontoStr = '';
+    else { if (gastoRapidoMontoStr === '0' || gastoRapidoMontoStr === '') gastoRapidoMontoStr = key; else gastoRapidoMontoStr += key; }
+    document.getElementById('gasto-rapido-display').textContent = gastoRapidoMontoStr ? '$' + gastoRapidoMontoStr : '$0';
+  }
+
+  function selTipoGastoRapido(tipo) {
+    tipoGastoRapido = tipo;
+    const bN = document.getElementById('grb-negocio');
+    const bP = document.getElementById('grb-personal');
+    if (tipo === 'negocio') {
+      bN.style.borderColor='var(--amarillo)'; bN.style.background='rgba(245,200,66,0.15)'; bN.style.color='var(--amarillo)';
+      bP.style.borderColor='#444'; bP.style.background='transparent'; bP.style.color='var(--gris)';
+    } else {
+      bP.style.borderColor='var(--morado)'; bP.style.background='rgba(245,200,66,0.15)'; bP.style.color='var(--morado)';
+      bN.style.borderColor='#444'; bN.style.background='transparent'; bN.style.color='var(--gris)';
+    }
+  }
+
+  function confirmarGastoRapido() {
+    const concepto = document.getElementById('gasto-rapido-concepto').value.trim();
+    const monto = parseFloat(gastoRapidoMontoStr);
+    if (!concepto) { mostrarToast('⚠️ Escribe el concepto'); return; }
+    if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa el monto'); return; }
+    const hora = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    gastos.push({id:Date.now(), concepto, monto, hora, tipo:tipoGastoRapido});
+    guardarGastos();
+    document.getElementById('overlay-gasto-rapido').classList.remove('visible');
+    renderGastos();
+    actualizarHeaderTotal();
+    mostrarToast('💸 Gasto registrado');
+  }
+
+  // ════════════════════════════════════════════════════
   // INIT
   // ════════════════════════════════════════════════════
   renderProductosVenta();
@@ -3132,6 +3210,8 @@
   renderFiados();
   renderPlats();
   initBackupFechas();
+  cargarPcts();
+  actualizarBadgeVenta();
   // Auto-backup al arrancar si corresponde
   setTimeout(autoBackupSiCorresponde, 5000);
 </script>
