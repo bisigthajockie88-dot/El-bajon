@@ -2437,17 +2437,47 @@
 
   // Calcula el reparto completo de HOY: en orden de prioridad, cuánto le toca a cada compromiso
   // sobre el sueldo disponible de hoy. Devuelve {repartos:[{comp,monto,cubierto}], libre}
+  // Cuánto le falta en total a un compromiso (no solo hoy, sino para terminarlo/completar el ciclo)
+  function faltaTotalCompromiso(comp) {
+    if (comp.tipo === 'meta') return Math.max(0, (comp.total || 0) - (comp.pagado || 0));
+    const info = infoCicloRecurrente(comp);
+    return info.falta;
+  }
+
+  // Calcula el reparto completo de HOY: en orden de prioridad, cuánto le toca a cada compromiso
+  // sobre el sueldo disponible de hoy. Primero cubre el monto necesario de hoy de cada uno (cascada normal);
+  // si después de cubrir a todos sigue sobrando dinero, ese sobrante se sigue repartiendo como ADELANTO
+  // en el mismo orden de prioridad (nunca se deja "libre" mientras haya compromisos con saldo pendiente).
+  // Devuelve {repartos:[{comp,monto,asignado,cubierto,adelanto}], libre}
   function calcularRepartoCompromisosHoy(sueldoDisponible) {
     const activos = compromisos.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
     let restante = Math.max(0, sueldoDisponible);
-    const repartos = [];
-    activos.forEach(comp => {
+    const repartos = activos.map(comp => {
       const monto = comp.tipo === 'meta' ? calcularMontoHoyMeta(comp) : calcularMontoHoyRecurrente(comp);
-      const asignado = Math.min(monto, restante);
-      const cubierto = asignado >= monto - 0.005;
-      repartos.push({ comp, montoNecesario: monto, asignado, cubierto });
+      return { comp, montoNecesario: monto, asignado: 0, cubierto: false, adelanto: 0 };
+    });
+    // Pasada 1: cubrir el monto necesario de hoy de cada compromiso, en orden
+    repartos.forEach(r => {
+      const asignado = Math.min(r.montoNecesario, restante);
+      r.asignado = asignado;
+      r.cubierto = asignado >= r.montoNecesario - 0.005;
       restante -= asignado;
     });
+    // Pasada 2: si sobra dinero, repartir como adelanto sobre el saldo TOTAL pendiente de cada uno (misma prioridad)
+    if (restante > 0.005) {
+      repartos.forEach(r => {
+        if (restante <= 0.005) return;
+        const faltaTotal = faltaTotalCompromiso(r.comp);
+        const yaAsignadoHoy = r.asignado;
+        const margenAdelanto = Math.max(0, faltaTotal - yaAsignadoHoy);
+        const adelanto = Math.min(margenAdelanto, restante);
+        if (adelanto > 0.005) {
+          r.adelanto = adelanto;
+          r.asignado += adelanto;
+          restante -= adelanto;
+        }
+      });
+    }
     return { repartos, libre: Math.max(0, restante) };
   }
 
@@ -2597,10 +2627,12 @@
     const completados = [];
     aPagar.forEach(r => {
       const comp = r.comp;
+      const esAdelantoPuro = r.montoNecesario <= 0.005 && r.adelanto > 0.005;
+      const concepto = esAdelantoPuro ? '📌 ' + comp.nombre + ' (adelanto)' : (r.adelanto > 0.005 ? '📌 ' + comp.nombre + ' (+adelanto)' : '📌 ' + comp.nombre);
       // Registrar gasto personal para descontar del sueldo (mismo patrón que ahorros)
-      gastos.push({ id: Date.now() + Math.floor(Math.random()*1000), concepto: '📌 ' + comp.nombre, monto: r.asignado, hora, tipo: 'personal' });
+      gastos.push({ id: Date.now() + Math.floor(Math.random()*1000), concepto, monto: r.asignado, hora, tipo: 'personal' });
       totalDescontado += r.asignado;
-      registrarMovimientoCompromiso(comp, r.asignado, 'Pago del día');
+      registrarMovimientoCompromiso(comp, r.asignado, esAdelantoPuro ? 'Adelanto' : (r.adelanto > 0.005 ? 'Pago del día + adelanto' : 'Pago del día'));
       if (comp.tipo === 'meta') {
         comp.pagado = (comp.pagado || 0) + r.asignado;
         if (comp.pagado >= comp.total - 0.005) completados.push(comp.nombre);
@@ -2648,11 +2680,19 @@
     // ── Reparto de hoy ──
     hoyBox.innerHTML = `<div style="font-size:11px;color:var(--gris);margin-bottom:10px;">Sueldo disponible hoy: <b style="color:var(--amarillo);">$${sueldoDisponible.toFixed(0)}</b></div>` +
       repartos.map(r => {
-        const icono = r.montoNecesario <= 0.005 ? '⬜' : (r.cubierto ? '✅' : '🟡');
-        const colorMonto = r.montoNecesario <= 0.005 ? 'var(--gris)' : (r.cubierto ? 'var(--verde)' : 'var(--rojo)');
+        const tieneAdelanto = r.adelanto > 0.005;
+        const sinNecesidadHoy = r.montoNecesario <= 0.005;
+        const icono = (sinNecesidadHoy && !tieneAdelanto) ? '⬜' : (r.cubierto ? '✅' : '🟡');
+        const colorMonto = (sinNecesidadHoy && !tieneAdelanto) ? 'var(--gris)' : (r.cubierto ? 'var(--verde)' : 'var(--rojo)');
+        let montoTxt;
+        if (sinNecesidadHoy && !tieneAdelanto) montoTxt = '$0';
+        else if (sinNecesidadHoy && tieneAdelanto) montoTxt = '+$' + r.asignado.toFixed(0) + ' (adelanto)';
+        else if (!r.cubierto) montoTxt = '+$' + r.asignado.toFixed(0) + ' de $' + r.montoNecesario.toFixed(0);
+        else if (tieneAdelanto) montoTxt = '+$' + r.asignado.toFixed(0) + ' (incl. $' + r.adelanto.toFixed(0) + ' adelanto)';
+        else montoTxt = '+$' + r.asignado.toFixed(0);
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #2a2a3e;font-size:13px;">
           <span>${icono} ${r.comp.nombre}</span>
-          <span style="font-weight:700;color:${colorMonto};">${r.montoNecesario <= 0.005 ? '$0' : '+$' + r.asignado.toFixed(0) + (r.cubierto ? '' : ' de $' + r.montoNecesario.toFixed(0))}</span>
+          <span style="font-weight:700;color:${colorMonto};">${montoTxt}</span>
         </div>`;
       }).join('');
     if (libreEl) libreEl.textContent = '$' + libre.toFixed(0);
