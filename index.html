@@ -596,6 +596,90 @@
     <div class="resumen-box"><h3>💵 Sueldo semana a semana</h3><canvas id="chart-sueldo-historico" height="220"></canvas><div id="resumen-sueldo-historico" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div></div>
     <div class="resumen-box"><h3>📋 Resumen por semana</h3><div id="hist-tabla-semanas" style="font-size:12px;"></div></div>
   </div>
+  <!-- COMPROMISOS -->
+  <div id="subtab-compromisos" style="display:none;">
+    <div class="dist-header">📌 Compromisos Fijos</div>
+    <div class="dist-sub">El sistema reparte tu sueldo solo — tú solo defines qué es y cuánto</div>
+
+    <div class="resumen-box" id="compromisos-hoy-box" style="border:2px solid var(--amarillo);">
+      <h3 style="color:var(--amarillo);">📅 Reparto de hoy</h3>
+      <div id="compromisos-hoy-lista"></div>
+      <div id="compromisos-libre-box" style="margin-top:12px;padding:14px;border-radius:10px;background:rgba(34,197,94,0.08);border:1px solid var(--verde);text-align:center;">
+        <div style="font-size:11px;color:var(--verde);text-transform:uppercase;letter-spacing:0.5px;">💰 Libre para ti hoy</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--verde);" id="compromisos-libre-monto">$0</div>
+      </div>
+      <button onclick="aplicarCompromisosHoy()" id="btn-aplicar-compromisos" style="width:100%;margin-top:10px;background:var(--amarillo);border:none;border-radius:10px;padding:14px;color:#111;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">
+        ✅ Aplicar reparto de hoy
+      </button>
+      <div id="compromisos-aplicado-msg" style="font-size:11px;color:var(--verde);text-align:center;margin-top:6px;"></div>
+    </div>
+
+    <div class="resumen-box">
+      <h3>📋 Tus compromisos (en orden de prioridad)</h3>
+      <div id="compromisos-lista"></div>
+    </div>
+
+    <div class="resumen-box">
+      <h3>➕ Agregar Compromiso</h3>
+      <input type="text" id="comp-nombre-input" placeholder="Nombre (ej: Moto, Mamá, Lavadora...)"
+        style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 12px;color:var(--texto);font-size:13px;outline:none;margin-bottom:10px;">
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button id="btn-comp-meta" onclick="selTipoCompromiso('meta')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">🎯 Meta con fin<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Moto, préstamo, lavadora...</span></button>
+        <button id="btn-comp-recurrente" onclick="selTipoCompromiso('recurrente')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">🔁 Recurrente<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Mamá, esposa, medicinas...</span></button>
+      </div>
+
+      <!-- CAMPOS META CON FIN -->
+      <div id="comp-campos-meta">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;">
+            <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Total a pagar ($)</div>
+            <input type="number" id="comp-meta-total" placeholder="14000" min="0" inputmode="decimal"
+              style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:10px 12px;color:var(--amarillo);font-size:16px;font-weight:700;text-align:center;outline:none;">
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Ya pagado ($)</div>
+            <input type="number" id="comp-meta-pagado" placeholder="0" min="0" inputmode="decimal"
+              style="width:100%;background:var(--oscuro);border:1px solid var(--verde);border-radius:8px;padding:10px 12px;color:var(--verde);font-size:16px;font-weight:700;text-align:center;outline:none;">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;">
+            <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Terminar el día</div>
+            <input type="date" id="comp-meta-fecha"
+              style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 8px;color:var(--texto);font-size:13px;outline:none;">
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">¿Qué días cuenta?</div>
+            <select id="comp-meta-dias" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 8px;color:var(--texto);font-size:12px;outline:none;">
+              <option value="todos">Todos los días</option>
+              <option value="habiles">Solo Lun-Vie</option>
+            </select>
+          </div>
+        </div>
+        <div id="comp-meta-preview" style="font-size:12px;color:var(--gris);text-align:center;margin-bottom:10px;min-height:16px;"></div>
+      </div>
+
+      <!-- CAMPOS RECURRENTE -->
+      <div id="comp-campos-recurrente" style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;">
+            <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Monto por ciclo ($)</div>
+            <input type="number" id="comp-rec-monto" placeholder="700" min="0" inputmode="decimal"
+              style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:10px 12px;color:var(--amarillo);font-size:16px;font-weight:700;text-align:center;outline:none;">
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Cada cuántos días</div>
+            <input type="number" id="comp-rec-ciclo" placeholder="7" min="1" inputmode="decimal"
+              style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 12px;color:var(--texto);font-size:16px;font-weight:700;text-align:center;outline:none;">
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--gris);margin-bottom:10px;">Ej: Esposa $700 cada 7 días · Medicinas $428 cada 15 días</div>
+      </div>
+
+      <button onclick="agregarCompromiso()" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:13px;color:var(--oscuro);font-size:14px;font-weight:700;cursor:pointer;">+ Agregar Compromiso</button>
+    </div>
+  </div>
+
   <!-- AHORROS -->
   <div id="subtab-ahorros" style="display:none;">
     <div class="dist-header">🏦 Mis Ahorros</div>
@@ -848,6 +932,11 @@
   </div>
 </div>
 
+<!-- MODAL MIGRAR AHORRO A COMPROMISO -->
+<div class="overlay" id="overlay-migrar-ahorro" onclick="if(event.target===this)this.classList.remove('visible')">
+  <div class="modal" id="modal-migrar-ahorro-content" style="border-top-color:var(--amarillo);"></div>
+</div>
+
 <!-- NAVEGACIÓN INFERIOR -->
 <nav class="bottom-nav">
   <div class="nav-item active" id="nav-venta" onclick="cambiarNavTab('venta')">
@@ -979,6 +1068,11 @@
   let _montoFijoTemp = {};
   let _sueldoDisponibleActual = 0;
 
+  // ── COMPROMISOS FIJOS ──
+  let compromisos = JSON.parse(localStorage.getItem('bajon_compromisos') || '[]');
+  function guardarCompromisos() { localStorage.setItem('bajon_compromisos', JSON.stringify(compromisos)); }
+  let _tipoCompromisoSel = 'meta';
+
   // ── STORAGE HELPERS ──
   function guardarMov(){ localStorage.setItem('bajon_mov', JSON.stringify(movimientos)); }
   function guardarGastos(){ localStorage.setItem('bajon_gastos', JSON.stringify(gastos)); }
@@ -996,6 +1090,7 @@
     analisis: [
       { key:'graficas', label:'📈 Gráficas' },
       { key:'historico', label:'📊 Histórico' },
+      { key:'compromisos', label:'📌 Compromisos' },
       { key:'ahorros', label:'🏦 Ahorros' },
     ],
     ajustes: [
@@ -1075,11 +1170,12 @@
   }
 
   function mostrarSubtabAnalisis(key) {
-    ['graficas','historico','ahorros'].forEach(k => {
+    ['graficas','historico','compromisos','ahorros'].forEach(k => {
       document.getElementById('subtab-' + k).style.display = k === key ? 'block' : 'none';
     });
     if (key === 'graficas') renderGraficas();
     if (key === 'historico') renderGraficasHistoricas();
+    if (key === 'compromisos') renderTabCompromisos();
     if (key === 'ahorros') renderTabAhorros();
   }
 
@@ -2251,7 +2347,7 @@
     const listaEl=document.getElementById('ahorros-tab-lista'); if(!listaEl) return;
     if(!ahorros.length){listaEl.innerHTML='<div class="empty-state"><div class="icon">🏦</div>Aún no tienes metas de ahorro.<br>Agrégalas en 💰 Distribución</div>';const canvasEl=document.getElementById('chart-ahorros-hist');if(canvasEl){destroyChart('ahorros-hist');canvasEl.style.display='none';}document.getElementById('ahorros-hist-resumen').innerHTML='';return;}
     const colores=['#f5c842','#22c55e','#e63946','#ff6600','#f0f0f0','#ff3008','#06c167','#ff9900'];
-    listaEl.innerHTML=`<div class="ahorro-mov-btns"><button class="btn-retirar" onclick="abrirAhorroMov('retirar')">💸 Retirar<br><span style="font-size:10px;font-weight:400;">de un ahorro específico</span></button><button class="btn-depositar" onclick="abrirAhorroMov('depositar')">💰 Depositar<br><span style="font-size:10px;font-weight:400;">global o específico</span></button></div>`+ahorros.map((a,i)=>{const color=colores[i%colores.length];const meta=a.meta_total||0;const acum=a.acumulado||0;const pct=meta>0?Math.min(100,(acum/meta)*100):0;const falta=meta>0?Math.max(0,meta-acum):null;const historial_mov=(a.historial||[]).slice().reverse();const histHtml=historial_mov.length?historial_mov.map(h=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #2a2a3e;font-size:12px;"><span style="color:var(--gris);">${h.fecha} ${h.hora||''}<br><span style="font-size:10px;opacity:0.7;">${h.concepto||''}</span></span><span style="font-weight:700;color:${h.tipo==='deposito'?'var(--verde)':'var(--rojo)'};">${h.tipo==='deposito'?'+':'-'}$${Math.abs(h.monto).toFixed(0)}</span></div>`).join(''):'<div style="color:var(--gris);font-size:12px;padding:6px 0;">Sin movimientos registrados aún</div>';return`<div style="background:var(--medio);border:2px solid ${color};border-radius:14px;padding:16px;margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${color};letter-spacing:1px;">${a.nombre}</div><div style="text-align:right;"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${color};">$${acum.toFixed(0)}</div><div style="font-size:10px;color:var(--gris);">ahorrado${meta>0?` de $${meta.toFixed(0)}`:''}</div></div></div>${meta>0?`<div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:${color};border-radius:6px;"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gris);"><span style="color:${color};font-weight:700;">${pct.toFixed(0)}% completado</span>${falta!==null?`<span>Faltan: <b style="color:var(--rojo);">$${falta.toFixed(0)}</b></span>`:''}</div>`:'<div style="font-size:11px;color:var(--gris);">Sin meta definida</div>'}<details style="margin-top:10px;"><summary style="font-size:12px;color:${color};cursor:pointer;user-select:none;padding:4px 0;">📋 Ver historial (${historial_mov.length} movimientos)</summary><div style="margin-top:8px;background:var(--oscuro);border-radius:8px;padding:8px;">${histHtml}</div></details></div>`;}).join('');
+    listaEl.innerHTML=`<div class="ahorro-mov-btns"><button class="btn-retirar" onclick="abrirAhorroMov('retirar')">💸 Retirar<br><span style="font-size:10px;font-weight:400;">de un ahorro específico</span></button><button class="btn-depositar" onclick="abrirAhorroMov('depositar')">💰 Depositar<br><span style="font-size:10px;font-weight:400;">global o específico</span></button></div>`+ahorros.map((a,i)=>{const color=colores[i%colores.length];const meta=a.meta_total||0;const acum=a.acumulado||0;const pct=meta>0?Math.min(100,(acum/meta)*100):0;const falta=meta>0?Math.max(0,meta-acum):null;const historial_mov=(a.historial||[]).slice().reverse();const histHtml=historial_mov.length?historial_mov.map(h=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #2a2a3e;font-size:12px;"><span style="color:var(--gris);">${h.fecha} ${h.hora||''}<br><span style="font-size:10px;opacity:0.7;">${h.concepto||''}</span></span><span style="font-weight:700;color:${h.tipo==='deposito'?'var(--verde)':'var(--rojo)'};">${h.tipo==='deposito'?'+':'-'}$${Math.abs(h.monto).toFixed(0)}</span></div>`).join(''):'<div style="color:var(--gris);font-size:12px;padding:6px 0;">Sin movimientos registrados aún</div>';return`<div style="background:var(--medio);border:2px solid ${color};border-radius:14px;padding:16px;margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${color};letter-spacing:1px;">${a.nombre}</div><div style="text-align:right;"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${color};">$${acum.toFixed(0)}</div><div style="font-size:10px;color:var(--gris);">ahorrado${meta>0?` de $${meta.toFixed(0)}`:''}</div></div></div>${meta>0?`<div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:${color};border-radius:6px;"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gris);"><span style="color:${color};font-weight:700;">${pct.toFixed(0)}% completado</span>${falta!==null?`<span>Faltan: <b style="color:var(--rojo);">$${falta.toFixed(0)}</b></span>`:''}</div>`:'<div style="font-size:11px;color:var(--gris);">Sin meta definida</div>'}<button onclick="abrirMigrarAhorro(${a.id})" style="width:100%;margin-top:10px;background:transparent;border:1px dashed var(--amarillo);border-radius:8px;padding:9px;color:var(--amarillo);font-size:11px;font-weight:700;cursor:pointer;">📌 Migrar a Compromisos (pago obligatorio en cascada)</button><details style="margin-top:10px;"><summary style="font-size:12px;color:${color};cursor:pointer;user-select:none;padding:4px 0;">📋 Ver historial (${historial_mov.length} movimientos)</summary><div style="margin-top:8px;background:var(--oscuro);border-radius:8px;padding:8px;">${histHtml}</div></details></div>`;}).join('');
     const todosRegistros=[];
     ahorros.forEach(a=>{(a.registros||[]).forEach(r=>{todosRegistros.push({fecha:r.fecha,label:r.label,monto:r.monto});});});
     todosRegistros.sort((a,b)=>a.fecha.localeCompare(b.fecha));
@@ -2266,6 +2362,359 @@
     grafCharts['ahorros-hist']=new Chart(canvasEl,{type:'line',data:{labels:todasFechas,datasets:[...datasets,{label:'💰 Total',data:totalData,borderColor:'#ffffff',backgroundColor:'rgba(255,255,255,0.04)',fill:false,tension:0.3,pointRadius:5,pointBackgroundColor:'#ffffff',borderWidth:2}]},options:{responsive:true,plugins:{legend:{display:true,position:'bottom',labels:{color:cf.color,font:{size:11},padding:10,boxWidth:14}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': $'+ctx.raw.toFixed(2)}}},scales:{x:{ticks:{color:cf.color,font:{size:10},maxRotation:45},grid:{color:cf.gridColor}},y:{ticks:{color:cf.color,callback:v=>'$'+v},grid:{color:cf.gridColor}}}}});
     const totalAcum=ahorros.reduce((s,a)=>s+(a.acumulado||0),0);
     document.getElementById('ahorros-hist-resumen').innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:10px;padding:4px 0;font-size:12px;">`+ahorros.map((a,i)=>`<span style="color:${colores[i%colores.length]};">${a.nombre}: <b>$${(a.acumulado||0).toFixed(0)}</b></span>`).join('')+`<span style="color:#fff;font-weight:700;border-top:1px solid #444;width:100%;padding-top:6px;margin-top:2px;">💰 Total: $${totalAcum.toFixed(2)}</span></div>`;
+  }
+
+  // ════════════════════════════════════════════════════
+  // COMPROMISOS FIJOS — motor de cálculo automático
+  // ════════════════════════════════════════════════════
+  // Helpers de fecha
+  function fechaSoloDia(d) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+  function hoySoloDia() { return fechaSoloDia(new Date()); }
+  function diffDias(a, b) { return Math.round((fechaSoloDia(b) - fechaSoloDia(a)) / 86400000); }
+  function esDiaHabil(d) { const wd = d.getDay(); return wd !== 0 && wd !== 6; }
+
+  // Cuenta cuántos días "válidos" hay entre hoy (incluido) y la fecha límite (incluida), según diasCuenta
+  function diasRestantesValidos(fechaLimiteStr, diasCuenta) {
+    const hoy = hoySoloDia();
+    const limite = fechaSoloDia(fechaLimiteStr + 'T12:00:00');
+    if (limite < hoy) return 0;
+    let count = 0;
+    const cursor = new Date(hoy);
+    while (cursor <= limite) {
+      if (diasCuenta === 'habiles') { if (esDiaHabil(cursor)) count++; }
+      else { count++; }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return Math.max(1, count);
+  }
+
+  // Para un compromiso tipo 'meta': ¿hoy es un día que cuenta?
+  function hoyCuentaParaCompromiso(comp) {
+    if (comp.tipo !== 'meta') return true;
+    const hoy = new Date();
+    if (comp.diasCuenta === 'habiles') return esDiaHabil(hoy);
+    return true;
+  }
+
+  // Calcula cuánto le toca a un compromiso TIPO META hoy (falta ÷ días restantes), recalculando solo
+  function calcularMontoHoyMeta(comp) {
+    const falta = Math.max(0, (comp.total || 0) - (comp.pagado || 0));
+    if (falta <= 0) return 0;
+    if (!hoyCuentaParaCompromiso(comp)) return 0;
+    const dias = diasRestantesValidos(comp.fechaLimite, comp.diasCuenta);
+    return Math.min(falta, falta / dias);
+  }
+
+  // Calcula info del ciclo actual de un compromiso RECURRENTE: en qué día del ciclo estamos, cuánto falta, cuántos días quedan del ciclo
+  function infoCicloRecurrente(comp) {
+    const hoy = hoySoloDia();
+    let inicioCiclo = fechaSoloDia(comp.fechaInicioCiclo + 'T12:00:00');
+    // Avanzar ciclos completados hasta encontrar el ciclo que contiene "hoy"
+    let acumuladoCiclo = comp.acumuladoCiclo || 0;
+    while (diffDias(inicioCiclo, hoy) >= comp.cicloDias) {
+      // Ciclo terminado: se reinicia (lo que no se completó, se pierde — empieza limpio el siguiente)
+      inicioCiclo.setDate(inicioCiclo.getDate() + comp.cicloDias);
+      acumuladoCiclo = 0;
+    }
+    const diaDelCiclo = diffDias(inicioCiclo, hoy); // 0-indexado
+    const diasRestantesCiclo = comp.cicloDias - diaDelCiclo;
+    const falta = Math.max(0, (comp.montoCiclo || 0) - acumuladoCiclo);
+    return { inicioCiclo, acumuladoCiclo, diaDelCiclo, diasRestantesCiclo, falta };
+  }
+
+  function calcularMontoHoyRecurrente(comp) {
+    const info = infoCicloRecurrente(comp);
+    if (info.falta <= 0) return 0;
+    return Math.min(info.falta, info.falta / info.diasRestantesCiclo);
+  }
+
+  // Sincroniza inicioCiclo/acumuladoCiclo en el objeto real (se llama al aplicar el reparto)
+  function sincronizarCicloRecurrente(comp) {
+    const info = infoCicloRecurrente(comp);
+    comp.fechaInicioCiclo = info.inicioCiclo.toISOString().split('T')[0];
+    comp.acumuladoCiclo = info.acumuladoCiclo;
+  }
+
+  // Calcula el reparto completo de HOY: en orden de prioridad, cuánto le toca a cada compromiso
+  // sobre el sueldo disponible de hoy. Devuelve {repartos:[{comp,monto,cubierto}], libre}
+  function calcularRepartoCompromisosHoy(sueldoDisponible) {
+    const activos = compromisos.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
+    let restante = Math.max(0, sueldoDisponible);
+    const repartos = [];
+    activos.forEach(comp => {
+      const monto = comp.tipo === 'meta' ? calcularMontoHoyMeta(comp) : calcularMontoHoyRecurrente(comp);
+      const asignado = Math.min(monto, restante);
+      const cubierto = asignado >= monto - 0.005;
+      repartos.push({ comp, montoNecesario: monto, asignado, cubierto });
+      restante -= asignado;
+    });
+    return { repartos, libre: Math.max(0, restante) };
+  }
+
+  function selTipoCompromiso(tipo) {
+    _tipoCompromisoSel = tipo;
+    const bM = document.getElementById('btn-comp-meta');
+    const bR = document.getElementById('btn-comp-recurrente');
+    const wM = document.getElementById('comp-campos-meta');
+    const wR = document.getElementById('comp-campos-recurrente');
+    if (tipo === 'meta') {
+      bM.style.cssText='flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;';
+      bR.style.cssText='flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;';
+      wM.style.display='block'; wR.style.display='none';
+    } else {
+      bR.style.cssText='flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--morado);background:rgba(245,200,66,0.15);color:var(--morado);font-size:12px;font-weight:700;cursor:pointer;';
+      bM.style.cssText='flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;';
+      wR.style.display='block'; wM.style.display='none';
+    }
+  }
+
+  function agregarCompromiso() {
+    const nombre = document.getElementById('comp-nombre-input').value.trim();
+    if (!nombre) { mostrarToast('⚠️ Escribe el nombre del compromiso'); return; }
+    const maxOrden = compromisos.reduce((m,c) => Math.max(m, c.orden||0), 0);
+    if (_tipoCompromisoSel === 'meta') {
+      const total = parseFloat(document.getElementById('comp-meta-total').value);
+      const pagado = parseFloat(document.getElementById('comp-meta-pagado').value) || 0;
+      const fechaLimite = document.getElementById('comp-meta-fecha').value;
+      const diasCuenta = document.getElementById('comp-meta-dias').value;
+      if (!total || total <= 0) { mostrarToast('⚠️ Ingresa el total a pagar'); return; }
+      if (pagado < 0 || pagado > total) { mostrarToast('⚠️ El monto pagado no es válido'); return; }
+      if (!fechaLimite) { mostrarToast('⚠️ Elige la fecha límite'); return; }
+      compromisos.push({
+        id: Date.now(), nombre, tipo: 'meta', orden: maxOrden + 1,
+        total, pagado, fechaLimite, diasCuenta, historial: []
+      });
+      document.getElementById('comp-meta-total').value = '';
+      document.getElementById('comp-meta-pagado').value = '';
+      document.getElementById('comp-meta-fecha').value = '';
+    } else {
+      const montoCiclo = parseFloat(document.getElementById('comp-rec-monto').value);
+      const cicloDias = parseInt(document.getElementById('comp-rec-ciclo').value);
+      if (!montoCiclo || montoCiclo <= 0) { mostrarToast('⚠️ Ingresa el monto por ciclo'); return; }
+      if (!cicloDias || cicloDias <= 0) { mostrarToast('⚠️ Ingresa cada cuántos días'); return; }
+      compromisos.push({
+        id: Date.now(), nombre, tipo: 'recurrente', orden: maxOrden + 1,
+        montoCiclo, cicloDias, fechaInicioCiclo: new Date().toISOString().split('T')[0],
+        acumuladoCiclo: 0, historial: []
+      });
+      document.getElementById('comp-rec-monto').value = '';
+      document.getElementById('comp-rec-ciclo').value = '';
+    }
+    document.getElementById('comp-nombre-input').value = '';
+    guardarCompromisos();
+    renderTabCompromisos();
+    mostrarToast('✅ Compromiso "' + nombre + '" agregado');
+  }
+
+  function eliminarCompromiso(id) {
+    compromisos = compromisos.filter(c => c.id !== id);
+    guardarCompromisos();
+    renderTabCompromisos();
+    mostrarToast('🗑️ Compromiso eliminado');
+  }
+
+  // Migra un Ahorro existente (ej. "Moto") a un Compromiso tipo meta, conservando lo ya pagado.
+  function migrarAhorroACompromiso(ahorroId, total, fechaLimite, diasCuenta) {
+    const a = ahorros.find(x => x.id === ahorroId);
+    if (!a) { mostrarToast('⚠️ No se encontró ese ahorro'); return; }
+    if (!total || total <= 0) { mostrarToast('⚠️ Ingresa el total de la deuda'); return; }
+    if (!fechaLimite) { mostrarToast('⚠️ Elige la fecha límite'); return; }
+    const maxOrden = compromisos.reduce((m,c) => Math.max(m, c.orden||0), 0);
+    compromisos.push({
+      id: Date.now(), nombre: a.nombre, tipo: 'meta', orden: maxOrden + 1,
+      total, pagado: a.acumulado || 0, fechaLimite, diasCuenta: diasCuenta || 'todos',
+      historial: (a.historial || []).map(h => ({ fecha: h.fecha, hora: h.hora, monto: h.monto, concepto: h.concepto || 'Migrado de Ahorros' }))
+    });
+    ahorros = ahorros.filter(x => x.id !== ahorroId);
+    guardarAhorros();
+    guardarCompromisos();
+    renderTabCompromisos();
+    renderTabAhorros();
+    mostrarToast('✅ "' + a.nombre + '" migrado a Compromisos con $' + (a.acumulado||0).toFixed(0) + ' ya pagados');
+  }
+
+  function abrirMigrarAhorro(ahorroId) {
+    const a = ahorros.find(x => x.id === ahorroId);
+    if (!a) return;
+    const totalSugerido = a.meta_total || '';
+    const html = `
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--amarillo);letter-spacing:1px;margin-bottom:4px;">📌 Migrar "${a.nombre}" a Compromisos</h2>
+      <p style="font-size:12px;color:var(--gris);margin-bottom:14px;">Ya tienes <b style="color:var(--verde);">$${(a.acumulado||0).toFixed(0)}</b> pagados — se conservan.</p>
+      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Total de la deuda ($)</div>
+      <input type="number" id="migrar-total-input" value="${totalSugerido}" placeholder="14000" min="0" inputmode="decimal"
+        style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:10px 12px;color:var(--amarillo);font-size:16px;font-weight:700;text-align:center;outline:none;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Terminar el día</div>
+      <input type="date" id="migrar-fecha-input"
+        style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 8px;color:var(--texto);font-size:13px;outline:none;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">¿Qué días cuenta?</div>
+      <select id="migrar-dias-input" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 8px;color:var(--texto);font-size:12px;outline:none;margin-bottom:14px;">
+        <option value="todos">Todos los días</option>
+        <option value="habiles">Solo Lun-Vie</option>
+      </select>
+      <div class="modal-btns" style="margin-top:0;">
+        <button class="btn-cancelar" onclick="document.getElementById('overlay-migrar-ahorro').classList.remove('visible')">Cancelar</button>
+        <button class="btn-confirmar" onclick="migrarAhorroACompromiso(${a.id}, parseFloat(document.getElementById('migrar-total-input').value), document.getElementById('migrar-fecha-input').value, document.getElementById('migrar-dias-input').value); document.getElementById('overlay-migrar-ahorro').classList.remove('visible');">📌 Migrar</button>
+      </div>`;
+    document.getElementById('modal-migrar-ahorro-content').innerHTML = html;
+    document.getElementById('overlay-migrar-ahorro').classList.add('visible');
+  }
+
+  function moverCompromiso(id, dir) {
+    const ordenados = compromisos.slice().sort((a,b)=>(a.orden||0)-(b.orden||0));
+    const idx = ordenados.findIndex(c => c.id === id);
+    const swapIdx = idx + dir;
+    if (idx === -1 || swapIdx < 0 || swapIdx >= ordenados.length) return;
+    const tmp = ordenados[idx].orden;
+    ordenados[idx].orden = ordenados[swapIdx].orden;
+    ordenados[swapIdx].orden = tmp;
+    guardarCompromisos();
+    renderTabCompromisos();
+  }
+
+  // Registra un movimiento en el historial propio del compromiso (igual patrón que ahorros)
+  function registrarMovimientoCompromiso(comp, monto, concepto) {
+    if (!comp.historial) comp.historial = [];
+    const now = new Date();
+    comp.historial.push({
+      fecha: now.toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'}),
+      hora: now.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit', hour12:false}),
+      monto, concepto: concepto || 'Pago del día'
+    });
+  }
+
+  // Aplica el reparto de hoy: descuenta cada compromiso del sueldo (vía gasto personal, igual que ahorros),
+  // marca metas completadas para auto-eliminarlas, y reinicia ciclos recurrentes vencidos.
+  function aplicarCompromisosHoy() {
+    const hoyKey = new Date().toISOString().split('T')[0];
+    const yaAplicadoHoy = compromisos.some(c => (c.historial||[]).some(h => h.fecha === new Date().toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'})));
+    if (yaAplicadoHoy) { mostrarToast('⚠️ Ya aplicaste el reparto de hoy'); return; }
+    const sueldoDisponible = sueldoDisponibleHoy();
+    const { repartos } = calcularRepartoCompromisosHoy(sueldoDisponible);
+    const aPagar = repartos.filter(r => r.asignado > 0.005);
+    if (!aPagar.length) { mostrarToast('⚠️ No hay nada que repartir hoy'); return; }
+    const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit', hour12:false});
+    let totalDescontado = 0;
+    const completados = [];
+    aPagar.forEach(r => {
+      const comp = r.comp;
+      // Registrar gasto personal para descontar del sueldo (mismo patrón que ahorros)
+      gastos.push({ id: Date.now() + Math.floor(Math.random()*1000), concepto: '📌 ' + comp.nombre, monto: r.asignado, hora, tipo: 'personal' });
+      totalDescontado += r.asignado;
+      registrarMovimientoCompromiso(comp, r.asignado, 'Pago del día');
+      if (comp.tipo === 'meta') {
+        comp.pagado = (comp.pagado || 0) + r.asignado;
+        if (comp.pagado >= comp.total - 0.005) completados.push(comp.nombre);
+      } else {
+        comp.acumuladoCiclo = (comp.acumuladoCiclo || 0) + r.asignado;
+        sincronizarCicloRecurrente(comp);
+      }
+    });
+    guardarGastos();
+    // Eliminar metas completadas
+    if (completados.length) {
+      compromisos = compromisos.filter(c => !(c.tipo === 'meta' && c.pagado >= c.total - 0.005));
+    }
+    guardarCompromisos();
+    actualizarHeaderTotal();
+    renderDistribucion();
+    renderTabCompromisos();
+    let msg = '✅ Repartidos $' + totalDescontado.toFixed(0) + ' de tu sueldo';
+    if (completados.length) msg += ' · 🎉 ¡' + completados.join(', ') + ' completado!';
+    mostrarToast(msg);
+  }
+
+  function renderTabCompromisos() {
+    const lista = document.getElementById('compromisos-lista');
+    const hoyBox = document.getElementById('compromisos-hoy-lista');
+    const libreEl = document.getElementById('compromisos-libre-monto');
+    const btnAplicar = document.getElementById('btn-aplicar-compromisos');
+    const msgEl = document.getElementById('compromisos-aplicado-msg');
+    if (!lista) return;
+    selTipoCompromiso(_tipoCompromisoSel);
+
+    if (!compromisos.length) {
+      lista.innerHTML = '<div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">Sin compromisos aún. Agrégalos abajo.</div>';
+      hoyBox.innerHTML = '<div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">Agrega un compromiso para ver el reparto de hoy.</div>';
+      if (libreEl) libreEl.textContent = '$' + sueldoDisponibleHoy().toFixed(0);
+      if (btnAplicar) btnAplicar.style.display = 'none';
+      return;
+    }
+
+    const sueldoDisponible = sueldoDisponibleHoy();
+    const { repartos, libre } = calcularRepartoCompromisosHoy(sueldoDisponible);
+    const hoyLabel = new Date().toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'});
+    const yaAplicadoHoy = compromisos.some(c => (c.historial||[]).some(h => h.fecha === hoyLabel));
+
+    // ── Reparto de hoy ──
+    hoyBox.innerHTML = `<div style="font-size:11px;color:var(--gris);margin-bottom:10px;">Sueldo disponible hoy: <b style="color:var(--amarillo);">$${sueldoDisponible.toFixed(0)}</b></div>` +
+      repartos.map(r => {
+        const icono = r.montoNecesario <= 0.005 ? '⬜' : (r.cubierto ? '✅' : '🟡');
+        const colorMonto = r.montoNecesario <= 0.005 ? 'var(--gris)' : (r.cubierto ? 'var(--verde)' : 'var(--rojo)');
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #2a2a3e;font-size:13px;">
+          <span>${icono} ${r.comp.nombre}</span>
+          <span style="font-weight:700;color:${colorMonto};">${r.montoNecesario <= 0.005 ? '$0' : '+$' + r.asignado.toFixed(0) + (r.cubierto ? '' : ' de $' + r.montoNecesario.toFixed(0))}</span>
+        </div>`;
+      }).join('');
+    if (libreEl) libreEl.textContent = '$' + libre.toFixed(0);
+    if (btnAplicar) btnAplicar.style.display = yaAplicadoHoy ? 'none' : 'block';
+    if (msgEl) msgEl.textContent = yaAplicadoHoy ? '✅ Ya aplicaste el reparto de hoy' : '';
+
+    // ── Lista de compromisos ordenados ──
+    const ordenados = compromisos.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
+    lista.innerHTML = ordenados.map((comp, idx) => {
+      const historial_mov = (comp.historial||[]).slice().reverse();
+      const histHtml = historial_mov.length ? historial_mov.map(h =>
+        `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2a3e;font-size:12px;">
+          <span style="color:var(--gris);">${h.fecha} ${h.hora||''}</span>
+          <span style="font-weight:700;color:var(--verde);">+$${h.monto.toFixed(0)}</span>
+        </div>`).join('') : '<div style="color:var(--gris);font-size:12px;padding:6px 0;">Sin pagos registrados aún</div>';
+
+      let cuerpo = '';
+      if (comp.tipo === 'meta') {
+        const falta = Math.max(0, comp.total - comp.pagado);
+        const pct = comp.total > 0 ? Math.min(100, (comp.pagado/comp.total)*100) : 0;
+        const montoHoy = calcularMontoHoyMeta(comp);
+        const dias = diasRestantesValidos(comp.fechaLimite, comp.diasCuenta);
+        cuerpo = `
+          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🎯 Meta · vence ${comp.fechaLimite} · ${comp.diasCuenta==='habiles'?'Lun-Vie':'todos los días'}</div>
+          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="color:var(--gris);">Pagado: <b style="color:var(--verde);">$${comp.pagado.toFixed(0)}</b> / $${comp.total.toFixed(0)}</span>
+            <span style="color:var(--gris);">Faltan: <b style="color:var(--rojo);">$${falta.toFixed(0)}</b></span>
+          </div>
+          <div style="font-size:12px;color:var(--amarillo);">📅 ${dias} días restantes · ~$${montoHoy.toFixed(0)}/día</div>`;
+      } else {
+        const info = infoCicloRecurrente(comp);
+        const pct = comp.montoCiclo > 0 ? Math.min(100, (info.acumuladoCiclo/comp.montoCiclo)*100) : 0;
+        const montoHoy = calcularMontoHoyRecurrente(comp);
+        cuerpo = `
+          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🔁 Recurrente · $${comp.montoCiclo.toFixed(0)} cada ${comp.cicloDias} días</div>
+          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--morado);border-radius:6px;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="color:var(--gris);">Este ciclo: <b style="color:var(--amarillo);">$${info.acumuladoCiclo.toFixed(0)}</b> / $${comp.montoCiclo.toFixed(0)}</span>
+            <span style="color:var(--gris);">Faltan: <b style="color:var(--rojo);">$${info.falta.toFixed(0)}</b></span>
+          </div>
+          <div style="font-size:12px;color:var(--amarillo);">📅 ${info.diasRestantesCiclo} días quedan del ciclo · ~$${montoHoy.toFixed(0)}/día</div>`;
+      }
+
+      return `<div style="background:var(--medio);border:2px solid #444;border-radius:14px;padding:14px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--gris);background:var(--oscuro);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;">${idx+1}</span>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--amarillo);letter-spacing:0.5px;">${comp.nombre}</span>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button onclick="moverCompromiso(${comp.id},-1)" ${idx===0?'disabled style="opacity:0.3;"':''} style="background:transparent;border:1px solid #444;border-radius:6px;color:var(--gris);font-size:13px;cursor:pointer;padding:3px 8px;">▲</button>
+            <button onclick="moverCompromiso(${comp.id},1)" ${idx===ordenados.length-1?'disabled style="opacity:0.3;"':''} style="background:transparent;border:1px solid #444;border-radius:6px;color:var(--gris);font-size:13px;cursor:pointer;padding:3px 8px;">▼</button>
+            <button onclick="eliminarCompromiso(${comp.id})" style="background:transparent;border:none;color:#555;font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
+          </div>
+        </div>
+        ${cuerpo}
+        <details style="margin-top:10px;"><summary style="font-size:12px;color:var(--amarillo);cursor:pointer;user-select:none;padding:4px 0;">📋 Ver historial (${historial_mov.length})</summary>
+          <div style="margin-top:8px;background:var(--oscuro);border-radius:8px;padding:8px;">${histHtml}</div>
+        </details>
+      </div>`;
+    }).join('');
   }
 
   // ════════════════════════════════════════════════════
