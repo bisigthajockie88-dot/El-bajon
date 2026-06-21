@@ -2543,14 +2543,46 @@
     return info.falta;
   }
 
+  // ── Opcional por día: el usuario puede "saltar" un compromiso solo por hoy (ej. hoy no le deposito a Mamá,
+  // pero a la Moto sí). Se guarda como una fecha; si esa fecha no es hoy, automáticamente vuelve a estar
+  // incluido al día siguiente — no hay que "reactivarlo" a mano.
+  function fechaHoyISO() { return new Date().toISOString().split('T')[0]; }
+  function estaExcluidoHoy(comp) {
+    return comp.excluidoFecha === fechaHoyISO();
+  }
+  function toggleExcluirHoy(comp, guardarFn, renderFn) {
+    comp.excluidoFecha = estaExcluidoHoy(comp) ? null : fechaHoyISO();
+    guardarFn();
+    renderFn();
+  }
+  function toggleExcluirCompromisoHoy(id) {
+    const comp = compromisos.find(c => c.id === id);
+    if (!comp) return;
+    toggleExcluirHoy(comp, guardarCompromisos, renderTabCompromisos);
+  }
+  function toggleExcluirCompromisoNegocioHoy(id) {
+    const comp = compromisosNegocio.find(c => c.id === id);
+    if (!comp) return;
+    toggleExcluirHoy(comp, guardarCompromisosNegocio, renderTabCompromisosNegocio);
+  }
+  // HTML reutilizable del switch "Incluido hoy / Saltado hoy" (usado en Compromisos y Metas de Negocio).
+  function toggleHoyHtml(comp, toggleFn) {
+    const excluido = estaExcluidoHoy(comp);
+    if (excluido) {
+      return `<button onclick="${toggleFn}(${comp.id})" style="width:100%;background:rgba(255,255,255,0.04);border:1.5px dashed #666;border-radius:8px;padding:8px;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;">⏭️ Saltado hoy — no entra al reparto. Toca para incluirlo.</button>`;
+    }
+    return `<button onclick="${toggleFn}(${comp.id})" style="width:100%;background:rgba(76,217,100,0.08);border:1.5px solid var(--verde);border-radius:8px;padding:8px;color:var(--verde);font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;">✅ Incluido hoy. Toca para saltarlo solo hoy.</button>`;
+  }
+
   // Calcula el reparto completo de HOY: en orden de prioridad, cuánto le toca a cada compromiso
   // sobre el sueldo disponible de hoy. Primero cubre el monto necesario de hoy de cada uno (cascada normal);
   // si después de cubrir a todos sigue sobrando dinero, ese sobrante se sigue repartiendo como ADELANTO
   // en el mismo orden de prioridad (nunca se deja "libre" mientras haya compromisos con saldo pendiente).
+  // Los compromisos marcados como "saltados hoy" quedan totalmente fuera del reparto de hoy.
   // Devuelve {repartos:[{comp,monto,asignado,cubierto,adelanto}], libre}
   function calcularRepartoCompromisosHoy(sueldoDisponible, lista) {
     const fuente = lista || compromisos;
-    const activos = fuente.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
+    const activos = fuente.filter(c => !estaExcluidoHoy(c)).sort((a,b) => (a.orden||0) - (b.orden||0));
     let restante = Math.max(0, sueldoDisponible);
     const repartos = activos.map(comp => {
       const monto = comp.tipo === 'meta' ? calcularMontoHoyMeta(comp) : calcularMontoHoyRecurrente(comp);
@@ -2842,28 +2874,32 @@
         const montoHoy = calcularMontoHoyMeta(comp);
         const sugerido = sugerenciaMontoHoyMeta(comp);
         const dias = diasRestantesValidos(comp.fechaLimite, comp.diasCuenta);
+        const lineaHoy = estaExcluidoHoy(comp) ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 ${dias} días restantes · hoy: $0/día (saltado)</div>` : `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${dias} días restantes · hoy: $${montoHoy.toFixed(0)}/día</div>`;
         cuerpo = `
+          ${toggleHoyHtml(comp, 'toggleExcluirCompromisoHoy')}
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🎯 Meta · vence ${comp.fechaLimite} · ${comp.diasCuenta==='habiles'?'Lun-Vie':'todos los días'}</div>
           <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
             <span style="color:var(--gris);">Pagado: <b style="color:var(--verde);">$${comp.pagado.toFixed(0)}</b> / $${comp.total.toFixed(0)}</span>
             <span style="color:var(--gris);">Faltan: <b style="color:var(--rojo);">$${falta.toFixed(0)}</b></span>
           </div>
-          <div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${dias} días restantes · hoy: $${montoHoy.toFixed(0)}/día</div>
+          ${lineaHoy}
           ${montoFijoInputHtml(comp, sugerido)}`;
       } else {
         const info = infoCicloRecurrente(comp);
         const pct = comp.montoCiclo > 0 ? Math.min(100, (info.acumuladoCiclo/comp.montoCiclo)*100) : 0;
         const montoHoy = calcularMontoHoyRecurrente(comp);
         const sugerido = sugerenciaMontoHoyRecurrente(comp);
+        const lineaHoy = estaExcluidoHoy(comp) ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $0/día (saltado)</div>` : `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $${montoHoy.toFixed(0)}/día</div>`;
         cuerpo = `
+          ${toggleHoyHtml(comp, 'toggleExcluirCompromisoHoy')}
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🔁 Recurrente · $${comp.montoCiclo.toFixed(0)} cada ${comp.cicloDias} días</div>
           <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--morado);border-radius:6px;"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
             <span style="color:var(--gris);">Este ciclo: <b style="color:var(--amarillo);">$${info.acumuladoCiclo.toFixed(0)}</b> / $${comp.montoCiclo.toFixed(0)}</span>
             <span style="color:var(--gris);">Faltan: <b style="color:var(--rojo);">$${info.falta.toFixed(0)}</b></span>
           </div>
-          <div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $${montoHoy.toFixed(0)}/día</div>
+          ${lineaHoy}
           ${montoFijoInputHtml(comp, sugerido)}`;
       }
 
@@ -3082,6 +3118,7 @@
         const pct = comp.total > 0 ? Math.min(100, (comp.pagado/comp.total)*100) : 0;
         const sugerido = sugerenciaMontoHoyMeta(comp);
         cuerpo = `
+          ${toggleHoyHtml(comp, 'toggleExcluirCompromisoNegocioHoy')}
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🎯 Meta puntual de negocio</div>
           <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
@@ -3094,6 +3131,7 @@
         const pct = comp.montoCiclo > 0 ? Math.min(100, (info.acumuladoCiclo/comp.montoCiclo)*100) : 0;
         const sugerido = sugerenciaMontoHoyRecurrente(comp);
         cuerpo = `
+          ${toggleHoyHtml(comp, 'toggleExcluirCompromisoNegocioHoy')}
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🔁 Recurrente · $${comp.montoCiclo.toFixed(0)} cada ${comp.cicloDias} días</div>
           <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--morado);border-radius:6px;"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
