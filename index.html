@@ -2627,6 +2627,20 @@
     </div>`;
   }
 
+  // HTML reutilizable del bloque de "abono externo" — dinero de tu bolsillo, no del sueldo ni del negocio.
+  // No genera gasto ni toca la distribución; solo suma directo al progreso del compromiso.
+  function abonoExternoHtml(id, fnAbono, prefixId) {
+    return `<div style="background:rgba(76,217,100,0.05);border:1px dashed var(--verde);border-radius:8px;padding:8px 10px;margin-top:8px;">
+      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">💵 Abono externo (de tu bolsillo)</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="number" id="${prefixId}${id}" min="0" inputmode="decimal" placeholder="$0"
+          style="flex:1;background:var(--oscuro);border:1px solid var(--verde);border-radius:8px;padding:8px 10px;color:var(--verde);font-size:15px;font-weight:700;text-align:center;outline:none;">
+        <button onclick="${fnAbono}(${id})" style="background:var(--verde);border:none;border-radius:8px;padding:8px 14px;color:var(--oscuro);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Abonar</button>
+      </div>
+      <div style="font-size:10px;color:var(--gris);margin-top:4px;">No descuenta del sueldo ni del negocio — va directo al compromiso.</div>
+    </div>`;
+  }
+
   function selTipoCompromiso(tipo) {
     _tipoCompromisoSel = tipo;
     const bM = document.getElementById('btn-comp-meta');
@@ -2760,6 +2774,62 @@
   }
 
   // Registra un movimiento en el historial propio del compromiso (igual patrón que ahorros)
+  // Depósito externo: el usuario mete dinero de su bolsillo directamente a un compromiso,
+  // sin tocar el sueldo ni la distribución del negocio. Solo suma al saldo del compromiso.
+  function abonarExternoCompromiso(id) {
+    const comp = compromisos.find(c => c.id === id);
+    if (!comp) return;
+    const input = document.getElementById('abono-ext-' + id);
+    if (!input) return;
+    const monto = parseFloat(input.value);
+    if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa un monto mayor a 0'); return; }
+    registrarMovimientoCompromiso(comp, monto, '💵 Abono externo');
+    if (comp.tipo === 'meta') {
+      comp.pagado = (comp.pagado || 0) + monto;
+      if (comp.pagado >= comp.total - 0.005) {
+        mostrarToast('🎉 ¡' + comp.nombre + ' completado!');
+        compromisos = compromisos.filter(c => c.id !== id);
+        guardarCompromisos();
+        renderTabCompromisos();
+        return;
+      }
+    } else {
+      comp.acumuladoCiclo = (comp.acumuladoCiclo || 0) + monto;
+      sincronizarCicloRecurrente(comp);
+    }
+    input.value = '';
+    guardarCompromisos();
+    renderTabCompromisos();
+    mostrarToast('✅ Abono externo de $' + monto.toFixed(0) + ' registrado en ' + comp.nombre);
+  }
+
+  function abonarExternoCompromisoNegocio(id) {
+    const comp = compromisosNegocio.find(c => c.id === id);
+    if (!comp) return;
+    const input = document.getElementById('abono-neg-ext-' + id);
+    if (!input) return;
+    const monto = parseFloat(input.value);
+    if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa un monto mayor a 0'); return; }
+    registrarMovimientoCompromiso(comp, monto, '💵 Abono externo');
+    if (comp.tipo === 'meta') {
+      comp.pagado = (comp.pagado || 0) + monto;
+      if (comp.pagado >= comp.total - 0.005) {
+        mostrarToast('🎉 ¡' + comp.nombre + ' completado!');
+        compromisosNegocio = compromisosNegocio.filter(c => c.id !== id);
+        guardarCompromisosNegocio();
+        renderTabCompromisosNegocio();
+        return;
+      }
+    } else {
+      comp.acumuladoCiclo = (comp.acumuladoCiclo || 0) + monto;
+      sincronizarCicloRecurrente(comp);
+    }
+    input.value = '';
+    guardarCompromisosNegocio();
+    renderTabCompromisosNegocio();
+    mostrarToast('✅ Abono externo de $' + monto.toFixed(0) + ' registrado en ' + comp.nombre);
+  }
+
   function registrarMovimientoCompromiso(comp, monto, concepto) {
     if (!comp.historial) comp.historial = [];
     const now = new Date();
@@ -2870,7 +2940,7 @@
       let cuerpo = '';
       if (comp.tipo === 'meta') {
         const falta = Math.max(0, comp.total - comp.pagado);
-        const pct = comp.total > 0 ? Math.min(100, (comp.pagado/comp.total)*100) : 0;
+        const pctMeta = comp.total > 0 ? Math.min(100, (comp.pagado/comp.total)*100) : 0;
         const montoHoy = calcularMontoHoyMeta(comp);
         const sugerido = sugerenciaMontoHoyMeta(comp);
         const dias = diasRestantesValidos(comp.fechaLimite, comp.diasCuenta);
@@ -2878,29 +2948,31 @@
         cuerpo = `
           ${toggleHoyHtml(comp, 'toggleExcluirCompromisoHoy')}
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🎯 Meta · vence ${comp.fechaLimite} · ${comp.diasCuenta==='habiles'?'Lun-Vie':'todos los días'}</div>
-          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div></div>
+          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pctMeta.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
             <span style="color:var(--gris);">Pagado: <b style="color:var(--verde);">$${comp.pagado.toFixed(0)}</b> / $${comp.total.toFixed(0)}</span>
             <span style="color:var(--gris);">Faltan: <b style="color:var(--rojo);">$${falta.toFixed(0)}</b></span>
           </div>
           ${lineaHoy}
-          ${montoFijoInputHtml(comp, sugerido)}`;
+          ${montoFijoInputHtml(comp, sugerido)}
+          ${abonoExternoHtml(comp.id, 'abonarExternoCompromiso', 'abono-ext-')}`;
       } else {
         const info = infoCicloRecurrente(comp);
-        const pct = comp.montoCiclo > 0 ? Math.min(100, (info.acumuladoCiclo/comp.montoCiclo)*100) : 0;
-        const montoHoy = calcularMontoHoyRecurrente(comp);
-        const sugerido = sugerenciaMontoHoyRecurrente(comp);
-        const lineaHoy = estaExcluidoHoy(comp) ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $0/día (saltado)</div>` : `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $${montoHoy.toFixed(0)}/día</div>`;
+        const pctRec = comp.montoCiclo > 0 ? Math.min(100, (info.acumuladoCiclo/comp.montoCiclo)*100) : 0;
+        const montoHoyR = calcularMontoHoyRecurrente(comp);
+        const sugeridoR = sugerenciaMontoHoyRecurrente(comp);
+        const lineaHoyR = estaExcluidoHoy(comp) ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $0/día (saltado)</div>` : `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $${montoHoyR.toFixed(0)}/día</div>`;
         cuerpo = `
           ${toggleHoyHtml(comp, 'toggleExcluirCompromisoHoy')}
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🔁 Recurrente · $${comp.montoCiclo.toFixed(0)} cada ${comp.cicloDias} días</div>
-          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--morado);border-radius:6px;"></div></div>
+          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pctRec.toFixed(1)}%;background:var(--morado);border-radius:6px;"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
             <span style="color:var(--gris);">Este ciclo: <b style="color:var(--amarillo);">$${info.acumuladoCiclo.toFixed(0)}</b> / $${comp.montoCiclo.toFixed(0)}</span>
             <span style="color:var(--gris);">Faltan: <b style="color:var(--rojo);">$${info.falta.toFixed(0)}</b></span>
           </div>
-          ${lineaHoy}
-          ${montoFijoInputHtml(comp, sugerido)}`;
+          ${lineaHoyR}
+          ${montoFijoInputHtml(comp, sugeridoR)}
+          ${abonoExternoHtml(comp.id, 'abonarExternoCompromiso', 'abono-ext-')}`;
       }
 
       return `<div style="background:var(--medio);border:2px solid #444;border-radius:14px;padding:14px;margin-bottom:12px;">
@@ -3115,30 +3187,32 @@
       let cuerpo = '';
       if (comp.tipo === 'meta') {
         const falta = Math.max(0, comp.total - comp.pagado);
-        const pct = comp.total > 0 ? Math.min(100, (comp.pagado/comp.total)*100) : 0;
+        const pctMeta = comp.total > 0 ? Math.min(100, (comp.pagado/comp.total)*100) : 0;
         const sugerido = sugerenciaMontoHoyMeta(comp);
         cuerpo = `
           ${toggleHoyHtml(comp, 'toggleExcluirCompromisoNegocioHoy')}
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🎯 Meta puntual de negocio</div>
-          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div></div>
+          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pctMeta.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
             <span style="color:var(--gris);">Juntado: <b style="color:var(--verde);">$${comp.pagado.toFixed(0)}</b> / $${comp.total.toFixed(0)}</span>
             <span style="color:var(--gris);">Faltan: <b style="color:var(--rojo);">$${falta.toFixed(0)}</b></span>
           </div>
-          ${montoFijoInputHtml(comp, sugerido, 'actualizarMontoFijoCompromisoNegocio')}`;
+          ${montoFijoInputHtml(comp, sugerido, 'actualizarMontoFijoCompromisoNegocio')}
+          ${abonoExternoHtml(comp.id, 'abonarExternoCompromisoNegocio', 'abono-neg-ext-')}`;
       } else {
         const info = infoCicloRecurrente(comp);
-        const pct = comp.montoCiclo > 0 ? Math.min(100, (info.acumuladoCiclo/comp.montoCiclo)*100) : 0;
+        const pctRec = comp.montoCiclo > 0 ? Math.min(100, (info.acumuladoCiclo/comp.montoCiclo)*100) : 0;
         const sugerido = sugerenciaMontoHoyRecurrente(comp);
         cuerpo = `
           ${toggleHoyHtml(comp, 'toggleExcluirCompromisoNegocioHoy')}
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🔁 Recurrente · $${comp.montoCiclo.toFixed(0)} cada ${comp.cicloDias} días</div>
-          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:var(--morado);border-radius:6px;"></div></div>
+          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pctRec.toFixed(1)}%;background:var(--morado);border-radius:6px;"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
             <span style="color:var(--gris);">Este ciclo: <b style="color:var(--amarillo);">$${info.acumuladoCiclo.toFixed(0)}</b> / $${comp.montoCiclo.toFixed(0)}</span>
             <span style="color:var(--gris);">Faltan: <b style="color:var(--rojo);">$${info.falta.toFixed(0)}</b></span>
           </div>
-          ${montoFijoInputHtml(comp, sugerido, 'actualizarMontoFijoCompromisoNegocio')}`;
+          ${montoFijoInputHtml(comp, sugerido, 'actualizarMontoFijoCompromisoNegocio')}
+          ${abonoExternoHtml(comp.id, 'abonarExternoCompromisoNegocio', 'abono-neg-ext-')}`;
       }
 
       return `<div style="background:var(--medio);border:2px solid #444;border-radius:14px;padding:14px;margin-bottom:12px;">
