@@ -620,6 +620,10 @@
       </button>
     </div>
 
+    <button id="btnEditTime" onclick="openEditTimeModal()" style="display:none;width:100%;margin-top:10px;padding:10px 16px;background:transparent;border:1.5px dashed #aaa;border-radius:12px;color:#888;font-size:13px;cursor:pointer;font-family:inherit;">
+      🕐 Cambiar la hora en que la tomé
+    </button>
+
     <div class="time-taken-info" id="timeTakenInfo" style="display:none"></div>
   </div>
 
@@ -658,6 +662,19 @@
 </div>
 
 <!-- SKIP MODAL -->
+<div class="modal-overlay" id="editTimeModal">
+  <div class="modal">
+    <div class="modal-title">🕐 ¿A qué hora la tomaste?</div>
+    <div class="modal-sub">Pon la hora real. Solo actualiza el registro.</div>
+    <input type="time" id="inputEditTime"
+      style="width:100%;padding:12px;font-size:22px;text-align:center;border:2px solid #ddd;border-radius:12px;margin:12px 0;font-family:inherit;outline:none;box-sizing:border-box;">
+    <div class="modal-buttons">
+      <button class="btn btn-secondary" onclick="closeEditTimeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditTime()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="skipModal">
   <div class="modal">
     <div class="modal-title">¿Saltarte la pastilla hoy?</div>
@@ -761,6 +778,7 @@ function renderToday() {
     statusText.textContent = 'Pendiente para hoy';
     document.getElementById('btnTake').disabled = false;
     document.getElementById('btnSkip').disabled = false;
+    document.getElementById('btnEditTime').style.display = 'none';
   } else if (rec.status === 'taken') {
     indicator.classList.add('taken');
     statusText.textContent = '¡Ya tomaste tu pastilla hoy! 🎉';
@@ -769,6 +787,7 @@ function renderToday() {
     document.getElementById('btnTake').disabled = true;
     document.getElementById('btnTake').textContent = '✓ Ya tomada';
     document.getElementById('btnSkip').disabled = false;
+    document.getElementById('btnEditTime').style.display = 'inline-flex';
   } else if (rec.status === 'skipped') {
     indicator.classList.add('skipped');
     statusText.textContent = 'Saltada hoy — sin problema, sigue adelante';
@@ -776,6 +795,7 @@ function renderToday() {
     document.getElementById('btnTake').disabled = false;
     document.getElementById('btnTake').textContent = '✓ Tomarla ahora';
     document.getElementById('btnSkip').disabled = true;
+    document.getElementById('btnEditTime').style.display = 'none';
   }
 
   // stats
@@ -837,6 +857,35 @@ function takePill() {
   data.records[t] = { status: 'taken', ts: Date.now() };
   saveData(data);
   showToast('✓ Registrado. ¡Bien hecho!');
+  renderToday();
+}
+
+function openEditTimeModal() {
+  // Pre-llena con la hora actual como sugerencia
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('inputEditTime').value = `${hh}:${mm}`;
+  document.getElementById('editTimeModal').classList.add('open');
+}
+
+function closeEditTimeModal() {
+  document.getElementById('editTimeModal').classList.remove('open');
+}
+
+function saveEditTime() {
+  const val = document.getElementById('inputEditTime').value;
+  if (!val) { showToast('Pon una hora válida'); return; }
+  const [hh, mm] = val.split(':').map(Number);
+  const data = loadData();
+  const t = today();
+  // Construye un timestamp de HOY con la hora que el usuario dijo
+  const d = new Date();
+  d.setHours(hh, mm, 0, 0);
+  data.records[t] = { status: 'taken', ts: d.getTime() };
+  saveData(data);
+  closeEditTimeModal();
+  showToast(`✓ Hora actualizada a las ${val}`);
   renderToday();
 }
 
