@@ -240,7 +240,20 @@
   .fiados-bar-label{font-size:10px;color:var(--rojo);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:700;}
 
   /* ── MODAL FIADOS ── */
-  .modal-fiado{background:var(--medio);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;border-top:3px solid var(--rojo);max-height:85vh;overflow-y:auto;}
+  .modal-fiado{background:var(--medio);border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;border-top:3px solid var(--rojo);max-height:85vh;overflow-y:auto;position:relative;}
+  .modal-fiado-cerrar{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;color:var(--texto);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;}
+  .modal-fiado-cerrar:active{background:rgba(255,255,255,0.16);}
+  .fiado-eliminar-link{display:block;width:100%;text-align:center;background:none;border:none;color:#555;font-size:11px;margin-top:14px;padding:8px;cursor:pointer;text-decoration:underline;}
+  .fiado-fijo-badge{display:inline-block;font-size:9px;font-weight:700;color:var(--amarillo);border:1px solid var(--amarillo);border-radius:8px;padding:1px 6px;margin-left:6px;vertical-align:middle;letter-spacing:.3px;}
+  .fiado-toggle-fijo{width:100%;background:rgba(245,200,66,0.06);border:1px solid #444;border-radius:10px;padding:10px;color:var(--gris);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:10px;text-align:center;}
+  .fiado-toggle-fijo.on{border-color:var(--amarillo);color:var(--amarillo);background:rgba(245,200,66,0.1);}
+  .fiado-ultima-act{font-size:10.5px;color:var(--gris);margin-bottom:10px;}
+  .fiado-ultima-act.alerta{color:var(--rojo);}
+  .cliente-fiado-item{background:var(--oscuro);border:2px solid #333;border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+  .cliente-fiado-item:active{border-color:var(--rojo);}
+  .cliente-fiado-nuevo-box{background:var(--oscuro);border:1px dashed var(--verde);border-radius:10px;padding:12px;margin-top:6px;}
+  .cliente-fiado-nuevo-box input{width:100%;background:var(--medio);border:1px solid #444;border-radius:8px;padding:11px;color:var(--texto);font-size:14px;margin-bottom:8px;outline:none;}
+  .cliente-fiado-nuevo-box input:focus{border-color:var(--verde);}
   .abono-item{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a2a;font-size:12px;}
 
   /* ── MESAS ── */
@@ -621,19 +634,27 @@
 
     <div class="resumen-box">
       <h3>➕ Agregar Compromiso</h3>
+      <div style="font-size:11px;color:var(--gris);margin-bottom:10px;">Solo necesitas el nombre y su lugar en la fila. El monto, la fecha o el ciclo los puedes agregar después, cuando los tengas claros.</div>
       <input type="text" id="comp-nombre-input" placeholder="Nombre (ej: Moto, Mamá, Lavadora...)"
         style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 12px;color:var(--texto);font-size:13px;outline:none;margin-bottom:10px;">
+
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">📍 ¿Dónde va en la fila de prioridad?</div>
+        <select id="comp-posicion-input" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 8px;color:var(--texto);font-size:12px;outline:none;"></select>
+      </div>
+
       <div style="display:flex;gap:8px;margin-bottom:10px;">
         <button id="btn-comp-meta" onclick="selTipoCompromiso('meta')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">🎯 Meta con fin<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Moto, préstamo, lavadora...</span></button>
         <button id="btn-comp-recurrente" onclick="selTipoCompromiso('recurrente')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">🔁 Recurrente<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Mamá, esposa, medicinas...</span></button>
       </div>
 
-      <!-- CAMPOS META CON FIN -->
+      <!-- CAMPOS META CON FIN (opcionales) -->
       <div id="comp-campos-meta">
+        <div style="font-size:10px;color:var(--gris);margin-bottom:6px;">Opcional — puedes dejarlo vacío y configurarlo después</div>
         <div style="display:flex;gap:8px;margin-bottom:10px;">
           <div style="flex:1;">
             <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Total a pagar ($)</div>
-            <input type="number" id="comp-meta-total" placeholder="14000" min="0" inputmode="decimal"
+            <input type="number" id="comp-meta-total" placeholder="Opcional" min="0" inputmode="decimal"
               style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:10px 12px;color:var(--amarillo);font-size:16px;font-weight:700;text-align:center;outline:none;">
           </div>
           <div style="flex:1;">
@@ -659,17 +680,18 @@
         <div id="comp-meta-preview" style="font-size:12px;color:var(--gris);text-align:center;margin-bottom:10px;min-height:16px;"></div>
       </div>
 
-      <!-- CAMPOS RECURRENTE -->
+      <!-- CAMPOS RECURRENTE (opcionales) -->
       <div id="comp-campos-recurrente" style="display:none;">
+        <div style="font-size:10px;color:var(--gris);margin-bottom:6px;">Opcional — puedes dejarlo vacío y configurarlo después</div>
         <div style="display:flex;gap:8px;margin-bottom:10px;">
           <div style="flex:1;">
             <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Monto por ciclo ($)</div>
-            <input type="number" id="comp-rec-monto" placeholder="700" min="0" inputmode="decimal"
+            <input type="number" id="comp-rec-monto" placeholder="Opcional" min="0" inputmode="decimal"
               style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:10px 12px;color:var(--amarillo);font-size:16px;font-weight:700;text-align:center;outline:none;">
           </div>
           <div style="flex:1;">
             <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Cada cuántos días</div>
-            <input type="number" id="comp-rec-ciclo" placeholder="7" min="1" inputmode="decimal"
+            <input type="number" id="comp-rec-ciclo" placeholder="Opcional" min="1" inputmode="decimal"
               style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 12px;color:var(--texto);font-size:16px;font-weight:700;text-align:center;outline:none;">
           </div>
         </div>
@@ -951,6 +973,14 @@
 <!-- MODAL FIADOS -->
 <div class="overlay" id="overlay-fiado" onclick="cerrarFiadoModal(event)">
   <div class="modal-fiado" id="modal-fiado-content"></div>
+</div>
+
+<div class="overlay" id="overlay-elegir-cliente-fiado" onclick="if(event.target===this)cerrarElegirClienteFiado()">
+  <div class="modal-fiado" id="modal-elegir-cliente-fiado-content" style="border-top-color:var(--amarillo);"></div>
+</div>
+
+<div class="overlay" id="overlay-fusionar-fiado" onclick="if(event.target===this)cerrarFusionarFiado()">
+  <div class="modal-fiado" id="modal-fusionar-fiado-content" style="border-top-color:var(--amarillo);"></div>
 </div>
 
 <!-- MODAL CONFIRMACIÓN CERRAR DÍA -->
@@ -2474,12 +2504,22 @@
     return true;
   }
 
+  // Un compromiso puede crearse solo con nombre + prioridad. Está "configurado" cuando ya
+  // tiene los datos mínimos para participar en el reparto (monto/fecha o monto/ciclo).
+  // Mientras no esté configurado, no participa en ningún reparto ni cálculo — solo espera.
+  function compromisoConfigurado(comp) {
+    if (comp.tipo === 'meta') return !!(comp.total && comp.total > 0);
+    return !!(comp.montoCiclo && comp.montoCiclo > 0 && comp.cicloDias && comp.cicloDias > 0);
+  }
+
   // Sugerencia automática (falta ÷ días restantes) — solo se usa como referencia/placeholder
   // cuando el compromiso NO tiene un monto fijo definido por el usuario.
+  // Si aún no tiene fecha límite definida, no hay sugerencia diaria (sigue participando por su total).
   function sugerenciaMontoHoyMeta(comp) {
     const falta = Math.max(0, (comp.total || 0) - (comp.pagado || 0));
     if (falta <= 0) return 0;
     if (!hoyCuentaParaCompromiso(comp)) return 0;
+    if (!comp.fechaLimite) return 0;
     const dias = diasRestantesValidos(comp.fechaLimite, comp.diasCuenta);
     return Math.min(falta, falta / dias);
   }
@@ -2488,6 +2528,7 @@
   // Si el usuario definió un "monto fijo diario", se usa ESE monto siempre (no se recalcula solo).
   // Si no, se usa la sugerencia automática (falta ÷ días restantes).
   function calcularMontoHoyMeta(comp) {
+    if (!compromisoConfigurado(comp)) return 0;
     const falta = Math.max(0, (comp.total || 0) - (comp.pagado || 0));
     if (falta <= 0) return 0;
     if (!hoyCuentaParaCompromiso(comp)) return 0;
@@ -2512,19 +2553,36 @@
     return { inicioCiclo, acumuladoCiclo, diaDelCiclo, diasRestantesCiclo, falta };
   }
 
-  // Sugerencia automática para recurrentes (falta del ciclo ÷ días restantes del ciclo)
+  // Sugerencia automática para recurrentes: SIEMPRE la tasa fija del ciclo (monto ÷ días del ciclo).
+  // OJO: esto es intencional — si hubo atraso en días anteriores, el pago de HOY no sube para
+  // compensarlo. El atraso se muestra aparte (ver atrasoRecurrente) para ponerse al corriente
+  // cuando el usuario decida, no de forma automática ni forzada.
   function sugerenciaMontoHoyRecurrente(comp) {
+    if (!comp.cicloDias || comp.cicloDias <= 0) return 0;
     const info = infoCicloRecurrente(comp);
     if (info.falta <= 0) return 0;
-    return Math.min(info.falta, info.falta / info.diasRestantesCiclo);
+    const tasaDiaria = (comp.montoCiclo || 0) / comp.cicloDias;
+    return Math.min(info.falta, tasaDiaria);
   }
 
   // Igual que con metas: si hay monto fijo definido por el usuario, se respeta siempre.
   function calcularMontoHoyRecurrente(comp) {
+    if (!compromisoConfigurado(comp)) return 0;
     const info = infoCicloRecurrente(comp);
     if (info.falta <= 0) return 0;
     if (comp.montoFijo && comp.montoFijo > 0) return Math.min(info.falta, comp.montoFijo);
     return sugerenciaMontoHoyRecurrente(comp);
+  }
+
+  // Cuánto se acumuló de atraso en el ciclo actual: lo que "debería" llevarse pagado hasta
+  // ayer (tasa diaria × días ya transcurridos del ciclo) menos lo que realmente se ha pagado.
+  // Se muestra aparte, como pendiente de ponerse al corriente — nunca se suma al pago de hoy.
+  function atrasoRecurrente(comp) {
+    if (!compromisoConfigurado(comp)) return 0;
+    const tasaDiaria = (comp.montoCiclo || 0) / comp.cicloDias;
+    const info = infoCicloRecurrente(comp);
+    const esperadoAlHoy = Math.min(comp.montoCiclo || 0, tasaDiaria * info.diaDelCiclo);
+    return Math.max(0, esperadoAlHoy - info.acumuladoCiclo);
   }
 
   // Sincroniza inicioCiclo/acumuladoCiclo en el objeto real (se llama al aplicar el reparto)
@@ -2538,6 +2596,7 @@
   // sobre el sueldo disponible de hoy. Devuelve {repartos:[{comp,monto,cubierto}], libre}
   // Cuánto le falta en total a un compromiso (no solo hoy, sino para terminarlo/completar el ciclo)
   function faltaTotalCompromiso(comp) {
+    if (!compromisoConfigurado(comp)) return 0;
     if (comp.tipo === 'meta') return Math.max(0, (comp.total || 0) - (comp.pagado || 0));
     const info = infoCicloRecurrente(comp);
     return info.falta;
@@ -2613,6 +2672,72 @@
     return { repartos, libre: Math.max(0, restante) };
   }
 
+  // ── Mínimo garantizado por compromiso activo (para Compromisos personales) ──
+  // Config editable por el usuario; se guarda aparte. Default $20.
+  let compromisosMinimoGarantizado = (() => {
+    const v = parseFloat(localStorage.getItem('bajon_compromisos_minimo'));
+    return (!isNaN(v) && v >= 0) ? v : 20;
+  })();
+  function guardarMinimoGarantizado(valor) {
+    const v = parseFloat(valor);
+    compromisosMinimoGarantizado = (!isNaN(v) && v >= 0) ? v : 0;
+    localStorage.setItem('bajon_compromisos_minimo', compromisosMinimoGarantizado);
+    renderTabCompromisos();
+  }
+
+  // Motor de reparto de Compromisos personales:
+  // 1) Un mínimo garantizado a cada compromiso activo (para que ninguno quede en $0 total),
+  //    topado por lo que realmente le falta (no se le da de más si ya casi termina).
+  // 2) El resto del sobrante va en CASCADA COMPLETA: todo al de mayor prioridad hasta
+  //    completarlo del todo, luego al siguiente, y así.
+  // 3) Si el sobrante de hoy no alcanza ni para los mínimos de todos, todo se va al de
+  //    mayor prioridad (no se reparte a medias entre varios).
+  // Devuelve {repartos:[{comp,montoNecesario,asignado,cubierto,adelanto,esMinimo}], libre}
+  function calcularRepartoCascadaCompromisos(sueldoDisponible, lista) {
+    const fuente = lista || compromisos;
+    const activos = fuente.filter(c => !estaExcluidoHoy(c) && faltaTotalCompromiso(c) > 0.005)
+      .sort((a, b) => (a.orden || 0) - (b.orden || 0));
+    let restante = Math.max(0, sueldoDisponible);
+    const repartos = activos.map(comp => {
+      const necesario = comp.tipo === 'meta' ? calcularMontoHoyMeta(comp) : calcularMontoHoyRecurrente(comp);
+      return { comp, montoNecesario: necesario, asignado: 0, cubierto: false, adelanto: 0, esMinimo: false };
+    });
+    if (!repartos.length) return { repartos: [], libre: restante };
+
+    const minimo = Math.max(0, compromisosMinimoGarantizado || 0);
+    const minTotal = minimo * repartos.length;
+
+    if (minimo > 0 && restante < minTotal - 0.005) {
+      // No alcanza ni para los mínimos de todos: todo al de mayor prioridad
+      const top = repartos[0];
+      const asignar = Math.min(faltaTotalCompromiso(top.comp), restante);
+      top.asignado = asignar;
+      restante -= asignar;
+    } else {
+      // Paso 1: mínimo garantizado por compromiso activo (sin pasarse de lo que le falta)
+      if (minimo > 0) {
+        repartos.forEach(r => {
+          const asignar = Math.min(minimo, faltaTotalCompromiso(r.comp), restante);
+          if (asignar > 0.005) { r.asignado += asignar; r.esMinimo = true; restante -= asignar; }
+        });
+      }
+      // Paso 2: cascada completa — el resto va al de mayor prioridad hasta completarlo, luego al siguiente
+      repartos.forEach(r => {
+        if (restante <= 0.005) return;
+        const margen = Math.max(0, faltaTotalCompromiso(r.comp) - r.asignado);
+        const extra = Math.min(margen, restante);
+        if (extra > 0.005) { r.asignado += extra; restante -= extra; }
+      });
+    }
+
+    repartos.forEach(r => {
+      r.cubierto = r.asignado >= r.montoNecesario - 0.005;
+      r.adelanto = Math.max(0, r.asignado - r.montoNecesario);
+    });
+
+    return { repartos, libre: Math.max(0, restante) };
+  }
+
   // HTML reutilizable del input de "monto fijo diario" (usado en Compromisos y en Metas de Negocio).
   // updateFn es el nombre de la función a llamar onchange (string), para reusar en ambos sistemas.
   function montoFijoInputHtml(comp, sugerido, updateFn) {
@@ -2641,6 +2766,57 @@
     </div>`;
   }
 
+  // HTML del botón "Abonar a este compromiso": en un solo paso, descuenta del sueldo disponible
+  // de hoy Y lo registra como pago del compromiso (antes había que hacerlo en dos pasos).
+  // atrasoSugerido (opcional) precarga el input con el monto de atraso pendiente, para "ponerse al corriente".
+  function abonoDesdeSueldoHtml(id, atrasoSugerido) {
+    const prefill = (atrasoSugerido && atrasoSugerido > 0.5) ? atrasoSugerido.toFixed(0) : '';
+    return `<div style="background:rgba(245,200,66,0.06);border:1px dashed var(--amarillo);border-radius:8px;padding:8px 10px;margin-top:8px;">
+      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">💳 Abonar a este compromiso (de tu sueldo)</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="number" id="abono-sueldo-${id}" min="0" inputmode="decimal" placeholder="$0" value="${prefill}"
+          style="flex:1;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:8px 10px;color:var(--amarillo);font-size:15px;font-weight:700;text-align:center;outline:none;">
+        <button onclick="abonarDesdeSueldoCompromiso(${id})" style="background:var(--amarillo);border:none;border-radius:8px;padding:8px 14px;color:#111;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">💳 Abonar</button>
+      </div>
+      <div style="font-size:10px;color:var(--gris);margin-top:4px;">Se descuenta de tu sueldo disponible de hoy y se registra como pago, en un solo paso.</div>
+    </div>`;
+  }
+
+  // Abona a un compromiso directamente desde el sueldo disponible de hoy: descuenta el sueldo
+  // (como gasto personal) Y registra el pago del compromiso, en un solo paso.
+  function abonarDesdeSueldoCompromiso(id) {
+    const comp = compromisos.find(c => c.id === id);
+    if (!comp) return;
+    const input = document.getElementById('abono-sueldo-' + id);
+    if (!input) return;
+    const monto = parseFloat(input.value);
+    if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa un monto mayor a 0'); return; }
+    const disponible = sueldoDisponibleHoy();
+    if (monto > disponible + 0.5) { mostrarToast('⚠️ Solo tienes $' + disponible.toFixed(0) + ' disponibles hoy'); return; }
+    const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit', hour12:false});
+    gastos.push({ id: Date.now() + Math.floor(Math.random()*1000), concepto: '📌 ' + comp.nombre + ' (abono directo)', monto, hora, tipo: 'personal' });
+    guardarGastos();
+    registrarMovimientoCompromiso(comp, monto, '💳 Abono desde sueldo');
+    let completado = false;
+    if (comp.tipo === 'meta') {
+      comp.pagado = (comp.pagado || 0) + monto;
+      if (comp.total > 0 && comp.pagado >= comp.total - 0.005) completado = true;
+    } else {
+      comp.acumuladoCiclo = (comp.acumuladoCiclo || 0) + monto;
+      sincronizarCicloRecurrente(comp);
+    }
+    if (completado) {
+      compromisos = compromisos.filter(c => c.id !== id);
+      mostrarToast('🎉 ¡' + comp.nombre + ' completado!');
+    } else {
+      mostrarToast('✅ Abonado $' + monto.toFixed(0) + ' a ' + comp.nombre + ' desde tu sueldo');
+    }
+    guardarCompromisos();
+    actualizarHeaderTotal();
+    renderDistribucion();
+    renderTabCompromisos();
+  }
+
   function selTipoCompromiso(tipo) {
     _tipoCompromisoSel = tipo;
     const bM = document.getElementById('btn-comp-meta');
@@ -2658,42 +2834,102 @@
     }
   }
 
+  // Genera las opciones del selector "¿dónde va en la fila de prioridad?" según los compromisos actuales.
+  function posicionSelectHtml() {
+    const ordenados = compromisos.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
+    let html = `<option value="start">🥇 Primero (máxima prioridad)</option>`;
+    ordenados.forEach(c => { html += `<option value="${c.id}">Antes de "${c.nombre}"</option>`; });
+    html += `<option value="end" selected>Al final (menor prioridad)</option>`;
+    return html;
+  }
+
+  // Inserta un compromiso nuevo en la posición elegida por el usuario y renumera las prioridades.
+  function insertarCompromisoEnPosicion(nuevo, posValor) {
+    const ordenados = compromisos.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
+    let idx;
+    if (posValor === 'start') idx = 0;
+    else if (!posValor || posValor === 'end') idx = ordenados.length;
+    else {
+      const refIdx = ordenados.findIndex(c => String(c.id) === String(posValor));
+      idx = refIdx === -1 ? ordenados.length : refIdx;
+    }
+    ordenados.splice(idx, 0, nuevo);
+    ordenados.forEach((c, i) => { c.orden = i + 1; });
+    compromisos.push(nuevo);
+  }
+
+  // Alta simplificada: solo se exige nombre + lugar en la fila de prioridad.
+  // Monto total, fecha límite, monto por ciclo y días del ciclo quedan OPCIONALES —
+  // se pueden agregar después desde la tarjeta del compromiso (ver configurarMetaCompromiso /
+  // configurarRecurrenteCompromiso). Mientras no estén, el compromiso no entra al reparto.
   function agregarCompromiso() {
     const nombre = document.getElementById('comp-nombre-input').value.trim();
     if (!nombre) { mostrarToast('⚠️ Escribe el nombre del compromiso'); return; }
-    const maxOrden = compromisos.reduce((m,c) => Math.max(m, c.orden||0), 0);
+    const posSel = document.getElementById('comp-posicion-input');
+    const posValor = posSel ? posSel.value : 'end';
+
+    let nuevo;
     if (_tipoCompromisoSel === 'meta') {
-      const total = parseFloat(document.getElementById('comp-meta-total').value);
+      const total = parseFloat(document.getElementById('comp-meta-total').value) || 0;
       const pagado = parseFloat(document.getElementById('comp-meta-pagado').value) || 0;
-      const fechaLimite = document.getElementById('comp-meta-fecha').value;
+      const fechaLimite = document.getElementById('comp-meta-fecha').value || '';
       const diasCuenta = document.getElementById('comp-meta-dias').value;
-      if (!total || total <= 0) { mostrarToast('⚠️ Ingresa el total a pagar'); return; }
-      if (pagado < 0 || pagado > total) { mostrarToast('⚠️ El monto pagado no es válido'); return; }
-      if (!fechaLimite) { mostrarToast('⚠️ Elige la fecha límite'); return; }
-      compromisos.push({
-        id: Date.now(), nombre, tipo: 'meta', orden: maxOrden + 1,
-        total, pagado, fechaLimite, diasCuenta, montoFijo: 0, historial: []
-      });
+      if (total > 0 && pagado > total) { mostrarToast('⚠️ El monto pagado no es válido'); return; }
+      nuevo = { id: Date.now(), nombre, tipo: 'meta', orden: 0, total, pagado, fechaLimite, diasCuenta, montoFijo: 0, historial: [] };
       document.getElementById('comp-meta-total').value = '';
       document.getElementById('comp-meta-pagado').value = '';
       document.getElementById('comp-meta-fecha').value = '';
     } else {
-      const montoCiclo = parseFloat(document.getElementById('comp-rec-monto').value);
-      const cicloDias = parseInt(document.getElementById('comp-rec-ciclo').value);
-      if (!montoCiclo || montoCiclo <= 0) { mostrarToast('⚠️ Ingresa el monto por ciclo'); return; }
-      if (!cicloDias || cicloDias <= 0) { mostrarToast('⚠️ Ingresa cada cuántos días'); return; }
-      compromisos.push({
-        id: Date.now(), nombre, tipo: 'recurrente', orden: maxOrden + 1,
+      const montoCiclo = parseFloat(document.getElementById('comp-rec-monto').value) || 0;
+      const cicloDias = parseInt(document.getElementById('comp-rec-ciclo').value) || 0;
+      nuevo = {
+        id: Date.now(), nombre, tipo: 'recurrente', orden: 0,
         montoCiclo, cicloDias, fechaInicioCiclo: new Date().toISOString().split('T')[0],
         acumuladoCiclo: 0, montoFijo: 0, historial: []
-      });
+      };
       document.getElementById('comp-rec-monto').value = '';
       document.getElementById('comp-rec-ciclo').value = '';
     }
     document.getElementById('comp-nombre-input').value = '';
+
+    insertarCompromisoEnPosicion(nuevo, posValor);
     guardarCompromisos();
     renderTabCompromisos();
-    mostrarToast('✅ Compromiso "' + nombre + '" agregado');
+    mostrarToast('✅ Compromiso "' + nombre + '" agregado' + (compromisoConfigurado(nuevo) ? '' : ' — configúralo cuando quieras'));
+  }
+
+  // Guarda el monto total y la fecha límite de un compromiso tipo meta creado sin configurar.
+  function configurarMetaCompromiso(id) {
+    const comp = compromisos.find(c => c.id === id);
+    if (!comp) return;
+    const total = parseFloat(document.getElementById('cfg-meta-total-' + id).value);
+    const fechaLimite = document.getElementById('cfg-meta-fecha-' + id).value;
+    const diasCuenta = document.getElementById('cfg-meta-dias-' + id).value;
+    if (!total || total <= 0) { mostrarToast('⚠️ Ingresa el total a pagar'); return; }
+    if (!fechaLimite) { mostrarToast('⚠️ Elige la fecha límite'); return; }
+    comp.total = total;
+    comp.fechaLimite = fechaLimite;
+    comp.diasCuenta = diasCuenta;
+    guardarCompromisos();
+    renderTabCompromisos();
+    mostrarToast('✅ "' + comp.nombre + '" configurado — ya entra al reparto');
+  }
+
+  // Guarda el monto por ciclo y los días del ciclo de un compromiso recurrente creado sin configurar.
+  function configurarRecurrenteCompromiso(id) {
+    const comp = compromisos.find(c => c.id === id);
+    if (!comp) return;
+    const montoCiclo = parseFloat(document.getElementById('cfg-rec-monto-' + id).value);
+    const cicloDias = parseInt(document.getElementById('cfg-rec-ciclo-' + id).value);
+    if (!montoCiclo || montoCiclo <= 0) { mostrarToast('⚠️ Ingresa el monto por ciclo'); return; }
+    if (!cicloDias || cicloDias <= 0) { mostrarToast('⚠️ Ingresa cada cuántos días'); return; }
+    comp.montoCiclo = montoCiclo;
+    comp.cicloDias = cicloDias;
+    comp.fechaInicioCiclo = new Date().toISOString().split('T')[0];
+    comp.acumuladoCiclo = 0;
+    guardarCompromisos();
+    renderTabCompromisos();
+    mostrarToast('✅ "' + comp.nombre + '" configurado — ya entra al reparto');
   }
 
   // Define o quita el "monto fijo diario" de un compromiso. Una vez puesto, NUNCA se recalcula
@@ -2842,28 +3078,45 @@
 
   // Aplica el reparto de hoy: descuenta cada compromiso del sueldo (vía gasto personal, igual que ahorros),
   // marca metas completadas para auto-eliminarlas, y reinicia ciclos recurrentes vencidos.
+  // Respeta los montos que el usuario haya AJUSTADO A MANO en la propuesta de hoy (el dueño mantiene
+  // el control final) — si no los tocó, usa la propuesta automática de calcularRepartoCascadaCompromisos.
   function aplicarCompromisosHoy() {
-    const hoyKey = new Date().toISOString().split('T')[0];
     const yaAplicadoHoy = compromisos.some(c => (c.historial||[]).some(h => h.fecha === new Date().toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'})));
     if (yaAplicadoHoy) { mostrarToast('⚠️ Ya aplicaste el reparto de hoy'); return; }
     const sueldoDisponible = sueldoDisponibleHoy();
-    const { repartos } = calcularRepartoCompromisosHoy(sueldoDisponible);
-    const aPagar = repartos.filter(r => r.asignado > 0.005);
+    const { repartos } = calcularRepartoCascadaCompromisos(sueldoDisponible);
+    if (!repartos.length) { mostrarToast('⚠️ No hay compromisos activos configurados para repartir'); return; }
+
+    // Leer los montos finales: si el usuario editó el input de algún compromiso en la propuesta,
+    // se respeta ese valor; si no, se usa el calculado automáticamente.
+    let totalAsignar = 0;
+    const aPagar = [];
+    repartos.forEach(r => {
+      const input = document.getElementById('hoy-monto-' + r.comp.id);
+      let monto = input ? parseFloat(input.value) : r.asignado;
+      if (isNaN(monto) || monto < 0) monto = 0;
+      if (monto > 0.005) { aPagar.push({ comp: r.comp, asignado: monto, montoNecesario: r.montoNecesario }); totalAsignar += monto; }
+    });
     if (!aPagar.length) { mostrarToast('⚠️ No hay nada que repartir hoy'); return; }
+    if (totalAsignar > sueldoDisponible + 0.5) {
+      mostrarToast('⚠️ Ojo: repartiste $' + totalAsignar.toFixed(0) + ', más de lo disponible hoy ($' + sueldoDisponible.toFixed(0) + ')');
+    }
+
     const hora = new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit', hour12:false});
     let totalDescontado = 0;
     const completados = [];
     aPagar.forEach(r => {
       const comp = r.comp;
-      const esAdelantoPuro = r.montoNecesario <= 0.005 && r.adelanto > 0.005;
-      const concepto = esAdelantoPuro ? '📌 ' + comp.nombre + ' (adelanto)' : (r.adelanto > 0.005 ? '📌 ' + comp.nombre + ' (+adelanto)' : '📌 ' + comp.nombre);
+      const adelanto = Math.max(0, r.asignado - r.montoNecesario);
+      const esAdelantoPuro = r.montoNecesario <= 0.005 && adelanto > 0.005;
+      const concepto = esAdelantoPuro ? '📌 ' + comp.nombre + ' (adelanto)' : (adelanto > 0.005 ? '📌 ' + comp.nombre + ' (+adelanto)' : '📌 ' + comp.nombre);
       // Registrar gasto personal para descontar del sueldo (mismo patrón que ahorros)
       gastos.push({ id: Date.now() + Math.floor(Math.random()*1000), concepto, monto: r.asignado, hora, tipo: 'personal' });
       totalDescontado += r.asignado;
-      registrarMovimientoCompromiso(comp, r.asignado, esAdelantoPuro ? 'Adelanto' : (r.adelanto > 0.005 ? 'Pago del día + adelanto' : 'Pago del día'));
+      registrarMovimientoCompromiso(comp, r.asignado, esAdelantoPuro ? 'Adelanto' : (adelanto > 0.005 ? 'Pago del día + adelanto' : 'Pago del día'));
       if (comp.tipo === 'meta') {
         comp.pagado = (comp.pagado || 0) + r.asignado;
-        if (comp.pagado >= comp.total - 0.005) completados.push(comp.nombre);
+        if (comp.total > 0 && comp.pagado >= comp.total - 0.005) completados.push(comp.nombre);
       } else {
         comp.acumuladoCiclo = (comp.acumuladoCiclo || 0) + r.asignado;
         sincronizarCicloRecurrente(comp);
@@ -2872,7 +3125,7 @@
     guardarGastos();
     // Eliminar metas completadas
     if (completados.length) {
-      compromisos = compromisos.filter(c => !(c.tipo === 'meta' && c.pagado >= c.total - 0.005));
+      compromisos = compromisos.filter(c => !(c.tipo === 'meta' && c.total > 0 && c.pagado >= c.total - 0.005));
     }
     guardarCompromisos();
     actualizarHeaderTotal();
@@ -2883,6 +3136,22 @@
     mostrarToast(msg);
   }
 
+  // Recalcula en vivo el "Libre para ti hoy" mientras el usuario ajusta a mano los montos
+  // de la propuesta, sin perder el foco de los inputs (no vuelve a renderizar todo).
+  function recalcularLibreManual(sueldoDisponible) {
+    const inputs = document.querySelectorAll('[id^="hoy-monto-"]');
+    let suma = 0;
+    inputs.forEach(inp => { const v = parseFloat(inp.value); if (!isNaN(v) && v > 0) suma += v; });
+    const libreEl = document.getElementById('compromisos-libre-monto');
+    if (libreEl) libreEl.textContent = '$' + Math.max(0, sueldoDisponible - suma).toFixed(0);
+  }
+
+  // Descarta los ajustes manuales del día y vuelve a mostrar la propuesta automática.
+  function restablecerRepartoManual() {
+    renderTabCompromisos();
+    mostrarToast('↺ Propuesta automática restablecida');
+  }
+
   function renderTabCompromisos() {
     const lista = document.getElementById('compromisos-lista');
     const hoyBox = document.getElementById('compromisos-hoy-lista');
@@ -2891,6 +3160,8 @@
     const msgEl = document.getElementById('compromisos-aplicado-msg');
     if (!lista) return;
     selTipoCompromiso(_tipoCompromisoSel);
+    const posSel = document.getElementById('comp-posicion-input');
+    if (posSel) { const prevVal = posSel.value; posSel.innerHTML = posicionSelectHtml(); if ([...posSel.options].some(o=>o.value===prevVal)) posSel.value = prevVal; }
 
     if (!compromisos.length) {
       lista.innerHTML = '<div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">Sin compromisos aún. Agrégalos abajo.</div>';
@@ -2901,30 +3172,45 @@
     }
 
     const sueldoDisponible = sueldoDisponibleHoy();
-    const { repartos, libre } = calcularRepartoCompromisosHoy(sueldoDisponible);
+    const { repartos, libre } = calcularRepartoCascadaCompromisos(sueldoDisponible);
     const hoyLabel = new Date().toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'});
     const yaAplicadoHoy = compromisos.some(c => (c.historial||[]).some(h => h.fecha === hoyLabel));
+    const sinConfigurar = compromisos.filter(c => !compromisoConfigurado(c)).length;
 
-    // ── Reparto de hoy ──
-    hoyBox.innerHTML = `<div style="font-size:11px;color:var(--gris);margin-bottom:10px;">Sueldo disponible hoy: <b style="color:var(--amarillo);">$${sueldoDisponible.toFixed(0)}</b></div>` +
-      repartos.map(r => {
-        const tieneAdelanto = r.adelanto > 0.005;
-        const sinNecesidadHoy = r.montoNecesario <= 0.005;
-        const icono = (sinNecesidadHoy && !tieneAdelanto) ? '⬜' : (r.cubierto ? '✅' : '🟡');
-        const colorMonto = (sinNecesidadHoy && !tieneAdelanto) ? 'var(--gris)' : (r.cubierto ? 'var(--verde)' : 'var(--rojo)');
-        let montoTxt;
-        if (sinNecesidadHoy && !tieneAdelanto) montoTxt = '$0';
-        else if (sinNecesidadHoy && tieneAdelanto) montoTxt = '+$' + r.asignado.toFixed(0) + ' (adelanto)';
-        else if (!r.cubierto) montoTxt = '+$' + r.asignado.toFixed(0) + ' de $' + r.montoNecesario.toFixed(0);
-        else if (tieneAdelanto) montoTxt = '+$' + r.asignado.toFixed(0) + ' (incl. $' + r.adelanto.toFixed(0) + ' adelanto)';
-        else montoTxt = '+$' + r.asignado.toFixed(0);
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #2a2a3e;font-size:13px;">
-          <span>${icono} ${r.comp.nombre}</span>
-          <span style="font-weight:700;color:${colorMonto};">${montoTxt}</span>
-        </div>`;
-      }).join('');
-    if (libreEl) libreEl.textContent = '$' + libre.toFixed(0);
-    if (btnAplicar) btnAplicar.style.display = yaAplicadoHoy ? 'none' : 'block';
+    // ── Reparto de hoy: propuesta clara + inputs editables (control final del dueño) ──
+    if (!repartos.length) {
+      hoyBox.innerHTML = `<div style="font-size:11px;color:var(--gris);margin-bottom:8px;">Sueldo disponible hoy: <b style="color:var(--amarillo);">$${sueldoDisponible.toFixed(0)}</b></div>
+        <div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">${sinConfigurar ? 'Tienes compromisos sin configurar — agrégales monto/fecha o ciclo para que entren al reparto.' : 'No hay compromisos activos hoy.'}</div>`;
+      if (libreEl) libreEl.textContent = '$' + sueldoDisponible.toFixed(0);
+      if (btnAplicar) btnAplicar.style.display = 'none';
+    } else {
+      const aRepartir = repartos.filter(r => r.asignado > 0.005);
+      const propuestaTxt = aRepartir.length
+        ? `<div style="font-size:13px;color:var(--texto);font-weight:700;margin-bottom:10px;">Hoy: ` + aRepartir.map(r => '$' + r.asignado.toFixed(0) + ' a ' + r.comp.nombre).join(', ') + `</div>`
+        : `<div style="font-size:12px;color:var(--gris);margin-bottom:10px;">Hoy no hay sobrante para repartir.</div>`;
+
+      hoyBox.innerHTML = `<div style="font-size:11px;color:var(--gris);margin-bottom:8px;">Sueldo disponible hoy: <b style="color:var(--amarillo);">$${sueldoDisponible.toFixed(0)}</b></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;background:rgba(245,200,66,0.06);border:1px dashed var(--amarillo);border-radius:8px;padding:8px 10px;">
+          <div style="font-size:10px;color:var(--gris);">💵 Mínimo garantizado por compromiso (ninguno queda en $0)</div>
+          <input type="number" min="0" inputmode="decimal" id="comp-minimo-input" value="${compromisosMinimoGarantizado}" onchange="guardarMinimoGarantizado(this.value)" style="width:64px;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:6px;padding:6px;color:var(--amarillo);font-size:13px;font-weight:700;text-align:center;outline:none;">
+        </div>
+        ${propuestaTxt}` +
+        repartos.map(r => {
+          const tieneAdelanto = r.adelanto > 0.005;
+          const sinNecesidadHoy = r.montoNecesario <= 0.005;
+          const icono = r.esMinimo && !r.cubierto ? '🟡' : (sinNecesidadHoy && !tieneAdelanto && r.asignado <= 0.005) ? '⬜' : (r.cubierto ? '✅' : '🟡');
+          const colorBorde = r.asignado > 0.005 ? 'var(--verde)' : '#444';
+          const etiqueta = r.esMinimo && !r.cubierto ? ' (mínimo)' : (tieneAdelanto ? ' (+adelanto)' : '');
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #2a2a3e;font-size:13px;gap:8px;">
+            <span style="flex:1;">${icono} ${r.comp.nombre}${etiqueta}</span>
+            <span style="font-size:10px;color:var(--gris);white-space:nowrap;">${sinNecesidadHoy ? '' : 'sug. $' + r.montoNecesario.toFixed(0)}</span>
+            <input type="number" min="0" inputmode="decimal" id="hoy-monto-${r.comp.id}" value="${r.asignado.toFixed(0)}" oninput="recalcularLibreManual(${sueldoDisponible})" style="width:60px;background:var(--oscuro);border:1px solid ${colorBorde};border-radius:6px;padding:5px;color:var(--texto);font-size:13px;font-weight:700;text-align:center;outline:none;">
+          </div>`;
+        }).join('') +
+        `<div style="text-align:right;margin-top:6px;"><button onclick="restablecerRepartoManual()" style="background:transparent;border:none;color:var(--gris);font-size:11px;text-decoration:underline;cursor:pointer;padding:2px;">↺ Restablecer propuesta automática</button></div>`;
+      if (libreEl) libreEl.textContent = '$' + libre.toFixed(0);
+      if (btnAplicar) btnAplicar.style.display = yaAplicadoHoy ? 'none' : 'block';
+    }
     if (msgEl) msgEl.textContent = yaAplicadoHoy ? '✅ Ya aplicaste el reparto de hoy' : '';
 
     // ── Lista de compromisos ordenados ──
@@ -2938,16 +3224,55 @@
         </div>`).join('') : '<div style="color:var(--gris);font-size:12px;padding:6px 0;">Sin pagos registrados aún</div>';
 
       let cuerpo = '';
-      if (comp.tipo === 'meta') {
+      if (!compromisoConfigurado(comp)) {
+        // ── Compromiso creado solo con nombre + prioridad: falta configurarlo ──
+        if (comp.tipo === 'meta') {
+          cuerpo = `
+            <div style="font-size:11px;color:var(--amarillo);margin-bottom:8px;">🎯 Meta · sin configurar todavía — no entra al reparto hasta que le pongas total y fecha.</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Total a pagar ($)</div>
+                <input type="number" id="cfg-meta-total-${comp.id}" placeholder="14000" min="0" inputmode="decimal" style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:8px 10px;color:var(--amarillo);font-size:14px;font-weight:700;text-align:center;outline:none;">
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Terminar el día</div>
+                <input type="date" id="cfg-meta-fecha-${comp.id}" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:8px 6px;color:var(--texto);font-size:12px;outline:none;">
+              </div>
+            </div>
+            <select id="cfg-meta-dias-${comp.id}" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:8px;color:var(--texto);font-size:12px;outline:none;margin-bottom:8px;">
+              <option value="todos">Todos los días</option>
+              <option value="habiles">Solo Lun-Vie</option>
+            </select>
+            <button onclick="configurarMetaCompromiso(${comp.id})" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:10px;color:var(--oscuro);font-size:13px;font-weight:700;cursor:pointer;">✅ Guardar configuración</button>`;
+        } else {
+          cuerpo = `
+            <div style="font-size:11px;color:var(--amarillo);margin-bottom:8px;">🔁 Recurrente · sin configurar todavía — no entra al reparto hasta que le pongas monto y ciclo.</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Monto por ciclo ($)</div>
+                <input type="number" id="cfg-rec-monto-${comp.id}" placeholder="700" min="0" inputmode="decimal" style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:8px 10px;color:var(--amarillo);font-size:14px;font-weight:700;text-align:center;outline:none;">
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Cada cuántos días</div>
+                <input type="number" id="cfg-rec-ciclo-${comp.id}" placeholder="7" min="1" inputmode="decimal" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:8px 10px;color:var(--texto);font-size:14px;font-weight:700;text-align:center;outline:none;">
+              </div>
+            </div>
+            <button onclick="configurarRecurrenteCompromiso(${comp.id})" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:10px;color:var(--oscuro);font-size:13px;font-weight:700;cursor:pointer;">✅ Guardar configuración</button>`;
+        }
+      } else if (comp.tipo === 'meta') {
         const falta = Math.max(0, comp.total - comp.pagado);
         const pctMeta = comp.total > 0 ? Math.min(100, (comp.pagado/comp.total)*100) : 0;
         const montoHoy = calcularMontoHoyMeta(comp);
         const sugerido = sugerenciaMontoHoyMeta(comp);
-        const dias = diasRestantesValidos(comp.fechaLimite, comp.diasCuenta);
-        const lineaHoy = estaExcluidoHoy(comp) ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 ${dias} días restantes · hoy: $0/día (saltado)</div>` : `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${dias} días restantes · hoy: $${montoHoy.toFixed(0)}/día</div>`;
+        const fechaTxt = comp.fechaLimite ? ('vence ' + comp.fechaLimite + ' · ' + (comp.diasCuenta==='habiles'?'Lun-Vie':'todos los días')) : 'sin fecha límite definida';
+        const lineaHoy = estaExcluidoHoy(comp)
+          ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 hoy: $0/día (saltado)</div>`
+          : !comp.fechaLimite
+            ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 sin fecha límite — sin sugerencia diaria automática, pero sigue en la cascada por su total pendiente.</div>`
+            : `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${diasRestantesValidos(comp.fechaLimite, comp.diasCuenta)} días restantes · hoy: $${montoHoy.toFixed(0)}/día</div>`;
         cuerpo = `
           ${toggleHoyHtml(comp, 'toggleExcluirCompromisoHoy')}
-          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🎯 Meta · vence ${comp.fechaLimite} · ${comp.diasCuenta==='habiles'?'Lun-Vie':'todos los días'}</div>
+          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🎯 Meta · ${fechaTxt}</div>
           <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pctMeta.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
             <span style="color:var(--gris);">Pagado: <b style="color:var(--verde);">$${comp.pagado.toFixed(0)}</b> / $${comp.total.toFixed(0)}</span>
@@ -2955,13 +3280,16 @@
           </div>
           ${lineaHoy}
           ${montoFijoInputHtml(comp, sugerido)}
+          ${abonoDesdeSueldoHtml(comp.id)}
           ${abonoExternoHtml(comp.id, 'abonarExternoCompromiso', 'abono-ext-')}`;
       } else {
         const info = infoCicloRecurrente(comp);
         const pctRec = comp.montoCiclo > 0 ? Math.min(100, (info.acumuladoCiclo/comp.montoCiclo)*100) : 0;
         const montoHoyR = calcularMontoHoyRecurrente(comp);
         const sugeridoR = sugerenciaMontoHoyRecurrente(comp);
+        const atraso = atrasoRecurrente(comp);
         const lineaHoyR = estaExcluidoHoy(comp) ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $0/día (saltado)</div>` : `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $${montoHoyR.toFixed(0)}/día</div>`;
+        const lineaAtraso = atraso > 0.5 ? `<div style="font-size:12px;color:var(--rojo);margin-bottom:8px;">⏳ Atrasado este ciclo: <b>$${atraso.toFixed(0)}</b> — no se suma al pago de hoy, ponte al corriente cuando puedas.</div>` : '';
         cuerpo = `
           ${toggleHoyHtml(comp, 'toggleExcluirCompromisoHoy')}
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🔁 Recurrente · $${comp.montoCiclo.toFixed(0)} cada ${comp.cicloDias} días</div>
@@ -2971,7 +3299,9 @@
             <span style="color:var(--gris);">Faltan: <b style="color:var(--rojo);">$${info.falta.toFixed(0)}</b></span>
           </div>
           ${lineaHoyR}
+          ${lineaAtraso}
           ${montoFijoInputHtml(comp, sugeridoR)}
+          ${abonoDesdeSueldoHtml(comp.id, atraso)}
           ${abonoExternoHtml(comp.id, 'abonarExternoCompromiso', 'abono-ext-')}`;
       }
 
@@ -3536,22 +3866,97 @@
   // ════════════════════════════════════════════════════
   // FIADOS — con abonos parciales
   // ════════════════════════════════════════════════════
+  // ── Cobrar como fiado: ahora primero se elige un cliente existente o se crea uno nuevo,
+  // en vez de un prompt() de texto libre que siempre creaba un registro nuevo aunque el
+  // nombre coincidiera con uno ya existente.
   function cobrarComoFiado() {
     if (!ticketItems.length) { mostrarToast('⚠️ El ticket está vacío'); return; }
-    const nombre = prompt('¿A nombre de quién va el fiado?');
-    if (!nombre || !nombre.trim()) return;
-    const total = ticketItems.reduce((s,i) => s + i.precio * i.cant, 0);
-    fiados.push({
-      id: Date.now(), nombre: nombre.trim(),
-      total, abonado: 0,
-      items: [...ticketItems],
-      abonos: [],
-      fecha: new Date().toLocaleDateString('es-MX', {day:'numeric',month:'short',year:'numeric'})
+    abrirElegirClienteFiado();
+  }
+
+  function normalizarNombreFiado(n) {
+    return (n || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  // Todos los clientes distintos que ya existen (activos o liquidados), para elegir de una lista.
+  function clientesFiadoUnicos() {
+    const mapa = {};
+    fiados.forEach(f => {
+      const key = normalizarNombreFiado(f.nombre);
+      if (!mapa[key]) mapa[key] = { nombre: f.nombre, pendiente: 0, fijo: false };
+      mapa[key].pendiente += Math.max(0, f.total - f.abonado);
+      if (f.fijo) mapa[key].fijo = true;
     });
+    return Object.values(mapa).sort((a,b) => b.pendiente - a.pendiente || a.nombre.localeCompare(b.nombre));
+  }
+
+  function abrirElegirClienteFiado() {
+    const cont = document.getElementById('modal-elegir-cliente-fiado-content');
+    const clientes = clientesFiadoUnicos();
+    const totalTicket = ticketItems.reduce((s,i) => s + i.precio * i.cant, 0);
+    cont.innerHTML = `
+      <button class="modal-fiado-cerrar" onclick="cerrarElegirClienteFiado()">✕</button>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--amarillo);letter-spacing:1px;margin-bottom:4px;">📒 ¿A nombre de quién?</h2>
+      <div style="font-size:11px;color:var(--gris);margin-bottom:14px;">Este consumo: <b style="color:var(--verde);">$${totalTicket.toFixed(0)}</b></div>
+      ${clientes.length ? `<div style="font-size:10.5px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Clientes existentes</div>
+      <div style="margin-bottom:12px;">${clientes.map(c => `
+        <div class="cliente-fiado-item" onclick="elegirClienteFiadoExistente('${c.nombre.replace(/'/g,"\\'")}')">
+          <div>
+            <div style="font-weight:700;font-size:13px;">${c.nombre}${c.fijo ? '<span class=\"fiado-fijo-badge\">📌 fijo</span>' : ''}</div>
+            <div style="font-size:10.5px;color:var(--gris);">${c.pendiente > 0 ? 'Debe: $' + c.pendiente.toFixed(0) : 'Sin deuda pendiente'}</div>
+          </div>
+          <div style="color:var(--gris);font-size:16px;">›</div>
+        </div>`).join('')}</div>` : ''}
+      <div class="cliente-fiado-nuevo-box">
+        <div style="font-size:10.5px;color:var(--verde);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;font-weight:700;">➕ Cliente nuevo</div>
+        <input type="text" id="input-nuevo-cliente-fiado" placeholder="Nombre del cliente">
+        <button onclick="elegirClienteFiadoNuevo()" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:12px;color:var(--oscuro);font-weight:700;font-size:13px;cursor:pointer;">Registrar como fiado</button>
+      </div>`;
+    document.getElementById('overlay-elegir-cliente-fiado').classList.add('visible');
+  }
+
+  function cerrarElegirClienteFiado() {
+    document.getElementById('overlay-elegir-cliente-fiado').classList.remove('visible');
+  }
+
+  // Suma el ticket actual al fiado ACTIVO (no liquidado) de ese cliente si ya existe uno;
+  // si no tiene ninguno activo, crea un registro nuevo a su nombre.
+  function agregarConsumoAFiado(nombre) {
+    const nombreLimpio = nombre.trim();
+    const key = normalizarNombreFiado(nombreLimpio);
+    const totalTicket = ticketItems.reduce((s,i) => s + i.precio * i.cant, 0);
+    const hoy = new Date().toLocaleDateString('es-MX', {day:'numeric',month:'short',year:'numeric'});
+    const ahoraISO = new Date().toISOString();
+    let activo = fiados.find(f => normalizarNombreFiado(f.nombre) === key && f.abonado < f.total);
+    if (activo) {
+      activo.total += totalTicket;
+      if (!activo.consumos) activo.consumos = activo.items ? [{ fecha: activo.fecha, items: activo.items, monto: activo.items.reduce((s,i)=>s+i.precio*i.cant,0) }] : [];
+      activo.consumos.push({ fecha: hoy, items: [...ticketItems], monto: totalTicket });
+      activo.ultimaActividadISO = ahoraISO;
+      mostrarToast('📒 Se sumó $' + totalTicket.toFixed(0) + ' a la cuenta de ' + activo.nombre);
+    } else {
+      fiados.push({
+        id: Date.now(), nombre: nombreLimpio,
+        total: totalTicket, abonado: 0,
+        consumos: [{ fecha: hoy, items: [...ticketItems], monto: totalTicket }],
+        abonos: [], fijo: false,
+        fecha: hoy, ultimaActividadISO: ahoraISO
+      });
+      mostrarToast('📒 Fiado registrado: ' + nombreLimpio);
+    }
     guardarFiados();
     ticketItems = []; mesaActiva = null;
     renderTicket(); renderFiados();
-    mostrarToast('📒 Fiado registrado: ' + nombre.trim());
+    cerrarElegirClienteFiado();
+  }
+
+  function elegirClienteFiadoExistente(nombre) { agregarConsumoAFiado(nombre); }
+
+  function elegirClienteFiadoNuevo() {
+    const input = document.getElementById('input-nuevo-cliente-fiado');
+    const nombre = input ? input.value.trim() : '';
+    if (!nombre) { mostrarToast('⚠️ Escribe el nombre del cliente'); return; }
+    agregarConsumoAFiado(nombre);
   }
 
   function renderFiados() {
@@ -3564,7 +3969,7 @@
     scroll.innerHTML = pendientes.map(f => {
       const resto = f.total - f.abonado;
       return `<div class="fiado-chip" onclick="abrirFiado(${f.id})">
-        <div class="fc-nombre">${f.nombre}</div>
+        <div class="fc-nombre">${f.nombre}${f.fijo ? ' 📌' : ''}</div>
         <div class="fc-total">$${resto.toFixed(0)}</div>
         <div class="fc-abonado">Abonado: $${f.abonado.toFixed(0)}</div>
       </div>`;
@@ -3580,17 +3985,43 @@
     document.getElementById('overlay-fiado').classList.add('visible');
   }
 
+  // Días desde la última vez que hubo actividad (abono o consumo nuevo) en este fiado.
+  function diasSinActividadFiado(f) {
+    let ultima = f.ultimaActividadISO ? new Date(f.ultimaActividadISO) : null;
+    if (!ultima && f.abonos && f.abonos.length) ultima = null; // fechas viejas sin ISO, no se puede calcular exacto
+    if (!ultima) return null;
+    const ms = Date.now() - ultima.getTime();
+    return Math.max(0, Math.floor(ms / (1000*60*60*24)));
+  }
+
+  function toggleFijoFiado(id) {
+    const f = fiados.find(x => x.id === id);
+    if (!f) return;
+    f.fijo = !f.fijo;
+    guardarFiados();
+    renderModalFiado(id);
+  }
+
   function renderModalFiado(id) {
     const f = fiados.find(x => x.id === id);
     if (!f) return;
     const resto = f.total - f.abonado;
     const pct = Math.min(100, (f.abonado / f.total) * 100);
-    const abonosHtml = f.abonos.length
-      ? f.abonos.map(a => `<div class="abono-item"><span style="color:var(--gris)">${a.fecha}</span><span style="color:var(--verde);font-weight:700;">+$${a.monto.toFixed(0)}</span></div>`).join('')
+    const abonosHtml = (f.abonos && f.abonos.length)
+      ? f.abonos.slice().reverse().map(a => `<div class="abono-item"><span style="color:var(--gris)">${a.fecha}</span><span style="color:var(--verde);font-weight:700;">+$${a.monto.toFixed(0)}</span></div>`).join('')
       : '<div style="color:var(--gris);font-size:12px;">Sin abonos aún</div>';
+    // Historial de consumos (lo que se ha llevado, con fecha). Compatible con registros viejos que solo tenían "items".
+    const consumos = f.consumos && f.consumos.length ? f.consumos : (f.items ? [{ fecha: f.fecha, items: f.items, monto: f.items.reduce((s,i)=>s+i.precio*i.cant,0) }] : []);
+    const consumosHtml = consumos.length
+      ? consumos.slice().reverse().map(c => `<div style="padding:7px 0;border-bottom:1px solid #2a2a3e;"><div style="display:flex;justify-content:space-between;font-size:11.5px;"><span style="color:var(--gris)">${c.fecha}</span><span style="color:var(--texto);font-weight:700;">$${c.monto.toFixed(0)}</span></div><div style="font-size:10.5px;color:var(--gris);margin-top:2px;">${(c.items||[]).map(i=>(i.cant>1?i.cant+'x ':'')+i.producto).join(', ')}</div></div>`).join('')
+      : '<div style="color:var(--gris);font-size:12px;">Sin detalle guardado</div>';
+    const dias = diasSinActividadFiado(f);
+    const ultimaActHtml = dias === null ? '' : `<div class="fiado-ultima-act${dias >= 14 ? ' alerta' : ''}">${dias === 0 ? '🕒 Actividad hoy' : '🕒 Sin movimientos hace ' + dias + ' día' + (dias===1?'':'s')}</div>`;
     document.getElementById('modal-fiado-content').innerHTML = `
-      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--rojo);letter-spacing:1px;margin-bottom:4px;">📒 ${f.nombre}</h2>
-      <div style="font-size:11px;color:var(--gris);margin-bottom:14px;">Fiado desde: ${f.fecha}</div>
+      <button class="modal-fiado-cerrar" onclick="cerrarFiadoModalBtn()">✕</button>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--rojo);letter-spacing:1px;margin-bottom:4px;padding-right:30px;">📒 ${f.nombre}${f.fijo ? '<span class="fiado-fijo-badge">📌 fijo</span>' : ''}</h2>
+      <div style="font-size:11px;color:var(--gris);margin-bottom:4px;">Fiado desde: ${f.fecha}</div>
+      ${ultimaActHtml}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
         <div style="background:var(--oscuro);border:1px solid #333;border-radius:10px;padding:10px;text-align:center;">
           <div style="font-size:10px;color:var(--gris);">Total</div>
@@ -3608,19 +4039,76 @@
       <div style="height:8px;background:#222;border-radius:6px;overflow:hidden;margin-bottom:14px;">
         <div style="height:100%;width:${pct.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div>
       </div>
+      <div class="fiado-toggle-fijo${f.fijo ? ' on' : ''}" onclick="toggleFijoFiado(${id})">${f.fijo ? '📌 Cliente fijo — toca para quitarlo' : '📌 Marcar como cliente fijo/recurrente'}</div>
       <div style="font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Agregar Abono ($)</div>
       <div id="fiado-abono-display" style="background:var(--oscuro);border:2px solid var(--verde);border-radius:10px;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--verde);text-align:center;margin-bottom:10px;">$0</div>
       <div class="numpad" style="margin-bottom:14px;">
         ${'7 8 9 4 5 6 1 2 3 . 0 DEL'.split(' ').map(k=>`<div class="numpad-btn${k==='DEL'?' btn-borrar':''}" onclick="fiadoNumpad('${id}','${k}')">${k==='DEL'?'⌫':k}</div>`).join('')}
       </div>
-      <div style="font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Historial de abonos</div>
-      <div style="margin-bottom:14px;">${abonosHtml}</div>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
         <button onclick="confirmarAbonoFiado(${id})" style="flex:2;background:var(--verde);border:none;border-radius:10px;padding:14px;color:var(--oscuro);font-size:14px;font-weight:700;cursor:pointer;">✅ Registrar Abono</button>
         <button onclick="liquidarFiado(${id})" style="flex:1;background:var(--rojo);border:none;border-radius:10px;padding:14px;color:white;font-size:13px;font-weight:700;cursor:pointer;">💯 Liquidar</button>
-        <button onclick="eliminarFiado(${id})" style="flex:0;background:transparent;border:1px solid #444;border-radius:10px;padding:14px;color:var(--gris);font-size:13px;cursor:pointer;">✕</button>
-      </div>`;
+      </div>
+      <button onclick="abrirFusionarFiado(${id})" style="width:100%;background:transparent;border:1px dashed var(--amarillo);border-radius:8px;padding:9px;color:var(--amarillo);font-size:11px;font-weight:700;cursor:pointer;margin-bottom:14px;">🔗 Fusionar con otro registro de este cliente</button>
+      <div style="font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">📥 Lo que se ha llevado</div>
+      <div style="margin-bottom:14px;">${consumosHtml}</div>
+      <div style="font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💵 Historial de abonos</div>
+      <div style="margin-bottom:6px;">${abonosHtml}</div>
+      <button class="fiado-eliminar-link" onclick="eliminarFiado(${id})">Eliminar este cliente y su historial</button>`;
     _fiadoAbonoStr = '';
+  }
+
+  // Cierra el modal sin tocar nada (equivalente al backdrop, pero como botón explícito).
+  function cerrarFiadoModalBtn() {
+    document.getElementById('overlay-fiado').classList.remove('visible');
+  }
+
+  // ── Fusionar fiados duplicados del mismo cliente ──
+  let _fusionarOrigenId = null;
+  function abrirFusionarFiado(id) {
+    _fusionarOrigenId = id;
+    const origen = fiados.find(f => f.id === id);
+    if (!origen) return;
+    const otros = fiados.filter(f => f.id !== id);
+    const cont = document.getElementById('modal-fusionar-fiado-content');
+    cont.innerHTML = `
+      <button class="modal-fiado-cerrar" onclick="cerrarFusionarFiado()">✕</button>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--amarillo);letter-spacing:1px;margin-bottom:4px;padding-right:30px;">🔗 Fusionar con...</h2>
+      <div style="font-size:11px;color:var(--gris);margin-bottom:14px;">Se juntará todo dentro de <b>${origen.nombre}</b>: montos, abonos e historial. El otro registro se elimina.</div>
+      ${otros.length ? otros.map(f => `
+        <div class="cliente-fiado-item" onclick="confirmarFusionFiado(${f.id})">
+          <div>
+            <div style="font-weight:700;font-size:13px;">${f.nombre}</div>
+            <div style="font-size:10.5px;color:var(--gris);">${(f.total-f.abonado)>0 ? 'Debe: $'+(f.total-f.abonado).toFixed(0) : 'Liquidado'} · desde ${f.fecha}</div>
+          </div>
+          <div style="color:var(--gris);font-size:16px;">›</div>
+        </div>`).join('') : '<div style="color:var(--gris);font-size:12px;text-align:center;padding:20px 0;">No hay otros registros de fiado para fusionar.</div>'}`;
+    document.getElementById('overlay-fusionar-fiado').classList.add('visible');
+  }
+
+  function cerrarFusionarFiado() {
+    document.getElementById('overlay-fusionar-fiado').classList.remove('visible');
+    _fusionarOrigenId = null;
+  }
+
+  function confirmarFusionFiado(otroId) {
+    const origen = fiados.find(f => f.id === _fusionarOrigenId);
+    const otro = fiados.find(f => f.id === otroId);
+    if (!origen || !otro) return;
+    if (!confirm('¿Fusionar "' + otro.nombre + '" dentro de "' + origen.nombre + '"? No se puede deshacer.')) return;
+    origen.total += otro.total;
+    origen.abonado += otro.abonado;
+    const consumosOtro = otro.consumos && otro.consumos.length ? otro.consumos : (otro.items ? [{ fecha: otro.fecha, items: otro.items, monto: otro.items.reduce((s,i)=>s+i.precio*i.cant,0) }] : []);
+    if (!origen.consumos) origen.consumos = origen.items ? [{ fecha: origen.fecha, items: origen.items, monto: origen.items.reduce((s,i)=>s+i.precio*i.cant,0) }] : [];
+    origen.consumos = origen.consumos.concat(consumosOtro);
+    origen.abonos = (origen.abonos||[]).concat(otro.abonos||[]);
+    if (otro.fijo) origen.fijo = true;
+    fiados = fiados.filter(f => f.id !== otro.id);
+    guardarFiados();
+    cerrarFusionarFiado();
+    renderModalFiado(origen.id);
+    renderFiados();
+    mostrarToast('🔗 Fusionado con ' + origen.nombre);
   }
 
   function fiadoNumpad(id, key) {
@@ -3640,6 +4128,7 @@
     const hoy = new Date().toLocaleDateString('es-MX', {day:'numeric',month:'short'});
     f.abonado = Math.min(f.total, f.abonado + monto);
     f.abonos.push({ fecha: hoy, monto });
+    f.ultimaActividadISO = new Date().toISOString();
     // Registrar como venta efectivo
     movimientos.push({ id: Date.now(), producto: 'Abono fiado: ' + f.nombre, precio: monto, metodo: 'efectivo', hora: new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false}) });
     guardarFiados(); guardarMov();
@@ -3665,6 +4154,7 @@
       guardarMov(); actualizarHeaderTotal();
     }
     f.abonado = f.total;
+    f.ultimaActividadISO = new Date().toISOString();
     guardarFiados();
     document.getElementById('overlay-fiado').classList.remove('visible');
     renderFiados(); mostrarToast('🎉 Fiado liquidado: ' + f.nombre);
