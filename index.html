@@ -467,17 +467,18 @@
   <div id="lista-gastos"><div class="empty-state"><div class="icon">💸</div>Sin gastos registrados</div></div>
 </div>
 
-<!-- TAB RESUMEN (cierre del día desde aquí) -->
-<div class="seccion" id="tab-resumen">
-  <!-- SUBTABS RESUMEN -->
-  <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #222;">
-    <div id="rtab-resumen" onclick="switchResumenTab('resumen')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--amarillo);border-bottom:2px solid var(--amarillo);text-transform:uppercase;letter-spacing:0.4px;">📊 Resumen</div>
-    <div id="rtab-estado" onclick="switchResumenTab('estado')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--gris);border-bottom:2px solid transparent;text-transform:uppercase;letter-spacing:0.4px;">💼 Estado</div>
-    <div id="rtab-dist" onclick="switchResumenTab('dist')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:700;text-align:center;cursor:pointer;color:var(--gris);border-bottom:2px solid transparent;text-transform:uppercase;letter-spacing:0.4px;">💰 Distribución</div>
+<!-- TAB DINERO (disponible hoy, resumen, estado, distribución, compromisos y ahorros — todo en una sola pantalla con scroll) -->
+<div class="seccion" id="tab-dinero">
+
+  <!-- DISPONIBLE PARA GASTAR HOY -->
+  <div class="resumen-box" id="dinero-disponible-box" style="border:2px solid var(--verde);text-align:center;">
+    <h3 style="text-align:left;">💰 Disponible para gastar hoy</h3>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--verde);" id="dinero-disponible-monto">$0</div>
+    <div style="font-size:10px;color:var(--gris);margin-top:2px;">Ingresos − Compromisos − Ahorros − Ya gastado</div>
+    <div style="font-size:10px;color:var(--gris);margin-top:4px;" id="dinero-disponible-det"></div>
   </div>
 
-  <!-- PANEL RESUMEN DEL DÍA -->
-  <div id="rpanel-resumen">
+  <!-- RESUMEN DEL DÍA -->
   <div class="resumen-box">
     <h3>📊 Resumen del Día</h3>
     <div class="resumen-fila"><span class="concepto">💵 Efectivo</span><span class="monto" id="res-efectivo">$0.00</span></div>
@@ -497,30 +498,14 @@
   </div>
   <button class="btn-copiar" onclick="copiarResumen()">📋 Copiar para Excel</button>
   <button class="btn-cerrar-dia" onclick="pedirCerrarDia()">🔒 Cerrar Día y Empezar Nuevo</button>
-  </div>
 
-  <!-- PANEL ESTADO DE CUENTA SEMANAL -->
-  <div id="rpanel-estado" style="display:none;">
-    <div class="dist-header">💼 Estado de Cuenta</div>
-    <div class="dist-sub">Tu situación acumulada esta semana</div>
-    <div id="estado-cuenta-contenido"></div>
-    <button class="btn-cerrar-dia" onclick="pedirCerrarDia()" style="margin-top:8px;">🔒 Cerrar Día y Empezar Nuevo</button>
-  </div>
+  <!-- ESTADO DE CUENTA SEMANAL -->
+  <div class="dist-header" style="margin-top:22px;">💼 Estado de Cuenta</div>
+  <div class="dist-sub">Tu situación acumulada esta semana</div>
+  <div id="estado-cuenta-contenido"></div>
 
-  <!-- PANEL DISTRIBUCIÓN (duplicado accesible desde Resumen) -->
-  <div id="rpanel-dist" style="display:none;">
-    <div id="rpanel-dist-inner"></div>
-  </div>
-</div>
-
-<!-- TAB HISTORIAL -->
-<div class="seccion" id="tab-historial">
-  <input type="text" class="historial-search" id="historial-busqueda" placeholder="🔍 Buscar por fecha..." oninput="renderHistorial()">
-  <div id="lista-historial"><div class="empty-state"><div class="icon">📅</div>Aún no hay días cerrados</div></div>
-</div>
-
-<!-- TAB DISTRIBUCIÓN -->
-<div class="seccion" id="tab-distribucion">
+<!-- DISTRIBUCIÓN -->
+<div id="tab-distribucion" style="margin-top:22px;">
   <div class="dist-header">💰 Distribución del Día</div>
   <div class="dist-sub">Solo efectivo en mano · Tarjeta · Didi Efectivo</div>
   <div class="dist-config">
@@ -568,49 +553,10 @@
   <div class="dist-nota">* Las ventas de Didi TAR, Rappi y Uber no se incluyen — ese dinero aún no está en tu mano</div>
 </div>
 
-<!-- TAB ANÁLISIS (submenús: Gráficas, Histórico, Ahorros) -->
-<div class="seccion" id="tab-analisis">
-  <!-- GRÁFICAS SEMANALES -->
-  <div id="subtab-graficas">
-    <div class="dist-header">📈 Gráficas Semanales</div>
-    <div class="dist-sub" id="graf-semana-label">Semana actual</div>
-    <div class="chart-nav">
-      <button onclick="semanaAnterior()">◀</button>
-      <span id="graf-semana-rango" style="font-size:12px;color:var(--gris);text-align:center;min-width:160px;"></span>
-      <button onclick="semanaSiguiente()" id="btn-semana-sig">▶</button>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-      <div class="total-card" style="border-color:var(--verde);"><div class="label">💰 Venta Total</div><div class="valor" style="color:var(--verde);font-size:22px;" id="graf-total-semana">$0</div></div>
-      <div class="total-card" style="border-color:var(--morado);"><div class="label">💵 Tu Sueldo</div><div class="valor" style="color:var(--morado);font-size:22px;" id="graf-sueldo-semana">$0</div></div>
-      <div class="total-card" style="border-color:var(--rojo);"><div class="label">💸 Gastos</div><div class="valor" style="color:var(--rojo);font-size:22px;" id="graf-gastos-semana-top">$0</div></div>
-      <div class="total-card" style="border-color:var(--amarillo);"><div class="label">📅 Días con venta</div><div class="valor" style="color:var(--amarillo);font-size:22px;" id="graf-dias-activos">0</div></div>
-      <div class="total-card" style="border-color:var(--morado);" colspan="2"><div class="label">🏆 Mejor día</div><div class="valor" style="color:var(--morado);font-size:14px;line-height:1.3;" id="graf-mejor-dia">—</div></div>
-    </div>
-    <div class="resumen-box"><h3>📆 Venta por día</h3><canvas id="chart-total-dia" height="200"></canvas></div>
-    <div class="resumen-box"><h3>📊 ¿De dónde viene el dinero?</h3><canvas id="chart-canal" height="220"></canvas><div id="resumen-canal" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div></div>
-    <div class="resumen-box"><h3>🏆 ¿Qué se vende más?</h3><canvas id="chart-productos" height="260"></canvas></div>
-    <div class="resumen-box"><h3>🕐 ¿A qué hora vendes más?</h3><canvas id="chart-horas" height="200"></canvas></div>
-    <div class="resumen-box"><h3>💸 Gastos de la semana</h3><canvas id="chart-gastos-semana" height="200"></canvas><div id="resumen-gastos-semana" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div></div>
-    <div class="resumen-box"><h3>📦 Inversión esta semana</h3><p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-inv-semana"></p><canvas id="chart-inversion-semana-actual" height="240"></canvas><div id="resumen-inversion-semana-actual" style="margin-top:14px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div></div>
-    <div class="resumen-box"><h3>💵 Sueldo esta semana</h3><p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-sueldo-semana"></p><canvas id="chart-sueldo-semana-actual" height="240"></canvas><div id="resumen-sueldo-semana-actual" style="margin-top:14px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div></div>
-  </div>
-  <!-- HISTÓRICO -->
-  <div id="subtab-historico" style="display:none;">
-    <div class="dist-header">📊 Histórico General</div>
-    <div class="dist-sub">Todas las semanas registradas</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-      <div class="total-card" style="border-color:var(--verde);"><div class="label">💰 Total ventas</div><div class="valor" style="color:var(--verde);font-size:20px;" id="hist-total-ventas">$0</div></div>
-      <div class="total-card" style="border-color:var(--amarillo);"><div class="label">📅 Semanas</div><div class="valor" style="color:var(--amarillo);font-size:20px;" id="hist-total-semanas">0</div></div>
-      <div class="total-card" style="border-color:var(--morado);"><div class="label">💵 Sueldo acum.</div><div class="valor" style="color:var(--morado);font-size:20px;" id="hist-total-sueldo">$0</div></div>
-      <div class="total-card" style="border-color:var(--amarillo);"><div class="label">📦 Inv. disponible</div><div class="valor" style="color:var(--amarillo);font-size:20px;" id="hist-total-inv">$0</div></div>
-    </div>
-    <div class="resumen-box"><h3>📈 Venta semanal</h3><canvas id="chart-hist-ventas" height="220"></canvas></div>
-    <div class="resumen-box"><h3>📦 Inversión semana a semana</h3><canvas id="chart-inversion-historico" height="220"></canvas><div id="resumen-inversion-historico" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div></div>
-    <div class="resumen-box"><h3>💵 Sueldo semana a semana</h3><canvas id="chart-sueldo-historico" height="220"></canvas><div id="resumen-sueldo-historico" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div></div>
-    <div class="resumen-box"><h3>📋 Resumen por semana</h3><div id="hist-tabla-semanas" style="font-size:12px;"></div></div>
-  </div>
-  <!-- COMPROMISOS -->
-  <div id="subtab-compromisos" style="display:none;">
+
+
+<!-- COMPROMISOS -->
+<div id="subtab-compromisos" style="margin-top:22px;">
     <div class="dist-header">📌 Compromisos Fijos</div>
     <div class="dist-sub">El sistema reparte tu sueldo solo — tú solo defines qué es y cuánto</div>
 
@@ -702,6 +648,66 @@
     </div>
   </div>
 
+
+
+<!-- AHORROS -->
+<div id="subtab-ahorros" style="margin-top:22px;">
+    <div class="dist-header">🏦 Mis Ahorros</div>
+    <div class="dist-sub">Progreso de cada meta</div>
+    <div id="ahorros-tab-lista"></div>
+    <div class="resumen-box" style="margin-top:4px;"><h3>📈 Crecimiento de ahorros</h3><canvas id="chart-ahorros-hist" height="220"></canvas><div id="ahorros-hist-resumen" style="margin-top:10px;font-size:12px;"></div></div>
+  </div>
+
+
+</div>
+
+<!-- TAB HISTORIAL -->
+<div class="seccion" id="tab-historial">
+  <input type="text" class="historial-search" id="historial-busqueda" placeholder="🔍 Buscar por fecha..." oninput="renderHistorial()">
+  <div id="lista-historial"><div class="empty-state"><div class="icon">📅</div>Aún no hay días cerrados</div></div>
+</div>
+
+<!-- TAB ANÁLISIS (submenús: Gráficas, Histórico, Negocio) -->
+<div class="seccion" id="tab-analisis">
+  <!-- GRÁFICAS SEMANALES -->
+  <div id="subtab-graficas">
+    <div class="dist-header">📈 Gráficas Semanales</div>
+    <div class="dist-sub" id="graf-semana-label">Semana actual</div>
+    <div class="chart-nav">
+      <button onclick="semanaAnterior()">◀</button>
+      <span id="graf-semana-rango" style="font-size:12px;color:var(--gris);text-align:center;min-width:160px;"></span>
+      <button onclick="semanaSiguiente()" id="btn-semana-sig">▶</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div class="total-card" style="border-color:var(--verde);"><div class="label">💰 Venta Total</div><div class="valor" style="color:var(--verde);font-size:22px;" id="graf-total-semana">$0</div></div>
+      <div class="total-card" style="border-color:var(--morado);"><div class="label">💵 Tu Sueldo</div><div class="valor" style="color:var(--morado);font-size:22px;" id="graf-sueldo-semana">$0</div></div>
+      <div class="total-card" style="border-color:var(--rojo);"><div class="label">💸 Gastos</div><div class="valor" style="color:var(--rojo);font-size:22px;" id="graf-gastos-semana-top">$0</div></div>
+      <div class="total-card" style="border-color:var(--amarillo);"><div class="label">📅 Días con venta</div><div class="valor" style="color:var(--amarillo);font-size:22px;" id="graf-dias-activos">0</div></div>
+      <div class="total-card" style="border-color:var(--morado);" colspan="2"><div class="label">🏆 Mejor día</div><div class="valor" style="color:var(--morado);font-size:14px;line-height:1.3;" id="graf-mejor-dia">—</div></div>
+    </div>
+    <div class="resumen-box"><h3>📆 Venta por día</h3><canvas id="chart-total-dia" height="200"></canvas></div>
+    <div class="resumen-box"><h3>📊 ¿De dónde viene el dinero?</h3><canvas id="chart-canal" height="220"></canvas><div id="resumen-canal" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div></div>
+    <div class="resumen-box"><h3>🏆 ¿Qué se vende más?</h3><canvas id="chart-productos" height="260"></canvas></div>
+    <div class="resumen-box"><h3>🕐 ¿A qué hora vendes más?</h3><canvas id="chart-horas" height="200"></canvas></div>
+    <div class="resumen-box"><h3>💸 Gastos de la semana</h3><canvas id="chart-gastos-semana" height="200"></canvas><div id="resumen-gastos-semana" style="margin-top:12px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div></div>
+    <div class="resumen-box"><h3>📦 Inversión esta semana</h3><p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-inv-semana"></p><canvas id="chart-inversion-semana-actual" height="240"></canvas><div id="resumen-inversion-semana-actual" style="margin-top:14px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div></div>
+    <div class="resumen-box"><h3>💵 Sueldo esta semana</h3><p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-sueldo-semana"></p><canvas id="chart-sueldo-semana-actual" height="240"></canvas><div id="resumen-sueldo-semana-actual" style="margin-top:14px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div></div>
+  </div>
+  <!-- HISTÓRICO -->
+  <div id="subtab-historico" style="display:none;">
+    <div class="dist-header">📊 Histórico General</div>
+    <div class="dist-sub">Todas las semanas registradas</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div class="total-card" style="border-color:var(--verde);"><div class="label">💰 Total ventas</div><div class="valor" style="color:var(--verde);font-size:20px;" id="hist-total-ventas">$0</div></div>
+      <div class="total-card" style="border-color:var(--amarillo);"><div class="label">📅 Semanas</div><div class="valor" style="color:var(--amarillo);font-size:20px;" id="hist-total-semanas">0</div></div>
+      <div class="total-card" style="border-color:var(--morado);"><div class="label">💵 Sueldo acum.</div><div class="valor" style="color:var(--morado);font-size:20px;" id="hist-total-sueldo">$0</div></div>
+      <div class="total-card" style="border-color:var(--amarillo);"><div class="label">📦 Inv. disponible</div><div class="valor" style="color:var(--amarillo);font-size:20px;" id="hist-total-inv">$0</div></div>
+    </div>
+    <div class="resumen-box"><h3>📈 Venta semanal</h3><canvas id="chart-hist-ventas" height="220"></canvas></div>
+    <div class="resumen-box"><h3>📦 Inversión semana a semana</h3><canvas id="chart-inversion-historico" height="220"></canvas><div id="resumen-inversion-historico" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div></div>
+    <div class="resumen-box"><h3>💵 Sueldo semana a semana</h3><canvas id="chart-sueldo-historico" height="220"></canvas><div id="resumen-sueldo-historico" style="margin-top:10px;background:var(--oscuro);border-radius:10px;padding:10px;font-size:12px;"></div></div>
+    <div class="resumen-box"><h3>📋 Resumen por semana</h3><div id="hist-tabla-semanas" style="font-size:12px;"></div></div>
+  </div>
   <!-- NEGOCIO -->
   <div id="subtab-negocio" style="display:none;">
     <div class="dist-header">🏗️ Metas de Negocio</div>
@@ -777,13 +783,6 @@
     </div>
   </div>
 
-  <!-- AHORROS -->
-  <div id="subtab-ahorros" style="display:none;">
-    <div class="dist-header">🏦 Mis Ahorros</div>
-    <div class="dist-sub">Progreso de cada meta</div>
-    <div id="ahorros-tab-lista"></div>
-    <div class="resumen-box" style="margin-top:4px;"><h3>📈 Crecimiento de ahorros</h3><canvas id="chart-ahorros-hist" height="220"></canvas><div id="ahorros-hist-resumen" style="margin-top:10px;font-size:12px;"></div></div>
-  </div>
 </div>
 
 <!-- TAB AJUSTES (submenús: Productos & Precios, Backup) -->
@@ -1049,14 +1048,14 @@
     <div class="nav-label">Venta</div>
     <div class="nav-badge" id="badge-venta"></div>
   </div>
+  <div class="nav-item" id="nav-dinero" onclick="cambiarNavTab('dinero')">
+    <div class="nav-icon">💰</div>
+    <div class="nav-label">Dinero</div>
+  </div>
   <div class="nav-item" id="nav-registro" onclick="cambiarNavTab('registro')">
     <div class="nav-icon">📋</div>
     <div class="nav-label">Registro</div>
     <div class="nav-badge" id="badge-registro"></div>
-  </div>
-  <div class="nav-item" id="nav-resumen" onclick="cambiarNavTab('resumen')">
-    <div class="nav-icon">📊</div>
-    <div class="nav-label">Resumen</div>
   </div>
   <div class="nav-item" id="nav-analisis" onclick="cambiarNavTab('analisis')">
     <div class="nav-icon">📈</div>
@@ -1200,9 +1199,7 @@
     analisis: [
       { key:'graficas', label:'📈 Gráficas' },
       { key:'historico', label:'📊 Histórico' },
-      { key:'compromisos', label:'📌 Compromisos' },
       { key:'negocio', label:'🏗️ Negocio' },
-      { key:'ahorros', label:'🏦 Ahorros' },
     ],
     ajustes: [
       { key:'productos', label:'🍔 Productos & Precios' },
@@ -1212,7 +1209,6 @@
       { key:'movimientos', label:'🧾 Ventas' },
       { key:'gastos', label:'💸 Gastos' },
       { key:'historial', label:'📅 Historial' },
-      { key:'distribucion', label:'💰 Distribución' },
     ]
   };
 
@@ -1230,10 +1226,10 @@
       document.getElementById('tab-movimientos').classList.add('active');
       renderSubmenu('registro', 'movimientos');
       renderMovimientos();
-    } else if (tab === 'resumen') {
-      document.getElementById('tab-resumen').classList.add('active');
+    } else if (tab === 'dinero') {
+      document.getElementById('tab-dinero').classList.add('active');
       renderSubmenu(null);
-      renderResumen();
+      renderDinero();
     } else if (tab === 'venta') {
       document.getElementById('tab-venta').classList.add('active');
       renderSubmenu(null);
@@ -1271,7 +1267,6 @@
       if (key === 'movimientos') { mostrarSeccion('movimientos'); renderMovimientos(); }
       if (key === 'gastos') { mostrarSeccion('gastos'); renderGastos(); }
       if (key === 'historial') { mostrarSeccion('historial'); renderHistorial(); }
-      if (key === 'distribucion') { mostrarSeccion('distribucion'); renderDistribucion(); }
     }
   }
 
@@ -1281,14 +1276,42 @@
   }
 
   function mostrarSubtabAnalisis(key) {
-    ['graficas','historico','compromisos','negocio','ahorros'].forEach(k => {
+    ['graficas','historico','negocio'].forEach(k => {
       document.getElementById('subtab-' + k).style.display = k === key ? 'block' : 'none';
     });
     if (key === 'graficas') renderGraficas();
     if (key === 'historico') renderGraficasHistoricas();
-    if (key === 'compromisos') renderTabCompromisos();
     if (key === 'negocio') renderTabCompromisosNegocio();
-    if (key === 'ahorros') renderTabAhorros();
+  }
+
+  // ── DINERO: disponible hoy + resumen + estado + distribución + compromisos + ahorros, todo en una pantalla ──
+  function renderDinero() {
+    renderResumen();
+    renderEstadoCuenta();
+    renderDistribucion();
+    renderTabCompromisos();
+    renderTabAhorros();
+    renderDisponibleHoy();
+  }
+
+  function ahorradoHoyDesdeSueldo() {
+    const hoyLabel = new Date().toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'});
+    return ahorros.reduce((sum, a) => {
+      const movs = (a.historial || []).filter(h => h.fecha === hoyLabel && h.tipo === 'deposito' && (h.concepto || '').includes('[Sueldo]'));
+      return sum + movs.reduce((s, h) => s + h.monto, 0);
+    }, 0);
+  }
+
+  function renderDisponibleHoy() {
+    const montoEl = document.getElementById('dinero-disponible-monto');
+    const detEl = document.getElementById('dinero-disponible-det');
+    if (!montoEl) return;
+    const sueldoDisponible = sueldoDisponibleHoy();
+    const { libre } = calcularRepartoCascadaCompromisos(sueldoDisponible);
+    const ahorradoHoy = ahorradoHoyDesdeSueldo();
+    const disponible = Math.max(0, libre - ahorradoHoy);
+    montoEl.textContent = '$' + disponible.toFixed(0);
+    if (detEl) detEl.textContent = `Sueldo hoy $${sueldoDisponible.toFixed(0)} − compromisos y ahorrado hoy $${(sueldoDisponible - disponible).toFixed(0)}`;
   }
 
   function mostrarSubtabAjustes(key) {
@@ -2072,7 +2095,7 @@
     localStorage.removeItem('bajon_fecha_apertura');
     fechaApertura = new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
     localStorage.setItem('bajon_fecha_apertura', fechaApertura);
-    renderResumen(); actualizarTotalesRapidos(); renderTicket(); actualizarHeaderTotal(); renderFiados();
+    renderDinero(); actualizarTotalesRapidos(); renderTicket(); actualizarHeaderTotal(); renderFiados();
     mostrarToast('✅ Día cerrado — Excel descargado');
   }
 
@@ -4390,36 +4413,6 @@
         <div style="font-size:11px;color:var(--gris);text-transform:uppercase;margin-bottom:4px;">💰 Venta total semana</div>
         <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--verde);">$${movsSem.reduce((s,m)=>s+m.precio,0).toFixed(0)}</div>
       </div>`;
-  }
-
-  // ════════════════════════════════════════════════════
-  // SUBTABS DE RESUMEN
-  // ════════════════════════════════════════════════════
-  let _resumenTabActual = 'resumen';
-  function switchResumenTab(tab) {
-    _resumenTabActual = tab;
-    ['resumen','estado','dist'].forEach(t => {
-      const btn = document.getElementById('rtab-' + t);
-      const panel = document.getElementById('rpanel-' + t);
-      if (btn) {
-        const active = t === tab;
-        btn.style.color = active ? 'var(--amarillo)' : 'var(--gris)';
-        btn.style.borderBottomColor = active ? 'var(--amarillo)' : 'transparent';
-      }
-      if (panel) panel.style.display = t === tab ? 'block' : 'none';
-    });
-    if (tab === 'estado') renderEstadoCuenta();
-    if (tab === 'dist') {
-      // Copiar distribución al panel del resumen
-      const inner = document.getElementById('rpanel-dist-inner');
-      if (inner) {
-        renderDistribucion();
-        // Clonar el tab-distribucion
-        const orig = document.getElementById('tab-distribucion');
-        inner.innerHTML = orig ? orig.innerHTML : '';
-      }
-    }
-    if (tab === 'resumen') renderResumen();
   }
 
   // ════════════════════════════════════════════════════
