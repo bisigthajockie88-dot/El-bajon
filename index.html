@@ -633,8 +633,8 @@
       </div>
 
       <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <button id="btn-comp-meta" onclick="selTipoCompromiso('meta')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">🎯 Meta con fin<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Moto, préstamo, lavadora...</span></button>
-        <button id="btn-comp-recurrente" onclick="selTipoCompromiso('recurrente')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">🔁 Recurrente<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Mamá, esposa, medicinas...</span></button>
+        <button id="btn-comp-meta" onclick="selTipoCompromiso('personal','meta')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">🎯 Meta con fin<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Moto, préstamo, lavadora...</span></button>
+        <button id="btn-comp-recurrente" onclick="selTipoCompromiso('personal','recurrente')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">🔁 Recurrente<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Mamá, esposa, medicinas...</span></button>
       </div>
 
       <!-- CAMPOS META CON FIN (opcionales) -->
@@ -687,7 +687,7 @@
         <div style="font-size:11px;color:var(--gris);margin-bottom:10px;">Ej: Esposa $700 cada 7 días · Medicinas $428 cada 15 días</div>
       </div>
 
-      <button onclick="agregarCompromiso()" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:13px;color:var(--oscuro);font-size:14px;font-weight:700;cursor:pointer;">+ Agregar Compromiso</button>
+      <button onclick="agregarCompromiso('personal')" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:13px;color:var(--oscuro);font-size:14px;font-weight:700;cursor:pointer;">+ Agregar Compromiso</button>
     </div>
   </div>
 
@@ -769,7 +769,7 @@
       <h3 style="color:var(--amarillo);">📤 Mandar dinero a metas</h3>
       <div style="font-size:11px;color:var(--gris);margin-bottom:8px;">Disponible hoy en Inversión + Colchón: <b style="color:var(--amarillo);" id="negocio-disponible-hoy">$0</b></div>
       <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">¿Cuánto quieres mandar?</div>
-      <input type="number" id="negocio-monto-input" placeholder="0" min="0" inputmode="decimal" oninput="renderTabCompromisosNegocio()"
+      <input type="number" id="negocio-monto-input" placeholder="0" min="0" inputmode="decimal" oninput="renderTabCompromisos('negocio')"
         style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:12px;color:var(--amarillo);font-size:18px;font-weight:700;text-align:center;outline:none;margin-bottom:10px;">
       <div id="negocio-preview-lista" style="font-size:12px;"></div>
       <button onclick="aplicarRepartoNegocio()" style="width:100%;margin-top:10px;background:var(--amarillo);border:none;border-radius:10px;padding:14px;color:#111;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:0.5px;">
@@ -788,8 +788,8 @@
       <input type="text" id="neg-nombre-input" placeholder="Nombre (ej: Mesas nuevas, Freidora...)"
         style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 12px;color:var(--texto);font-size:13px;outline:none;margin-bottom:10px;">
       <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <button id="btn-neg-meta" onclick="selTipoCompromisoNegocio('meta')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">🎯 Meta con fin<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Compra puntual</span></button>
-        <button id="btn-neg-recurrente" onclick="selTipoCompromisoNegocio('recurrente')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">🔁 Recurrente<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Mantenimiento, renta de equipo...</span></button>
+        <button id="btn-neg-meta" onclick="selTipoCompromiso('negocio','meta')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">🎯 Meta con fin<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Compra puntual</span></button>
+        <button id="btn-neg-recurrente" onclick="selTipoCompromiso('negocio','recurrente')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">🔁 Recurrente<br><span style="font-size:9px;font-weight:400;opacity:0.8;">Mantenimiento, renta de equipo...</span></button>
       </div>
 
       <!-- CAMPOS META CON FIN -->
@@ -831,7 +831,7 @@
         </div>
       </div>
 
-      <button onclick="agregarCompromisoNegocio()" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:13px;color:var(--oscuro);font-size:14px;font-weight:700;cursor:pointer;">+ Agregar Meta de Negocio</button>
+      <button onclick="agregarCompromiso('negocio')" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:13px;color:var(--oscuro);font-size:14px;font-weight:700;cursor:pointer;">+ Agregar Meta de Negocio</button>
     </div>
   </div>
 
@@ -1292,8 +1292,6 @@
   // manualmente con el sobrante de Inversión/Colchón (no con el sueldo).
   let compromisosNegocio = JSON.parse(localStorage.getItem('bajon_compromisos_negocio') || '[]');
   function guardarCompromisosNegocio() { localStorage.setItem('bajon_compromisos_negocio', JSON.stringify(compromisosNegocio)); }
-  let _tipoCompromisoNegocioSel = 'meta';
-  let _tipoCompromisoSel = 'meta';
 
   // ── STORAGE HELPERS ──
   function guardarMov(){ localStorage.setItem('bajon_mov', JSON.stringify(movimientos)); }
@@ -1395,7 +1393,7 @@
     });
     if (key === 'graficas') renderGraficas();
     if (key === 'historico') renderGraficasHistoricas();
-    if (key === 'negocio') renderTabCompromisosNegocio();
+    if (key === 'negocio') renderTabCompromisos('negocio');
   }
 
   // ── DINERO: disponible hoy + resumen + estado + distribución + compromisos + ahorros, todo en una pantalla ──
@@ -1403,7 +1401,7 @@
     renderResumen();
     renderEstadoCuenta();
     renderDistribucion();
-    renderTabCompromisos();
+    renderTabCompromisos('personal');
     renderTabAhorros();
     renderDisponibleHoy();
   }
@@ -2766,23 +2764,73 @@
     guardarFn();
     renderFn();
   }
-  function toggleExcluirCompromisoHoy(id) {
-    const comp = compromisos.find(c => c.id === id);
+  // ════════════════════════════════════════════════════
+  // COMPROMISOS — motor único para Personales y de Negocio
+  // Misma implementación de código para ambos tipos ('personal' | 'negocio').
+  // El dinero, el storage y las pestañas siguen 100% separados: cada tipo tiene
+  // su propio array (compromisos vs compromisosNegocio), su propio localStorage
+  // y su propia UI — solo el CÓDIGO que los mueve es compartido.
+  // ════════════════════════════════════════════════════
+  const COMPROMISOS_CONFIG = {
+    personal: {
+      getLista: () => compromisos,
+      setLista: (v) => { compromisos = v; },
+      guardar: () => guardarCompromisos(),
+      permiteSinConfigurar: true,     // se puede crear solo con nombre; se configura después
+      usarSelectorPosicion: true,     // el usuario elige dónde entra en la fila de prioridad
+      horizonteMetaSinFecha: false,   // sin fecha límite = se queda sin fecha
+      idListaEl: 'compromisos-lista',
+      idNombreInput: 'comp-nombre-input',
+      idPosicionInput: 'comp-posicion-input',
+      idBtnMeta: 'btn-comp-meta', idBtnRecurrente: 'btn-comp-recurrente',
+      idCamposMeta: 'comp-campos-meta', idCamposRecurrente: 'comp-campos-recurrente',
+      idMetaTotal: 'comp-meta-total', idMetaPagado: 'comp-meta-pagado', idMetaFecha: 'comp-meta-fecha', idMetaDias: 'comp-meta-dias',
+      idRecMonto: 'comp-rec-monto', idRecCiclo: 'comp-rec-ciclo',
+      prefixAbonoExterno: 'abono-ext-',
+      labelJuntadoPagado: 'Pagado',
+      unidadMontoFijo: 'diario',
+      msgAgregado: (nombre, configurado) => '✅ Compromiso "' + nombre + '" agregado' + (configurado ? '' : ' — configúralo cuando quieras'),
+      msgEliminado: '🗑️ Compromiso eliminado',
+      msgSinNombre: '⚠️ Escribe el nombre del compromiso',
+    },
+    negocio: {
+      getLista: () => compromisosNegocio,
+      setLista: (v) => { compromisosNegocio = v; },
+      guardar: () => guardarCompromisosNegocio(),
+      permiteSinConfigurar: false,    // las metas de negocio se configuran completas al crearlas
+      usarSelectorPosicion: false,    // siempre entran al final de la fila
+      horizonteMetaSinFecha: true,    // sin fecha límite = horizonte de 1 año (solo para que el motor calcule sugerencia)
+      idListaEl: 'negocio-lista',
+      idNombreInput: 'neg-nombre-input',
+      idPosicionInput: null,
+      idBtnMeta: 'btn-neg-meta', idBtnRecurrente: 'btn-neg-recurrente',
+      idCamposMeta: 'neg-campos-meta', idCamposRecurrente: 'neg-campos-recurrente',
+      idMetaTotal: 'neg-meta-total', idMetaPagado: 'neg-meta-pagado', idMetaFecha: 'neg-meta-fecha', idMetaDias: null,
+      idRecMonto: 'neg-rec-monto', idRecCiclo: 'neg-rec-ciclo',
+      prefixAbonoExterno: 'abono-neg-ext-',
+      labelJuntadoPagado: 'Juntado',
+      unidadMontoFijo: 'por reparto',
+      msgAgregado: (nombre) => '✅ Meta de negocio "' + nombre + '" agregada',
+      msgEliminado: '🗑️ Meta de negocio eliminada',
+      msgSinNombre: '⚠️ Escribe el nombre de la meta',
+    }
+  };
+  let _tipoCompromisoSelPorTipo = { personal: 'meta', negocio: 'meta' };
+
+  function toggleExcluirCompromisoHoy(tipo, id) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    const comp = cfg.getLista().find(c => c.id === id);
     if (!comp) return;
-    toggleExcluirHoy(comp, guardarCompromisos, renderTabCompromisos);
+    toggleExcluirHoy(comp, cfg.guardar, () => renderTabCompromisos(tipo));
   }
-  function toggleExcluirCompromisoNegocioHoy(id) {
-    const comp = compromisosNegocio.find(c => c.id === id);
-    if (!comp) return;
-    toggleExcluirHoy(comp, guardarCompromisosNegocio, renderTabCompromisosNegocio);
-  }
+
   // HTML reutilizable del switch "Incluido hoy / Saltado hoy" (usado en Compromisos y Metas de Negocio).
-  function toggleHoyHtml(comp, toggleFn) {
+  function toggleHoyHtml(comp, tipo) {
     const excluido = estaExcluidoHoy(comp);
     if (excluido) {
-      return `<button onclick="${toggleFn}(${comp.id})" style="width:100%;background:rgba(255,255,255,0.04);border:1.5px dashed #666;border-radius:8px;padding:8px;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;">⏭️ Saltado hoy — no entra al reparto. Toca para incluirlo.</button>`;
+      return `<button onclick="toggleExcluirCompromisoHoy('${tipo}',${comp.id})" style="width:100%;background:rgba(255,255,255,0.04);border:1.5px dashed #666;border-radius:8px;padding:8px;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;">⏭️ Saltado hoy — no entra al reparto. Toca para incluirlo.</button>`;
     }
-    return `<button onclick="${toggleFn}(${comp.id})" style="width:100%;background:rgba(76,217,100,0.08);border:1.5px solid var(--verde);border-radius:8px;padding:8px;color:var(--verde);font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;">✅ Incluido hoy. Toca para saltarlo solo hoy.</button>`;
+    return `<button onclick="toggleExcluirCompromisoHoy('${tipo}',${comp.id})" style="width:100%;background:rgba(76,217,100,0.08);border:1.5px solid var(--verde);border-radius:8px;padding:8px;color:var(--verde);font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;">✅ Incluido hoy. Toca para saltarlo solo hoy.</button>`;
   }
 
   // Calcula el reparto completo de HOY: en orden de prioridad, cuánto le toca a cada compromiso
@@ -2834,7 +2882,7 @@
     const v = parseFloat(valor);
     compromisosMinimoGarantizado = (!isNaN(v) && v >= 0) ? v : 0;
     localStorage.setItem('bajon_compromisos_minimo', compromisosMinimoGarantizado);
-    renderTabCompromisos();
+    renderTabCompromisos('personal');
   }
 
   // Motor de reparto de Compromisos personales:
@@ -2891,14 +2939,13 @@
   }
 
   // HTML reutilizable del input de "monto fijo diario" (usado en Compromisos y en Metas de Negocio).
-  // updateFn es el nombre de la función a llamar onchange (string), para reusar en ambos sistemas.
-  function montoFijoInputHtml(comp, sugerido, updateFn) {
-    updateFn = updateFn || 'actualizarMontoFijoCompromiso';
+  function montoFijoInputHtml(comp, sugerido, tipo) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
     const tieneFijo = comp.montoFijo > 0;
     return `<div style="background:rgba(245,200,66,0.06);border:1px dashed var(--amarillo);border-radius:8px;padding:8px 10px;">
-      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">💵 Monto fijo diario (pactado)</div>
+      <div style="font-size:10px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">💵 Monto fijo ${cfg.unidadMontoFijo} (pactado)</div>
       <input type="number" min="0" inputmode="decimal" placeholder="Sugerido: $${sugerido.toFixed(0)}" value="${tieneFijo?comp.montoFijo:''}"
-        onchange="${updateFn}(${comp.id},this.value)"
+        onchange="actualizarMontoFijoCompromiso('${tipo}',${comp.id},this.value)"
         style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:8px 12px;color:var(--amarillo);font-size:15px;font-weight:700;text-align:center;outline:none;">
       <div style="font-size:10px;color:var(--gris);margin-top:4px;text-align:center;">${tieneFijo?'🔒 Fijo — no cambia solo hasta que tú lo edites.':'Vacío = se calcula automático cada día (puede bajar al abonar).'}</div>
     </div>`;
@@ -2906,13 +2953,15 @@
 
   // HTML reutilizable del bloque de "abono externo" — dinero de tu bolsillo, no del sueldo ni del negocio.
   // No genera gasto ni toca la distribución; solo suma directo al progreso del compromiso.
-  function abonoExternoHtml(id, fnAbono, prefixId) {
+  function abonoExternoHtml(comp, tipo) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    const prefixId = cfg.prefixAbonoExterno;
     return `<div style="background:rgba(76,217,100,0.05);border:1px dashed var(--verde);border-radius:8px;padding:8px 10px;margin-top:8px;">
       <div style="font-size:10px;color:var(--gris);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">💵 Abono externo (de tu bolsillo)</div>
       <div style="display:flex;gap:6px;align-items:center;">
-        <input type="number" id="${prefixId}${id}" min="0" inputmode="decimal" placeholder="$0"
+        <input type="number" id="${prefixId}${comp.id}" min="0" inputmode="decimal" placeholder="$0"
           style="flex:1;background:var(--oscuro);border:1px solid var(--verde);border-radius:8px;padding:8px 10px;color:var(--verde);font-size:15px;font-weight:700;text-align:center;outline:none;">
-        <button onclick="${fnAbono}(${id})" style="background:var(--verde);border:none;border-radius:8px;padding:8px 14px;color:var(--oscuro);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Abonar</button>
+        <button onclick="abonarExternoCompromiso('${tipo}',${comp.id})" style="background:var(--verde);border:none;border-radius:8px;padding:8px 14px;color:var(--oscuro);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Abonar</button>
       </div>
       <div style="font-size:10px;color:var(--gris);margin-top:4px;">No descuenta del sueldo ni del negocio — va directo al compromiso.</div>
     </div>`;
@@ -2920,6 +2969,7 @@
 
   // HTML del botón "Abonar a este compromiso": en un solo paso, descuenta del sueldo disponible
   // de hoy Y lo registra como pago del compromiso (antes había que hacerlo en dos pasos).
+  // Es exclusivo de Compromisos personales — de Negocio no existe "sueldo", se manda manualmente.
   // atrasoSugerido (opcional) precarga el input con el monto de atraso pendiente, para "ponerse al corriente".
   function abonoDesdeSueldoHtml(id, atrasoSugerido) {
     const prefill = (atrasoSugerido && atrasoSugerido > 0.5) ? atrasoSugerido.toFixed(0) : '';
@@ -2934,8 +2984,8 @@
     </div>`;
   }
 
-  // Abona a un compromiso directamente desde el sueldo disponible de hoy: descuenta el sueldo
-  // (como gasto personal) Y registra el pago del compromiso, en un solo paso.
+  // Abona a un compromiso PERSONAL directamente desde el sueldo disponible de hoy: descuenta el sueldo
+  // (como gasto personal) Y registra el pago del compromiso, en un solo paso. No aplica a Negocio.
   function abonarDesdeSueldoCompromiso(id) {
     const comp = compromisos.find(c => c.id === id);
     if (!comp) return;
@@ -2966,16 +3016,18 @@
     guardarCompromisos();
     actualizarHeaderTotal();
     renderDistribucion();
-    renderTabCompromisos();
+    renderTabCompromisos('personal');
   }
 
-  function selTipoCompromiso(tipo) {
-    _tipoCompromisoSel = tipo;
-    const bM = document.getElementById('btn-comp-meta');
-    const bR = document.getElementById('btn-comp-recurrente');
-    const wM = document.getElementById('comp-campos-meta');
-    const wR = document.getElementById('comp-campos-recurrente');
-    if (tipo === 'meta') {
+  function selTipoCompromiso(tipo, subtipo) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    _tipoCompromisoSelPorTipo[tipo] = subtipo;
+    const bM = document.getElementById(cfg.idBtnMeta);
+    const bR = document.getElementById(cfg.idBtnRecurrente);
+    const wM = document.getElementById(cfg.idCamposMeta);
+    const wR = document.getElementById(cfg.idCamposRecurrente);
+    if (!bM || !bR || !wM || !wR) return;
+    if (subtipo === 'meta') {
       bM.style.cssText='flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;';
       bR.style.cssText='flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;';
       wM.style.display='block'; wR.style.display='none';
@@ -2986,9 +3038,10 @@
     }
   }
 
-  // Genera las opciones del selector "¿dónde va en la fila de prioridad?" según los compromisos actuales.
-  function posicionSelectHtml() {
-    const ordenados = compromisos.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
+  // Genera las opciones del selector "¿dónde va en la fila de prioridad?" (solo Compromisos personales).
+  function posicionSelectHtml(tipo) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    const ordenados = cfg.getLista().slice().sort((a,b) => (a.orden||0) - (b.orden||0));
     let html = `<option value="start">🥇 Primero (máxima prioridad)</option>`;
     ordenados.forEach(c => { html += `<option value="${c.id}">Antes de "${c.nombre}"</option>`; });
     html += `<option value="end" selected>Al final (menor prioridad)</option>`;
@@ -2996,8 +3049,12 @@
   }
 
   // Inserta un compromiso nuevo en la posición elegida por el usuario y renumera las prioridades.
-  function insertarCompromisoEnPosicion(nuevo, posValor) {
-    const ordenados = compromisos.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
+  // Solo se usa cuando cfg.usarSelectorPosicion es true (Compromisos personales); Negocio siempre
+  // agrega al final (ver agregarCompromiso).
+  function insertarCompromisoEnPosicion(tipo, nuevo, posValor) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    const lista = cfg.getLista();
+    const ordenados = lista.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
     let idx;
     if (posValor === 'start') idx = 0;
     else if (!posValor || posValor === 'end') idx = ordenados.length;
@@ -3007,52 +3064,77 @@
     }
     ordenados.splice(idx, 0, nuevo);
     ordenados.forEach((c, i) => { c.orden = i + 1; });
-    compromisos.push(nuevo);
+    lista.push(nuevo);
   }
 
-  // Alta simplificada: solo se exige nombre + lugar en la fila de prioridad.
-  // Monto total, fecha límite, monto por ciclo y días del ciclo quedan OPCIONALES —
-  // se pueden agregar después desde la tarjeta del compromiso (ver configurarMetaCompromiso /
-  // configurarRecurrenteCompromiso). Mientras no estén, el compromiso no entra al reparto.
-  function agregarCompromiso() {
-    const nombre = document.getElementById('comp-nombre-input').value.trim();
-    if (!nombre) { mostrarToast('⚠️ Escribe el nombre del compromiso'); return; }
-    const posSel = document.getElementById('comp-posicion-input');
-    const posValor = posSel ? posSel.value : 'end';
+  // Alta de un compromiso/meta, parametrizada por tipo ('personal' | 'negocio').
+  // Personal: alta simplificada — solo se exige nombre + lugar en la fila de prioridad.
+  //   Monto total, fecha límite, monto por ciclo y días del ciclo quedan OPCIONALES —
+  //   se pueden agregar después desde la tarjeta (ver configurarMetaCompromiso / configurarRecurrenteCompromiso).
+  //   Mientras no estén, el compromiso no entra al reparto.
+  // Negocio: se exige el total (o monto por ciclo) desde el alta; siempre entra al final de la fila.
+  function agregarCompromiso(tipo) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    const lista = cfg.getLista();
+    const nombre = document.getElementById(cfg.idNombreInput).value.trim();
+    if (!nombre) { mostrarToast(cfg.msgSinNombre); return; }
+    const subtipo = _tipoCompromisoSelPorTipo[tipo];
 
     let nuevo;
-    if (_tipoCompromisoSel === 'meta') {
-      const total = parseFloat(document.getElementById('comp-meta-total').value) || 0;
-      const pagado = parseFloat(document.getElementById('comp-meta-pagado').value) || 0;
-      const fechaLimite = document.getElementById('comp-meta-fecha').value || '';
-      const diasCuenta = document.getElementById('comp-meta-dias').value;
-      if (total > 0 && pagado > total) { mostrarToast('⚠️ El monto pagado no es válido'); return; }
-      nuevo = { id: Date.now(), nombre, tipo: 'meta', orden: 0, total, pagado, fechaLimite, diasCuenta, montoFijo: 0, historial: [] };
-      document.getElementById('comp-meta-total').value = '';
-      document.getElementById('comp-meta-pagado').value = '';
-      document.getElementById('comp-meta-fecha').value = '';
+    if (subtipo === 'meta') {
+      const total = parseFloat(document.getElementById(cfg.idMetaTotal).value) || 0;
+      const pagado = parseFloat(document.getElementById(cfg.idMetaPagado).value) || 0;
+      let fechaLimite = document.getElementById(cfg.idMetaFecha).value || '';
+
+      if (!cfg.permiteSinConfigurar && (!total || total <= 0)) { mostrarToast('⚠️ Ingresa el total a juntar'); return; }
+      if (pagado < 0 || (total > 0 && pagado > total)) { mostrarToast('⚠️ El monto ' + (cfg.permiteSinConfigurar ? 'pagado' : 'juntado') + ' no es válido'); return; }
+      if (!fechaLimite && cfg.horizonteMetaSinFecha) {
+        // Sin fecha = no hay prisa; se usa 1 año como horizonte solo para que el motor pueda calcular una sugerencia.
+        const d = new Date(); d.setFullYear(d.getFullYear() + 1);
+        fechaLimite = d.toISOString().split('T')[0];
+      }
+
+      const orden = cfg.usarSelectorPosicion ? 0 : lista.reduce((m,c) => Math.max(m, c.orden||0), 0) + 1;
+      const diasCuenta = cfg.idMetaDias ? document.getElementById(cfg.idMetaDias).value : 'todos';
+      nuevo = { id: Date.now(), nombre, tipo: 'meta', orden, total, pagado, fechaLimite, diasCuenta, montoFijo: 0, historial: [] };
+      document.getElementById(cfg.idMetaTotal).value = '';
+      document.getElementById(cfg.idMetaPagado).value = '';
+      document.getElementById(cfg.idMetaFecha).value = '';
     } else {
-      const montoCiclo = parseFloat(document.getElementById('comp-rec-monto').value) || 0;
-      const cicloDias = parseInt(document.getElementById('comp-rec-ciclo').value) || 0;
+      const montoCiclo = parseFloat(document.getElementById(cfg.idRecMonto).value) || 0;
+      const cicloDias = parseInt(document.getElementById(cfg.idRecCiclo).value) || 0;
+      if (!cfg.permiteSinConfigurar) {
+        if (!montoCiclo || montoCiclo <= 0) { mostrarToast('⚠️ Ingresa el monto por ciclo'); return; }
+        if (!cicloDias || cicloDias <= 0) { mostrarToast('⚠️ Ingresa cada cuántos días'); return; }
+      }
+      const orden = cfg.usarSelectorPosicion ? 0 : lista.reduce((m,c) => Math.max(m, c.orden||0), 0) + 1;
       nuevo = {
-        id: Date.now(), nombre, tipo: 'recurrente', orden: 0,
+        id: Date.now(), nombre, tipo: 'recurrente', orden,
         montoCiclo, cicloDias, fechaInicioCiclo: new Date().toISOString().split('T')[0],
         acumuladoCiclo: 0, montoFijo: 0, historial: []
       };
-      document.getElementById('comp-rec-monto').value = '';
-      document.getElementById('comp-rec-ciclo').value = '';
+      document.getElementById(cfg.idRecMonto).value = '';
+      document.getElementById(cfg.idRecCiclo).value = '';
     }
-    document.getElementById('comp-nombre-input').value = '';
+    document.getElementById(cfg.idNombreInput).value = '';
 
-    insertarCompromisoEnPosicion(nuevo, posValor);
-    guardarCompromisos();
-    renderTabCompromisos();
-    mostrarToast('✅ Compromiso "' + nombre + '" agregado' + (compromisoConfigurado(nuevo) ? '' : ' — configúralo cuando quieras'));
+    if (cfg.usarSelectorPosicion) {
+      const posSel = document.getElementById(cfg.idPosicionInput);
+      const posValor = posSel ? posSel.value : 'end';
+      insertarCompromisoEnPosicion(tipo, nuevo, posValor);
+    } else {
+      lista.push(nuevo);
+    }
+    cfg.guardar();
+    renderTabCompromisos(tipo);
+    mostrarToast(cfg.msgAgregado(nombre, compromisoConfigurado(nuevo)));
   }
 
   // Guarda el monto total y la fecha límite de un compromiso tipo meta creado sin configurar.
-  function configurarMetaCompromiso(id) {
-    const comp = compromisos.find(c => c.id === id);
+  // Solo aplica a tipos que permiten alta sin configurar (Compromisos personales).
+  function configurarMetaCompromiso(tipo, id) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    const comp = cfg.getLista().find(c => c.id === id);
     if (!comp) return;
     const total = parseFloat(document.getElementById('cfg-meta-total-' + id).value);
     const fechaLimite = document.getElementById('cfg-meta-fecha-' + id).value;
@@ -3062,14 +3144,15 @@
     comp.total = total;
     comp.fechaLimite = fechaLimite;
     comp.diasCuenta = diasCuenta;
-    guardarCompromisos();
-    renderTabCompromisos();
+    cfg.guardar();
+    renderTabCompromisos(tipo);
     mostrarToast('✅ "' + comp.nombre + '" configurado — ya entra al reparto');
   }
 
   // Guarda el monto por ciclo y los días del ciclo de un compromiso recurrente creado sin configurar.
-  function configurarRecurrenteCompromiso(id) {
-    const comp = compromisos.find(c => c.id === id);
+  function configurarRecurrenteCompromiso(tipo, id) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    const comp = cfg.getLista().find(c => c.id === id);
     if (!comp) return;
     const montoCiclo = parseFloat(document.getElementById('cfg-rec-monto-' + id).value);
     const cicloDias = parseInt(document.getElementById('cfg-rec-ciclo-' + id).value);
@@ -3079,31 +3162,35 @@
     comp.cicloDias = cicloDias;
     comp.fechaInicioCiclo = new Date().toISOString().split('T')[0];
     comp.acumuladoCiclo = 0;
-    guardarCompromisos();
-    renderTabCompromisos();
+    cfg.guardar();
+    renderTabCompromisos(tipo);
     mostrarToast('✅ "' + comp.nombre + '" configurado — ya entra al reparto');
   }
 
-  // Define o quita el "monto fijo diario" de un compromiso. Una vez puesto, NUNCA se recalcula
-  // solo — se queda igual hasta que el usuario lo vuelva a editar a mano. Vacío = vuelve a automático.
-  function actualizarMontoFijoCompromiso(id, valor) {
-    const comp = compromisos.find(c => c.id === id);
+  // Define o quita el "monto fijo" (diario en Personal, por reparto en Negocio) de un compromiso.
+  // Una vez puesto, NUNCA se recalcula solo — se queda igual hasta que el usuario lo vuelva a editar
+  // a mano. Vacío = vuelve a automático.
+  function actualizarMontoFijoCompromiso(tipo, id, valor) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    const comp = cfg.getLista().find(c => c.id === id);
     if (!comp) return;
     const v = parseFloat(valor);
     comp.montoFijo = (!isNaN(v) && v > 0) ? v : 0;
-    guardarCompromisos();
-    renderTabCompromisos();
-    mostrarToast(comp.montoFijo > 0 ? '🔒 Monto fijo diario: $' + comp.montoFijo.toFixed(0) : '✅ Vuelve a calcularse automático');
+    cfg.guardar();
+    renderTabCompromisos(tipo);
+    mostrarToast(comp.montoFijo > 0 ? '🔒 Monto fijo ' + cfg.unidadMontoFijo + ': $' + comp.montoFijo.toFixed(0) : '✅ Vuelve a calcularse automático');
   }
 
-  function eliminarCompromiso(id) {
-    compromisos = compromisos.filter(c => c.id !== id);
-    guardarCompromisos();
-    renderTabCompromisos();
-    mostrarToast('🗑️ Compromiso eliminado');
+  function eliminarCompromiso(tipo, id) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    cfg.setLista(cfg.getLista().filter(c => c.id !== id));
+    cfg.guardar();
+    renderTabCompromisos(tipo);
+    mostrarToast(cfg.msgEliminado);
   }
 
-  // Migra un Ahorro existente (ej. "Moto") a un Compromiso tipo meta, conservando lo ya pagado.
+  // Migra un Ahorro existente (ej. "Moto") a un Compromiso PERSONAL tipo meta, conservando lo ya pagado.
+  // Es una operación exclusiva de Compromisos personales (Ahorros no tiene equivalente en Negocio).
   function migrarAhorroACompromiso(ahorroId, total, fechaLimite, diasCuenta) {
     const a = ahorros.find(x => x.id === ahorroId);
     if (!a) { mostrarToast('⚠️ No se encontró ese ahorro'); return; }
@@ -3118,7 +3205,7 @@
     ahorros = ahorros.filter(x => x.id !== ahorroId);
     guardarAhorros();
     guardarCompromisos();
-    renderTabCompromisos();
+    renderTabCompromisos('personal');
     renderTabAhorros();
     mostrarToast('✅ "' + a.nombre + '" migrado a Compromisos con $' + (a.acumulado||0).toFixed(0) + ' ya pagados');
   }
@@ -3149,75 +3236,21 @@
     document.getElementById('overlay-migrar-ahorro').classList.add('visible');
   }
 
-  function moverCompromiso(id, dir) {
-    const ordenados = compromisos.slice().sort((a,b)=>(a.orden||0)-(b.orden||0));
+  function moverCompromiso(tipo, id, dir) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    const lista = cfg.getLista();
+    const ordenados = lista.slice().sort((a,b)=>(a.orden||0)-(b.orden||0));
     const idx = ordenados.findIndex(c => c.id === id);
     const swapIdx = idx + dir;
     if (idx === -1 || swapIdx < 0 || swapIdx >= ordenados.length) return;
     const tmp = ordenados[idx].orden;
     ordenados[idx].orden = ordenados[swapIdx].orden;
     ordenados[swapIdx].orden = tmp;
-    guardarCompromisos();
-    renderTabCompromisos();
+    cfg.guardar();
+    renderTabCompromisos(tipo);
   }
 
   // Registra un movimiento en el historial propio del compromiso (igual patrón que ahorros)
-  // Depósito externo: el usuario mete dinero de su bolsillo directamente a un compromiso,
-  // sin tocar el sueldo ni la distribución del negocio. Solo suma al saldo del compromiso.
-  function abonarExternoCompromiso(id) {
-    const comp = compromisos.find(c => c.id === id);
-    if (!comp) return;
-    const input = document.getElementById('abono-ext-' + id);
-    if (!input) return;
-    const monto = parseFloat(input.value);
-    if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa un monto mayor a 0'); return; }
-    registrarMovimientoCompromiso(comp, monto, '💵 Abono externo');
-    if (comp.tipo === 'meta') {
-      comp.pagado = (comp.pagado || 0) + monto;
-      if (comp.pagado >= comp.total - 0.005) {
-        mostrarToast('🎉 ¡' + comp.nombre + ' completado!');
-        compromisos = compromisos.filter(c => c.id !== id);
-        guardarCompromisos();
-        renderTabCompromisos();
-        return;
-      }
-    } else {
-      comp.acumuladoCiclo = (comp.acumuladoCiclo || 0) + monto;
-      sincronizarCicloRecurrente(comp);
-    }
-    input.value = '';
-    guardarCompromisos();
-    renderTabCompromisos();
-    mostrarToast('✅ Abono externo de $' + monto.toFixed(0) + ' registrado en ' + comp.nombre);
-  }
-
-  function abonarExternoCompromisoNegocio(id) {
-    const comp = compromisosNegocio.find(c => c.id === id);
-    if (!comp) return;
-    const input = document.getElementById('abono-neg-ext-' + id);
-    if (!input) return;
-    const monto = parseFloat(input.value);
-    if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa un monto mayor a 0'); return; }
-    registrarMovimientoCompromiso(comp, monto, '💵 Abono externo');
-    if (comp.tipo === 'meta') {
-      comp.pagado = (comp.pagado || 0) + monto;
-      if (comp.pagado >= comp.total - 0.005) {
-        mostrarToast('🎉 ¡' + comp.nombre + ' completado!');
-        compromisosNegocio = compromisosNegocio.filter(c => c.id !== id);
-        guardarCompromisosNegocio();
-        renderTabCompromisosNegocio();
-        return;
-      }
-    } else {
-      comp.acumuladoCiclo = (comp.acumuladoCiclo || 0) + monto;
-      sincronizarCicloRecurrente(comp);
-    }
-    input.value = '';
-    guardarCompromisosNegocio();
-    renderTabCompromisosNegocio();
-    mostrarToast('✅ Abono externo de $' + monto.toFixed(0) + ' registrado en ' + comp.nombre);
-  }
-
   function registrarMovimientoCompromiso(comp, monto, concepto) {
     if (!comp.historial) comp.historial = [];
     const now = new Date();
@@ -3228,10 +3261,43 @@
     });
   }
 
-  // Aplica el reparto de hoy: descuenta cada compromiso del sueldo (vía gasto personal, igual que ahorros),
-  // marca metas completadas para auto-eliminarlas, y reinicia ciclos recurrentes vencidos.
-  // Respeta los montos que el usuario haya AJUSTADO A MANO en la propuesta de hoy (el dueño mantiene
-  // el control final) — si no los tocó, usa la propuesta automática de calcularRepartoCascadaCompromisos.
+  // Depósito externo: el usuario mete dinero de su bolsillo directamente a un compromiso,
+  // sin tocar el sueldo ni la distribución del negocio. Solo suma al saldo del compromiso.
+  function abonarExternoCompromiso(tipo, id) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    const lista = cfg.getLista();
+    const comp = lista.find(c => c.id === id);
+    if (!comp) return;
+    const input = document.getElementById(cfg.prefixAbonoExterno + id);
+    if (!input) return;
+    const monto = parseFloat(input.value);
+    if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa un monto mayor a 0'); return; }
+    registrarMovimientoCompromiso(comp, monto, '💵 Abono externo');
+    if (comp.tipo === 'meta') {
+      comp.pagado = (comp.pagado || 0) + monto;
+      if (comp.pagado >= comp.total - 0.005) {
+        mostrarToast('🎉 ¡' + comp.nombre + ' completado!');
+        cfg.setLista(lista.filter(c => c.id !== id));
+        cfg.guardar();
+        renderTabCompromisos(tipo);
+        return;
+      }
+    } else {
+      comp.acumuladoCiclo = (comp.acumuladoCiclo || 0) + monto;
+      sincronizarCicloRecurrente(comp);
+    }
+    input.value = '';
+    cfg.guardar();
+    renderTabCompromisos(tipo);
+    mostrarToast('✅ Abono externo de $' + monto.toFixed(0) + ' registrado en ' + comp.nombre);
+  }
+
+  // Aplica el reparto de hoy de Compromisos PERSONALES: descuenta cada compromiso del sueldo
+  // (vía gasto personal, igual que ahorros), marca metas completadas para auto-eliminarlas, y
+  // reinicia ciclos recurrentes vencidos. Respeta los montos que el usuario haya AJUSTADO A MANO
+  // en la propuesta de hoy (el dueño mantiene el control final) — si no los tocó, usa la propuesta
+  // automática de calcularRepartoCascadaCompromisos. Es exclusivo de Personal: Negocio se manda a
+  // mano con aplicarRepartoNegocio (no sale automático del sueldo).
   function aplicarCompromisosHoy() {
     const yaAplicadoHoy = compromisos.some(c => (c.historial||[]).some(h => h.fecha === new Date().toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'})));
     if (yaAplicadoHoy) { mostrarToast('⚠️ Ya aplicaste el reparto de hoy'); return; }
@@ -3282,7 +3348,7 @@
     guardarCompromisos();
     actualizarHeaderTotal();
     renderDistribucion();
-    renderTabCompromisos();
+    renderTabCompromisos('personal');
     let msg = '✅ Repartidos $' + totalDescontado.toFixed(0) + ' de tu sueldo';
     if (completados.length) msg += ' · 🎉 ¡' + completados.join(', ') + ' completado!';
     mostrarToast(msg);
@@ -3300,186 +3366,10 @@
 
   // Descarta los ajustes manuales del día y vuelve a mostrar la propuesta automática.
   function restablecerRepartoManual() {
-    renderTabCompromisos();
+    renderTabCompromisos('personal');
     mostrarToast('↺ Propuesta automática restablecida');
   }
 
-  function renderTabCompromisos() {
-    const lista = document.getElementById('compromisos-lista');
-    const hoyBox = document.getElementById('compromisos-hoy-lista');
-    const libreEl = document.getElementById('compromisos-libre-monto');
-    const btnAplicar = document.getElementById('btn-aplicar-compromisos');
-    const msgEl = document.getElementById('compromisos-aplicado-msg');
-    if (!lista) return;
-    selTipoCompromiso(_tipoCompromisoSel);
-    const posSel = document.getElementById('comp-posicion-input');
-    if (posSel) { const prevVal = posSel.value; posSel.innerHTML = posicionSelectHtml(); if ([...posSel.options].some(o=>o.value===prevVal)) posSel.value = prevVal; }
-
-    if (!compromisos.length) {
-      lista.innerHTML = '<div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">Sin compromisos aún. Agrégalos abajo.</div>';
-      hoyBox.innerHTML = '<div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">Agrega un compromiso para ver el reparto de hoy.</div>';
-      if (libreEl) libreEl.textContent = '$' + sueldoDisponibleHoy().toFixed(0);
-      if (btnAplicar) btnAplicar.style.display = 'none';
-      return;
-    }
-
-    const sueldoDisponible = sueldoDisponibleHoy();
-    const { repartos, libre } = calcularRepartoCascadaCompromisos(sueldoDisponible);
-    const hoyLabel = new Date().toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'});
-    const yaAplicadoHoy = compromisos.some(c => (c.historial||[]).some(h => h.fecha === hoyLabel));
-    const sinConfigurar = compromisos.filter(c => !compromisoConfigurado(c)).length;
-
-    // ── Reparto de hoy: propuesta clara + inputs editables (control final del dueño) ──
-    if (!repartos.length) {
-      hoyBox.innerHTML = `<div style="font-size:11px;color:var(--gris);margin-bottom:8px;">Sueldo disponible hoy: <b style="color:var(--amarillo);">$${sueldoDisponible.toFixed(0)}</b></div>
-        <div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">${sinConfigurar ? 'Tienes compromisos sin configurar — agrégales monto/fecha o ciclo para que entren al reparto.' : 'No hay compromisos activos hoy.'}</div>`;
-      if (libreEl) libreEl.textContent = '$' + sueldoDisponible.toFixed(0);
-      if (btnAplicar) btnAplicar.style.display = 'none';
-    } else {
-      const aRepartir = repartos.filter(r => r.asignado > 0.005);
-      const propuestaTxt = aRepartir.length
-        ? `<div style="font-size:13px;color:var(--texto);font-weight:700;margin-bottom:10px;">Hoy: ` + aRepartir.map(r => '$' + r.asignado.toFixed(0) + ' a ' + r.comp.nombre).join(', ') + `</div>`
-        : `<div style="font-size:12px;color:var(--gris);margin-bottom:10px;">Hoy no hay sobrante para repartir.</div>`;
-
-      hoyBox.innerHTML = `<div style="font-size:11px;color:var(--gris);margin-bottom:8px;">Sueldo disponible hoy: <b style="color:var(--amarillo);">$${sueldoDisponible.toFixed(0)}</b></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;background:rgba(245,200,66,0.06);border:1px dashed var(--amarillo);border-radius:8px;padding:8px 10px;">
-          <div style="font-size:10px;color:var(--gris);">💵 Mínimo garantizado por compromiso (ninguno queda en $0)</div>
-          <input type="number" min="0" inputmode="decimal" id="comp-minimo-input" value="${compromisosMinimoGarantizado}" onchange="guardarMinimoGarantizado(this.value)" style="width:64px;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:6px;padding:6px;color:var(--amarillo);font-size:13px;font-weight:700;text-align:center;outline:none;">
-        </div>
-        ${propuestaTxt}` +
-        repartos.map(r => {
-          const tieneAdelanto = r.adelanto > 0.005;
-          const sinNecesidadHoy = r.montoNecesario <= 0.005;
-          const icono = r.esMinimo && !r.cubierto ? '🟡' : (sinNecesidadHoy && !tieneAdelanto && r.asignado <= 0.005) ? '⬜' : (r.cubierto ? '✅' : '🟡');
-          const colorBorde = r.asignado > 0.005 ? 'var(--verde)' : '#444';
-          const etiqueta = r.esMinimo && !r.cubierto ? ' (mínimo)' : (tieneAdelanto ? ' (+adelanto)' : '');
-          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #2a2a3e;font-size:13px;gap:8px;">
-            <span style="flex:1;">${icono} ${r.comp.nombre}${etiqueta}</span>
-            <span style="font-size:10px;color:var(--gris);white-space:nowrap;">${sinNecesidadHoy ? '' : 'sug. $' + r.montoNecesario.toFixed(0)}</span>
-            <input type="number" min="0" inputmode="decimal" id="hoy-monto-${r.comp.id}" value="${r.asignado.toFixed(0)}" oninput="recalcularLibreManual(${sueldoDisponible})" style="width:60px;background:var(--oscuro);border:1px solid ${colorBorde};border-radius:6px;padding:5px;color:var(--texto);font-size:13px;font-weight:700;text-align:center;outline:none;">
-          </div>`;
-        }).join('') +
-        `<div style="text-align:right;margin-top:6px;"><button onclick="restablecerRepartoManual()" style="background:transparent;border:none;color:var(--gris);font-size:11px;text-decoration:underline;cursor:pointer;padding:2px;">↺ Restablecer propuesta automática</button></div>`;
-      if (libreEl) libreEl.textContent = '$' + libre.toFixed(0);
-      if (btnAplicar) btnAplicar.style.display = yaAplicadoHoy ? 'none' : 'block';
-    }
-    if (msgEl) msgEl.textContent = yaAplicadoHoy ? '✅ Ya aplicaste el reparto de hoy' : '';
-
-    // ── Lista de compromisos ordenados ──
-    const ordenados = compromisos.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
-    lista.innerHTML = ordenados.map((comp, idx) => {
-      const historial_mov = (comp.historial||[]).slice().reverse();
-      const histHtml = historial_mov.length ? historial_mov.map(h =>
-        `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2a3e;font-size:12px;">
-          <span style="color:var(--gris);">${h.fecha} ${h.hora||''}</span>
-          <span style="font-weight:700;color:var(--verde);">+$${h.monto.toFixed(0)}</span>
-        </div>`).join('') : '<div style="color:var(--gris);font-size:12px;padding:6px 0;">Sin pagos registrados aún</div>';
-
-      let cuerpo = '';
-      if (!compromisoConfigurado(comp)) {
-        // ── Compromiso creado solo con nombre + prioridad: falta configurarlo ──
-        if (comp.tipo === 'meta') {
-          cuerpo = `
-            <div style="font-size:11px;color:var(--amarillo);margin-bottom:8px;">🎯 Meta · sin configurar todavía — no entra al reparto hasta que le pongas total y fecha.</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px;">
-              <div style="flex:1;">
-                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Total a pagar ($)</div>
-                <input type="number" id="cfg-meta-total-${comp.id}" placeholder="14000" min="0" inputmode="decimal" style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:8px 10px;color:var(--amarillo);font-size:14px;font-weight:700;text-align:center;outline:none;">
-              </div>
-              <div style="flex:1;">
-                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Terminar el día</div>
-                <input type="date" id="cfg-meta-fecha-${comp.id}" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:8px 6px;color:var(--texto);font-size:12px;outline:none;">
-              </div>
-            </div>
-            <select id="cfg-meta-dias-${comp.id}" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:8px;color:var(--texto);font-size:12px;outline:none;margin-bottom:8px;">
-              <option value="todos">Todos los días</option>
-              <option value="habiles">Solo Lun-Vie</option>
-            </select>
-            <button onclick="configurarMetaCompromiso(${comp.id})" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:10px;color:var(--oscuro);font-size:13px;font-weight:700;cursor:pointer;">✅ Guardar configuración</button>`;
-        } else {
-          cuerpo = `
-            <div style="font-size:11px;color:var(--amarillo);margin-bottom:8px;">🔁 Recurrente · sin configurar todavía — no entra al reparto hasta que le pongas monto y ciclo.</div>
-            <div style="display:flex;gap:8px;margin-bottom:8px;">
-              <div style="flex:1;">
-                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Monto por ciclo ($)</div>
-                <input type="number" id="cfg-rec-monto-${comp.id}" placeholder="700" min="0" inputmode="decimal" style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:8px 10px;color:var(--amarillo);font-size:14px;font-weight:700;text-align:center;outline:none;">
-              </div>
-              <div style="flex:1;">
-                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Cada cuántos días</div>
-                <input type="number" id="cfg-rec-ciclo-${comp.id}" placeholder="7" min="1" inputmode="decimal" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:8px 10px;color:var(--texto);font-size:14px;font-weight:700;text-align:center;outline:none;">
-              </div>
-            </div>
-            <button onclick="configurarRecurrenteCompromiso(${comp.id})" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:10px;color:var(--oscuro);font-size:13px;font-weight:700;cursor:pointer;">✅ Guardar configuración</button>`;
-        }
-      } else if (comp.tipo === 'meta') {
-        const falta = Math.max(0, comp.total - comp.pagado);
-        const pctMeta = comp.total > 0 ? Math.min(100, (comp.pagado/comp.total)*100) : 0;
-        const montoHoy = calcularMontoHoyMeta(comp);
-        const sugerido = sugerenciaMontoHoyMeta(comp);
-        const fechaTxt = comp.fechaLimite ? ('vence ' + comp.fechaLimite + ' · ' + (comp.diasCuenta==='habiles'?'Lun-Vie':'todos los días')) : 'sin fecha límite definida';
-        const lineaHoy = estaExcluidoHoy(comp)
-          ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 hoy: $0/día (saltado)</div>`
-          : !comp.fechaLimite
-            ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 sin fecha límite — sin sugerencia diaria automática, pero sigue en la cascada por su total pendiente.</div>`
-            : `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${diasRestantesValidos(comp.fechaLimite, comp.diasCuenta)} días restantes · hoy: $${montoHoy.toFixed(0)}/día</div>`;
-        cuerpo = `
-          ${toggleHoyHtml(comp, 'toggleExcluirCompromisoHoy')}
-          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🎯 Meta · ${fechaTxt}</div>
-          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pctMeta.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
-            <span style="color:var(--gris);">Pagado: <b style="color:var(--verde);">$${comp.pagado.toFixed(0)}</b> / $${comp.total.toFixed(0)}</span>
-            <span style="color:var(--gris);">Faltan: <b style="color:var(--amarillo);">$${falta.toFixed(0)}</b></span>
-          </div>
-          ${lineaHoy}
-          ${montoFijoInputHtml(comp, sugerido)}
-          ${abonoDesdeSueldoHtml(comp.id)}
-          ${abonoExternoHtml(comp.id, 'abonarExternoCompromiso', 'abono-ext-')}`;
-      } else {
-        const info = infoCicloRecurrente(comp);
-        const pctRec = comp.montoCiclo > 0 ? Math.min(100, (info.acumuladoCiclo/comp.montoCiclo)*100) : 0;
-        const montoHoyR = calcularMontoHoyRecurrente(comp);
-        const sugeridoR = sugerenciaMontoHoyRecurrente(comp);
-        const atraso = atrasoRecurrente(comp);
-        const lineaHoyR = estaExcluidoHoy(comp) ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $0/día (saltado)</div>` : `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $${montoHoyR.toFixed(0)}/día</div>`;
-        const lineaAtraso = atraso > 0.5 ? `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">⏳ Atrasado este ciclo: <b>$${atraso.toFixed(0)}</b> — no se suma al pago de hoy, ponte al corriente cuando puedas.</div>` : '';
-        cuerpo = `
-          ${toggleHoyHtml(comp, 'toggleExcluirCompromisoHoy')}
-          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🔁 Recurrente · $${comp.montoCiclo.toFixed(0)} cada ${comp.cicloDias} días</div>
-          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pctRec.toFixed(1)}%;background:var(--morado);border-radius:6px;"></div></div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
-            <span style="color:var(--gris);">Este ciclo: <b style="color:var(--amarillo);">$${info.acumuladoCiclo.toFixed(0)}</b> / $${comp.montoCiclo.toFixed(0)}</span>
-            <span style="color:var(--gris);">Faltan: <b style="color:var(--amarillo);">$${info.falta.toFixed(0)}</b></span>
-          </div>
-          ${lineaHoyR}
-          ${lineaAtraso}
-          ${montoFijoInputHtml(comp, sugeridoR)}
-          ${abonoDesdeSueldoHtml(comp.id, atraso)}
-          ${abonoExternoHtml(comp.id, 'abonarExternoCompromiso', 'abono-ext-')}`;
-      }
-
-      return `<div style="background:var(--medio);border:2px solid #444;border-radius:14px;padding:14px;margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:12px;color:var(--gris);background:var(--oscuro);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;">${idx+1}</span>
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--amarillo);letter-spacing:0.5px;">${comp.nombre}</span>
-          </div>
-          <div style="display:flex;gap:4px;">
-            <button onclick="moverCompromiso(${comp.id},-1)" ${idx===0?'disabled style="opacity:0.3;"':''} style="background:transparent;border:1px solid #444;border-radius:6px;color:var(--gris);font-size:13px;cursor:pointer;padding:3px 8px;">▲</button>
-            <button onclick="moverCompromiso(${comp.id},1)" ${idx===ordenados.length-1?'disabled style="opacity:0.3;"':''} style="background:transparent;border:1px solid #444;border-radius:6px;color:var(--gris);font-size:13px;cursor:pointer;padding:3px 8px;">▼</button>
-            <button onclick="eliminarCompromiso(${comp.id})" style="background:transparent;border:none;color:#555;font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
-          </div>
-        </div>
-        ${cuerpo}
-        <details style="margin-top:10px;"><summary style="font-size:12px;color:var(--amarillo);cursor:pointer;user-select:none;padding:4px 0;">📋 Ver historial (${historial_mov.length})</summary>
-          <div style="margin-top:8px;background:var(--oscuro);border-radius:8px;padding:8px;">${histHtml}</div>
-        </details>
-      </div>`;
-    }).join('');
-  }
-
-  // ════════════════════════════════════════════════════
-  // METAS DE NEGOCIO — sistema separado, mismo motor que Compromisos
-  // ════════════════════════════════════════════════════
   // Cuánto hay disponible HOY en Inversión + Colchón (después de la cascada de gastos de negocio),
   // según se calcula en Distribución. Sirve solo como SUGERENCIA — el usuario decide cuánto mandar.
   function disponibleNegocioHoy() {
@@ -3493,96 +3383,10 @@
     return Math.max(0, (cas.invFinal || 0) + (cas.colchonFinal || 0));
   }
 
-  function selTipoCompromisoNegocio(tipo) {
-    _tipoCompromisoNegocioSel = tipo;
-    const bM = document.getElementById('btn-neg-meta');
-    const bR = document.getElementById('btn-neg-recurrente');
-    const wM = document.getElementById('neg-campos-meta');
-    const wR = document.getElementById('neg-campos-recurrente');
-    if (tipo === 'meta') {
-      bM.style.cssText='flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;';
-      bR.style.cssText='flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;';
-      wM.style.display='block'; wR.style.display='none';
-    } else {
-      bR.style.cssText='flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--morado);background:rgba(245,200,66,0.15);color:var(--morado);font-size:12px;font-weight:700;cursor:pointer;';
-      bM.style.cssText='flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;';
-      wR.style.display='block'; wM.style.display='none';
-    }
-  }
-
-  function agregarCompromisoNegocio() {
-    const nombre = document.getElementById('neg-nombre-input').value.trim();
-    if (!nombre) { mostrarToast('⚠️ Escribe el nombre de la meta'); return; }
-    const maxOrden = compromisosNegocio.reduce((m,c) => Math.max(m, c.orden||0), 0);
-    if (_tipoCompromisoNegocioSel === 'meta') {
-      const total = parseFloat(document.getElementById('neg-meta-total').value);
-      const pagado = parseFloat(document.getElementById('neg-meta-pagado').value) || 0;
-      let fechaLimite = document.getElementById('neg-meta-fecha').value;
-      if (!total || total <= 0) { mostrarToast('⚠️ Ingresa el total a juntar'); return; }
-      if (pagado < 0 || pagado > total) { mostrarToast('⚠️ El monto juntado no es válido'); return; }
-      if (!fechaLimite) {
-        // Sin fecha = no hay prisa; se usa 1 año como horizonte solo para que el motor pueda calcular una sugerencia.
-        const d = new Date(); d.setFullYear(d.getFullYear() + 1);
-        fechaLimite = d.toISOString().split('T')[0];
-      }
-      compromisosNegocio.push({
-        id: Date.now(), nombre, tipo: 'meta', orden: maxOrden + 1,
-        total, pagado, fechaLimite, diasCuenta: 'todos', montoFijo: 0, historial: []
-      });
-      document.getElementById('neg-meta-total').value = '';
-      document.getElementById('neg-meta-pagado').value = '';
-      document.getElementById('neg-meta-fecha').value = '';
-    } else {
-      const montoCiclo = parseFloat(document.getElementById('neg-rec-monto').value);
-      const cicloDias = parseInt(document.getElementById('neg-rec-ciclo').value);
-      if (!montoCiclo || montoCiclo <= 0) { mostrarToast('⚠️ Ingresa el monto por ciclo'); return; }
-      if (!cicloDias || cicloDias <= 0) { mostrarToast('⚠️ Ingresa cada cuántos días'); return; }
-      compromisosNegocio.push({
-        id: Date.now(), nombre, tipo: 'recurrente', orden: maxOrden + 1,
-        montoCiclo, cicloDias, fechaInicioCiclo: new Date().toISOString().split('T')[0],
-        acumuladoCiclo: 0, montoFijo: 0, historial: []
-      });
-      document.getElementById('neg-rec-monto').value = '';
-      document.getElementById('neg-rec-ciclo').value = '';
-    }
-    document.getElementById('neg-nombre-input').value = '';
-    guardarCompromisosNegocio();
-    renderTabCompromisosNegocio();
-    mostrarToast('✅ Meta de negocio "' + nombre + '" agregada');
-  }
-
-  function eliminarCompromisoNegocio(id) {
-    compromisosNegocio = compromisosNegocio.filter(c => c.id !== id);
-    guardarCompromisosNegocio();
-    renderTabCompromisosNegocio();
-    mostrarToast('🗑️ Meta de negocio eliminada');
-  }
-
-  function moverCompromisoNegocio(id, dir) {
-    const ordenados = compromisosNegocio.slice().sort((a,b)=>(a.orden||0)-(b.orden||0));
-    const idx = ordenados.findIndex(c => c.id === id);
-    const swapIdx = idx + dir;
-    if (idx === -1 || swapIdx < 0 || swapIdx >= ordenados.length) return;
-    const tmp = ordenados[idx].orden;
-    ordenados[idx].orden = ordenados[swapIdx].orden;
-    ordenados[swapIdx].orden = tmp;
-    guardarCompromisosNegocio();
-    renderTabCompromisosNegocio();
-  }
-
-  function actualizarMontoFijoCompromisoNegocio(id, valor) {
-    const comp = compromisosNegocio.find(c => c.id === id);
-    if (!comp) return;
-    const v = parseFloat(valor);
-    comp.montoFijo = (!isNaN(v) && v > 0) ? v : 0;
-    guardarCompromisosNegocio();
-    renderTabCompromisosNegocio();
-    mostrarToast(comp.montoFijo > 0 ? '🔒 Monto fijo por reparto: $' + comp.montoFijo.toFixed(0) : '✅ Vuelve a calcularse automático');
-  }
-
   // Aplica el monto que el usuario decidió mandar HOY, repartido en cascada de prioridad
   // entre las metas de negocio. Se registra como gasto de negocio (🏗️) — por eso SÍ descuenta
-  // de Inversión/Colchón la próxima vez que se calcule la Distribución del día.
+  // de Inversión/Colchón la próxima vez que se calcule la Distribución del día. Es exclusivo de
+  // Negocio: Personal se aplica automático desde el sueldo con aplicarCompromisosHoy.
   function aplicarRepartoNegocio() {
     const monto = parseFloat(document.getElementById('negocio-monto-input').value);
     if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa cuánto quieres mandar'); return; }
@@ -3615,86 +3419,231 @@
     document.getElementById('negocio-monto-input').value = '';
     actualizarHeaderTotal();
     renderDistribucion();
-    renderTabCompromisosNegocio();
+    renderTabCompromisos('negocio');
     let msg = '✅ Repartidos $' + totalRepartido.toFixed(0) + ' a metas de negocio';
     if (completados.length) msg += ' · 🎉 ¡' + completados.join(', ') + ' completada!';
     mostrarToast(msg);
   }
 
-  function renderTabCompromisosNegocio() {
-    const lista = document.getElementById('negocio-lista');
-    const disponibleEl = document.getElementById('negocio-disponible-hoy');
-    const previewEl = document.getElementById('negocio-preview-lista');
-    const montoInput = document.getElementById('negocio-monto-input');
-    if (!lista) return;
-    selTipoCompromisoNegocio(_tipoCompromisoNegocioSel);
+  // Render único para ambas pestañas de Compromisos, parametrizado por tipo ('personal' | 'negocio').
+  // La sección "hoy" (arriba) es distinta a propósito, porque el flujo de negocio real es distinto
+  // (Personal se reparte automático del sueldo día a día; Negocio se manda a mano un monto elegido):
+  //  - Personal: propuesta automática (cascada del sueldo) con inputs editables + botón "Aplicar reparto de hoy".
+  //  - Negocio: input de "cuánto quiero mandar hoy" + vista previa del reparto + botón dentro del HTML fijo.
+  // La lista de tarjetas de compromisos, en cambio, comparte una sola implementación para ambos tipos.
+  function renderTabCompromisos(tipo) {
+    const cfg = COMPROMISOS_CONFIG[tipo];
+    const lista = cfg.getLista();
+    const listaEl = document.getElementById(cfg.idListaEl);
+    if (!listaEl) return;
+    selTipoCompromiso(tipo, _tipoCompromisoSelPorTipo[tipo]);
 
-    const disponible = disponibleNegocioHoy();
-    if (disponibleEl) disponibleEl.textContent = '$' + disponible.toFixed(0);
-    if (montoInput) montoInput.placeholder = disponible > 0 ? disponible.toFixed(0) : '0';
-
-    if (!compromisosNegocio.length) {
-      lista.innerHTML = '<div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">Sin metas de negocio aún. Agrégalas abajo.</div>';
-      if (previewEl) previewEl.innerHTML = '';
-      return;
+    if (tipo === 'personal') {
+      const posSel = document.getElementById(cfg.idPosicionInput);
+      if (posSel) { const prevVal = posSel.value; posSel.innerHTML = posicionSelectHtml(tipo); if ([...posSel.options].some(o=>o.value===prevVal)) posSel.value = prevVal; }
     }
 
-    // ── Vista previa del reparto según el monto escrito ──
-    const montoAReparir = parseFloat(montoInput?.value) || 0;
-    if (previewEl) {
-      if (montoAReparir > 0) {
-        const { repartos, libre } = calcularRepartoCompromisosHoy(montoAReparir, compromisosNegocio);
-        previewEl.innerHTML = repartos.filter(r => r.asignado > 0.005 || r.montoNecesario > 0.005).map(r => {
-          const colorMonto = r.cubierto ? 'var(--verde)' : 'var(--amarillo)';
-          return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2a3e;">
-            <span>${r.comp.nombre}</span>
-            <span style="font-weight:700;color:${colorMonto};">+$${r.asignado.toFixed(0)}</span>
-          </div>`;
-        }).join('') + (libre > 0.005 ? `<div style="font-size:11px;color:var(--gris);margin-top:6px;">Sobrarían $${libre.toFixed(0)} (todas las metas quedarían cubiertas con eso)</div>` : '');
+    // ══ Sección "hoy" — distinta entre Personal (automática) y Negocio (manual) ══
+    if (tipo === 'personal') {
+      const hoyBox = document.getElementById('compromisos-hoy-lista');
+      const libreEl = document.getElementById('compromisos-libre-monto');
+      const btnAplicar = document.getElementById('btn-aplicar-compromisos');
+      const msgEl = document.getElementById('compromisos-aplicado-msg');
+
+      if (!lista.length) {
+        listaEl.innerHTML = '<div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">Sin compromisos aún. Agrégalos abajo.</div>';
+        if (hoyBox) hoyBox.innerHTML = '<div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">Agrega un compromiso para ver el reparto de hoy.</div>';
+        if (libreEl) libreEl.textContent = '$' + sueldoDisponibleHoy().toFixed(0);
+        if (btnAplicar) btnAplicar.style.display = 'none';
+        return;
+      }
+
+      const sueldoDisponible = sueldoDisponibleHoy();
+      const { repartos, libre } = calcularRepartoCascadaCompromisos(sueldoDisponible);
+      const hoyLabel = new Date().toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'});
+      const yaAplicadoHoy = lista.some(c => (c.historial||[]).some(h => h.fecha === hoyLabel));
+      const sinConfigurar = lista.filter(c => !compromisoConfigurado(c)).length;
+
+      if (!repartos.length) {
+        if (hoyBox) hoyBox.innerHTML = `<div style="font-size:11px;color:var(--gris);margin-bottom:8px;">Sueldo disponible hoy: <b style="color:var(--amarillo);">$${sueldoDisponible.toFixed(0)}</b></div>
+          <div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">${sinConfigurar ? 'Tienes compromisos sin configurar — agrégales monto/fecha o ciclo para que entren al reparto.' : 'No hay compromisos activos hoy.'}</div>`;
+        if (libreEl) libreEl.textContent = '$' + sueldoDisponible.toFixed(0);
+        if (btnAplicar) btnAplicar.style.display = 'none';
       } else {
-        previewEl.innerHTML = '';
+        const aRepartir = repartos.filter(r => r.asignado > 0.005);
+        const propuestaTxt = aRepartir.length
+          ? `<div style="font-size:13px;color:var(--texto);font-weight:700;margin-bottom:10px;">Hoy: ` + aRepartir.map(r => '$' + r.asignado.toFixed(0) + ' a ' + r.comp.nombre).join(', ') + `</div>`
+          : `<div style="font-size:12px;color:var(--gris);margin-bottom:10px;">Hoy no hay sobrante para repartir.</div>`;
+
+        if (hoyBox) hoyBox.innerHTML = `<div style="font-size:11px;color:var(--gris);margin-bottom:8px;">Sueldo disponible hoy: <b style="color:var(--amarillo);">$${sueldoDisponible.toFixed(0)}</b></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;background:rgba(245,200,66,0.06);border:1px dashed var(--amarillo);border-radius:8px;padding:8px 10px;">
+            <div style="font-size:10px;color:var(--gris);">💵 Mínimo garantizado por compromiso (ninguno queda en $0)</div>
+            <input type="number" min="0" inputmode="decimal" id="comp-minimo-input" value="${compromisosMinimoGarantizado}" onchange="guardarMinimoGarantizado(this.value)" style="width:64px;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:6px;padding:6px;color:var(--amarillo);font-size:13px;font-weight:700;text-align:center;outline:none;">
+          </div>
+          ${propuestaTxt}` +
+          repartos.map(r => {
+            const tieneAdelanto = r.adelanto > 0.005;
+            const sinNecesidadHoy = r.montoNecesario <= 0.005;
+            const icono = r.esMinimo && !r.cubierto ? '🟡' : (sinNecesidadHoy && !tieneAdelanto && r.asignado <= 0.005) ? '⬜' : (r.cubierto ? '✅' : '🟡');
+            const colorBorde = r.asignado > 0.005 ? 'var(--verde)' : '#444';
+            const etiqueta = r.esMinimo && !r.cubierto ? ' (mínimo)' : (tieneAdelanto ? ' (+adelanto)' : '');
+            return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #2a2a3e;font-size:13px;gap:8px;">
+              <span style="flex:1;">${icono} ${r.comp.nombre}${etiqueta}</span>
+              <span style="font-size:10px;color:var(--gris);white-space:nowrap;">${sinNecesidadHoy ? '' : 'sug. $' + r.montoNecesario.toFixed(0)}</span>
+              <input type="number" min="0" inputmode="decimal" id="hoy-monto-${r.comp.id}" value="${r.asignado.toFixed(0)}" oninput="recalcularLibreManual(${sueldoDisponible})" style="width:60px;background:var(--oscuro);border:1px solid ${colorBorde};border-radius:6px;padding:5px;color:var(--texto);font-size:13px;font-weight:700;text-align:center;outline:none;">
+            </div>`;
+          }).join('') +
+          `<div style="text-align:right;margin-top:6px;"><button onclick="restablecerRepartoManual()" style="background:transparent;border:none;color:var(--gris);font-size:11px;text-decoration:underline;cursor:pointer;padding:2px;">↺ Restablecer propuesta automática</button></div>`;
+        if (libreEl) libreEl.textContent = '$' + libre.toFixed(0);
+        if (btnAplicar) btnAplicar.style.display = yaAplicadoHoy ? 'none' : 'block';
+      }
+      if (msgEl) msgEl.textContent = yaAplicadoHoy ? '✅ Ya aplicaste el reparto de hoy' : '';
+    } else {
+      const disponibleEl = document.getElementById('negocio-disponible-hoy');
+      const previewEl = document.getElementById('negocio-preview-lista');
+      const montoInput = document.getElementById('negocio-monto-input');
+
+      const disponible = disponibleNegocioHoy();
+      if (disponibleEl) disponibleEl.textContent = '$' + disponible.toFixed(0);
+      if (montoInput) montoInput.placeholder = disponible > 0 ? disponible.toFixed(0) : '0';
+
+      if (!lista.length) {
+        listaEl.innerHTML = '<div style="color:var(--gris);font-size:12px;text-align:center;padding:8px 0;">Sin metas de negocio aún. Agrégalas abajo.</div>';
+        if (previewEl) previewEl.innerHTML = '';
+        return;
+      }
+
+      const montoAReparir = parseFloat(montoInput?.value) || 0;
+      if (previewEl) {
+        if (montoAReparir > 0) {
+          const { repartos, libre } = calcularRepartoCompromisosHoy(montoAReparir, lista);
+          previewEl.innerHTML = repartos.filter(r => r.asignado > 0.005 || r.montoNecesario > 0.005).map(r => {
+            const colorMonto = r.cubierto ? 'var(--verde)' : 'var(--amarillo)';
+            return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2a3e;">
+              <span>${r.comp.nombre}</span>
+              <span style="font-weight:700;color:${colorMonto};">+$${r.asignado.toFixed(0)}</span>
+            </div>`;
+          }).join('') + (libre > 0.005 ? `<div style="font-size:11px;color:var(--gris);margin-top:6px;">Sobrarían $${libre.toFixed(0)} (todas las metas quedarían cubiertas con eso)</div>` : '');
+        } else {
+          previewEl.innerHTML = '';
+        }
       }
     }
 
-    // ── Lista de metas ordenadas ──
-    const ordenados = compromisosNegocio.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
-    lista.innerHTML = ordenados.map((comp, idx) => {
+    // ══ Lista de compromisos ordenados — implementación compartida entre Personal y Negocio ══
+    const ordenados = lista.slice().sort((a,b) => (a.orden||0) - (b.orden||0));
+    listaEl.innerHTML = ordenados.map((comp, idx) => {
       const historial_mov = (comp.historial||[]).slice().reverse();
       const histHtml = historial_mov.length ? historial_mov.map(h =>
         `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2a3e;font-size:12px;">
           <span style="color:var(--gris);">${h.fecha} ${h.hora||''}</span>
           <span style="font-weight:700;color:var(--verde);">+$${h.monto.toFixed(0)}</span>
-        </div>`).join('') : '<div style="color:var(--gris);font-size:12px;padding:6px 0;">Sin envíos registrados aún</div>';
+        </div>`).join('') : `<div style="color:var(--gris);font-size:12px;padding:6px 0;">Sin ${tipo==='personal'?'pagos':'envíos'} registrados aún</div>`;
 
       let cuerpo = '';
-      if (comp.tipo === 'meta') {
+      if (cfg.permiteSinConfigurar && !compromisoConfigurado(comp)) {
+        // ── Compromiso creado solo con nombre + prioridad: falta configurarlo (solo Personal) ──
+        if (comp.tipo === 'meta') {
+          cuerpo = `
+            <div style="font-size:11px;color:var(--amarillo);margin-bottom:8px;">🎯 Meta · sin configurar todavía — no entra al reparto hasta que le pongas total y fecha.</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Total a pagar ($)</div>
+                <input type="number" id="cfg-meta-total-${comp.id}" placeholder="14000" min="0" inputmode="decimal" style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:8px 10px;color:var(--amarillo);font-size:14px;font-weight:700;text-align:center;outline:none;">
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Terminar el día</div>
+                <input type="date" id="cfg-meta-fecha-${comp.id}" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:8px 6px;color:var(--texto);font-size:12px;outline:none;">
+              </div>
+            </div>
+            <select id="cfg-meta-dias-${comp.id}" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:8px;color:var(--texto);font-size:12px;outline:none;margin-bottom:8px;">
+              <option value="todos">Todos los días</option>
+              <option value="habiles">Solo Lun-Vie</option>
+            </select>
+            <button onclick="configurarMetaCompromiso('${tipo}',${comp.id})" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:10px;color:var(--oscuro);font-size:13px;font-weight:700;cursor:pointer;">✅ Guardar configuración</button>`;
+        } else {
+          cuerpo = `
+            <div style="font-size:11px;color:var(--amarillo);margin-bottom:8px;">🔁 Recurrente · sin configurar todavía — no entra al reparto hasta que le pongas monto y ciclo.</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Monto por ciclo ($)</div>
+                <input type="number" id="cfg-rec-monto-${comp.id}" placeholder="700" min="0" inputmode="decimal" style="width:100%;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:8px 10px;color:var(--amarillo);font-size:14px;font-weight:700;text-align:center;outline:none;">
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:10px;color:var(--gris);margin-bottom:4px;">Cada cuántos días</div>
+                <input type="number" id="cfg-rec-ciclo-${comp.id}" placeholder="7" min="1" inputmode="decimal" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:8px 10px;color:var(--texto);font-size:14px;font-weight:700;text-align:center;outline:none;">
+              </div>
+            </div>
+            <button onclick="configurarRecurrenteCompromiso('${tipo}',${comp.id})" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:10px;color:var(--oscuro);font-size:13px;font-weight:700;cursor:pointer;">✅ Guardar configuración</button>`;
+        }
+      } else if (comp.tipo === 'meta') {
         const falta = Math.max(0, comp.total - comp.pagado);
         const pctMeta = comp.total > 0 ? Math.min(100, (comp.pagado/comp.total)*100) : 0;
         const sugerido = sugerenciaMontoHoyMeta(comp);
-        cuerpo = `
-          ${toggleHoyHtml(comp, 'toggleExcluirCompromisoNegocioHoy')}
+        cuerpo = `${toggleHoyHtml(comp, tipo)}`;
+        if (tipo === 'personal') {
+          const montoHoy = calcularMontoHoyMeta(comp);
+          const fechaTxt = comp.fechaLimite ? ('vence ' + comp.fechaLimite + ' · ' + (comp.diasCuenta==='habiles'?'Lun-Vie':'todos los días')) : 'sin fecha límite definida';
+          const lineaHoy = estaExcluidoHoy(comp)
+            ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 hoy: $0/día (saltado)</div>`
+            : !comp.fechaLimite
+              ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 sin fecha límite — sin sugerencia diaria automática, pero sigue en la cascada por su total pendiente.</div>`
+              : `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${diasRestantesValidos(comp.fechaLimite, comp.diasCuenta)} días restantes · hoy: $${montoHoy.toFixed(0)}/día</div>`;
+          cuerpo += `
+          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🎯 Meta · ${fechaTxt}</div>
+          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pctMeta.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="color:var(--gris);">${cfg.labelJuntadoPagado}: <b style="color:var(--verde);">$${comp.pagado.toFixed(0)}</b> / $${comp.total.toFixed(0)}</span>
+            <span style="color:var(--gris);">Faltan: <b style="color:var(--amarillo);">$${falta.toFixed(0)}</b></span>
+          </div>
+          ${lineaHoy}
+          ${montoFijoInputHtml(comp, sugerido, tipo)}
+          ${abonoDesdeSueldoHtml(comp.id)}
+          ${abonoExternoHtml(comp, tipo)}`;
+        } else {
+          cuerpo += `
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🎯 Meta puntual de negocio</div>
           <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pctMeta.toFixed(1)}%;background:var(--verde);border-radius:6px;"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
-            <span style="color:var(--gris);">Juntado: <b style="color:var(--verde);">$${comp.pagado.toFixed(0)}</b> / $${comp.total.toFixed(0)}</span>
+            <span style="color:var(--gris);">${cfg.labelJuntadoPagado}: <b style="color:var(--verde);">$${comp.pagado.toFixed(0)}</b> / $${comp.total.toFixed(0)}</span>
             <span style="color:var(--gris);">Faltan: <b style="color:var(--amarillo);">$${falta.toFixed(0)}</b></span>
           </div>
-          ${montoFijoInputHtml(comp, sugerido, 'actualizarMontoFijoCompromisoNegocio')}
-          ${abonoExternoHtml(comp.id, 'abonarExternoCompromisoNegocio', 'abono-neg-ext-')}`;
+          ${montoFijoInputHtml(comp, sugerido, tipo)}
+          ${abonoExternoHtml(comp, tipo)}`;
+        }
       } else {
         const info = infoCicloRecurrente(comp);
         const pctRec = comp.montoCiclo > 0 ? Math.min(100, (info.acumuladoCiclo/comp.montoCiclo)*100) : 0;
         const sugerido = sugerenciaMontoHoyRecurrente(comp);
-        cuerpo = `
-          ${toggleHoyHtml(comp, 'toggleExcluirCompromisoNegocioHoy')}
+        cuerpo = `${toggleHoyHtml(comp, tipo)}`;
+        if (tipo === 'personal') {
+          const montoHoyR = calcularMontoHoyRecurrente(comp);
+          const atraso = atrasoRecurrente(comp);
+          const lineaHoyR = estaExcluidoHoy(comp) ? `<div style="font-size:12px;color:var(--gris);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $0/día (saltado)</div>` : `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">📅 ${info.diasRestantesCiclo} días quedan del ciclo · hoy: $${montoHoyR.toFixed(0)}/día</div>`;
+          const lineaAtraso = atraso > 0.5 ? `<div style="font-size:12px;color:var(--amarillo);margin-bottom:8px;">⏳ Atrasado este ciclo: <b>$${atraso.toFixed(0)}</b> — no se suma al pago de hoy, ponte al corriente cuando puedas.</div>` : '';
+          cuerpo += `
+          <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🔁 Recurrente · $${comp.montoCiclo.toFixed(0)} cada ${comp.cicloDias} días</div>
+          <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pctRec.toFixed(1)}%;background:var(--morado);border-radius:6px;"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+            <span style="color:var(--gris);">Este ciclo: <b style="color:var(--amarillo);">$${info.acumuladoCiclo.toFixed(0)}</b> / $${comp.montoCiclo.toFixed(0)}</span>
+            <span style="color:var(--gris);">Faltan: <b style="color:var(--amarillo);">$${info.falta.toFixed(0)}</b></span>
+          </div>
+          ${lineaHoyR}
+          ${lineaAtraso}
+          ${montoFijoInputHtml(comp, sugerido, tipo)}
+          ${abonoDesdeSueldoHtml(comp.id, atraso)}
+          ${abonoExternoHtml(comp, tipo)}`;
+        } else {
+          cuerpo += `
           <div style="font-size:11px;color:var(--gris);margin-bottom:6px;">🔁 Recurrente · $${comp.montoCiclo.toFixed(0)} cada ${comp.cicloDias} días</div>
           <div style="height:10px;background:#2a2a3e;border-radius:6px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:${pctRec.toFixed(1)}%;background:var(--morado);border-radius:6px;"></div></div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
             <span style="color:var(--gris);">Este ciclo: <b style="color:var(--amarillo);">$${info.acumuladoCiclo.toFixed(0)}</b> / $${comp.montoCiclo.toFixed(0)}</span>
             <span style="color:var(--gris);">Faltan: <b style="color:var(--amarillo);">$${info.falta.toFixed(0)}</b></span>
           </div>
-          ${montoFijoInputHtml(comp, sugerido, 'actualizarMontoFijoCompromisoNegocio')}
-          ${abonoExternoHtml(comp.id, 'abonarExternoCompromisoNegocio', 'abono-neg-ext-')}`;
+          ${montoFijoInputHtml(comp, sugerido, tipo)}
+          ${abonoExternoHtml(comp, tipo)}`;
+        }
       }
 
       return `<div style="background:var(--medio);border:2px solid #444;border-radius:14px;padding:14px;margin-bottom:12px;">
@@ -3704,9 +3653,9 @@
             <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--amarillo);letter-spacing:0.5px;">${comp.nombre}</span>
           </div>
           <div style="display:flex;gap:4px;">
-            <button onclick="moverCompromisoNegocio(${comp.id},-1)" ${idx===0?'disabled style="opacity:0.3;"':''} style="background:transparent;border:1px solid #444;border-radius:6px;color:var(--gris);font-size:13px;cursor:pointer;padding:3px 8px;">▲</button>
-            <button onclick="moverCompromisoNegocio(${comp.id},1)" ${idx===ordenados.length-1?'disabled style="opacity:0.3;"':''} style="background:transparent;border:1px solid #444;border-radius:6px;color:var(--gris);font-size:13px;cursor:pointer;padding:3px 8px;">▼</button>
-            <button onclick="eliminarCompromisoNegocio(${comp.id})" style="background:transparent;border:none;color:#555;font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
+            <button onclick="moverCompromiso('${tipo}',${comp.id},-1)" ${idx===0?'disabled style="opacity:0.3;"':''} style="background:transparent;border:1px solid #444;border-radius:6px;color:var(--gris);font-size:13px;cursor:pointer;padding:3px 8px;">▲</button>
+            <button onclick="moverCompromiso('${tipo}',${comp.id},1)" ${idx===ordenados.length-1?'disabled style="opacity:0.3;"':''} style="background:transparent;border:1px solid #444;border-radius:6px;color:var(--gris);font-size:13px;cursor:pointer;padding:3px 8px;">▼</button>
+            <button onclick="eliminarCompromiso('${tipo}',${comp.id})" style="background:transparent;border:none;color:#555;font-size:16px;cursor:pointer;padding:2px 6px;">✕</button>
           </div>
         </div>
         ${cuerpo}
@@ -3716,6 +3665,7 @@
       </div>`;
     }).join('');
   }
+
 
   // ════════════════════════════════════════════════════
   // MOVIMIENTOS MANUALES DE AHORROS
