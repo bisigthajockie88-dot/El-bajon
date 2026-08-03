@@ -4566,14 +4566,22 @@
     const pendientes = cuentasPlat.filter(p => !p.cobrado);
     if (!pendientes.length) { bar.classList.remove('visible'); return; }
     bar.classList.add('visible');
-    scroll.innerHTML = pendientes.map(p => {
-      const info = PLAT_INFO[p.metodo] || { nombre: p.metodo, cls: 'rappi' };
-      const prom = calcularPromedioDescuento(p.metodo);
+    // Se agrupan todas las ventas pendientes de la misma plataforma en una sola tarjeta,
+    // así se acumulan varios días hasta que llega el pago semanal de esa plataforma.
+    const grupos = {};
+    pendientes.forEach(p => {
+      if (!grupos[p.metodo]) grupos[p.metodo] = { metodo: p.metodo, total: 0, count: 0 };
+      grupos[p.metodo].total += p.montoEsperado;
+      grupos[p.metodo].count += 1;
+    });
+    scroll.innerHTML = Object.values(grupos).map(g => {
+      const info = PLAT_INFO[g.metodo] || { nombre: g.metodo, cls: 'rappi' };
+      const prom = calcularPromedioDescuento(g.metodo);
       const promTxt = prom !== null ? `<div class="pc-fecha" style="color:${prom>0?'var(--perdida)':'var(--verde)'};">~${prom.toFixed(1)}% desc.</div>` : '';
-      return `<div class="plat-chip ${info.cls}" onclick="abrirModalPlat(${p.id})">
+      return `<div class="plat-chip ${info.cls}" onclick="abrirModalPlat('${g.metodo}')">
         <div class="pc-plat">${info.nombre}</div>
-        <div class="pc-monto">$${p.montoEsperado.toFixed(0)}</div>
-        <div class="pc-fecha">${p.fecha}</div>
+        <div class="pc-monto">$${g.total.toFixed(0)}</div>
+        <div class="pc-fecha">${g.count} venta${g.count>1?'s':''}</div>
         ${promTxt}
       </div>`;
     }).join('');
@@ -4611,18 +4619,29 @@
     }
   }
 
-  function abrirModalPlat(id) {
-    const p = cuentasPlat.find(x => x.id === id);
-    if (!p) return;
-    _platIdActual = id;
-    _platMontoStr = String(p.montoEsperado);
-    const info = PLAT_INFO[p.metodo] || { nombre: p.metodo, color:'var(--amarillo)' };
-    const promDesc = calcularPromedioDescuento(p.metodo);
+  function abrirModalPlat(metodo) {
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado);
+    if (!entries.length) return;
+    _platIdActual = metodo;
+    const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
+    _platMontoStr = String(totalEsperado);
+    const info = PLAT_INFO[metodo] || { nombre: metodo, color:'var(--amarillo)' };
+    const promDesc = calcularPromedioDescuento(metodo);
     const promHtml = promDesc !== null
       ? `<div style="font-size:11px;color:var(--gris);text-align:center;margin-bottom:10px;">📊 Promedio histórico de descuento en ${info.nombre}: <b style="color:${promDesc > 0 ? 'var(--perdida)' : 'var(--verde)'};">${promDesc.toFixed(1)}%</b></div>`
       : '';
-    // Últimos cobros de esta plataforma
-    const histPlat = cuentasPlat.filter(x => x.cobrado && x.metodo === p.metodo && x.montoReal !== undefined).slice(-3).reverse();
+    // Detalle de las ventas que se están acumulando en esta cuenta pendiente
+    const detalleHtml = `
+      <div style="margin-bottom:12px;background:var(--oscuro);border-radius:10px;padding:10px;">
+        <div style="font-size:10px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Ventas acumuladas (${entries.length})</div>
+        ${entries.map(e => `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #2a2a2a;font-size:12px;">
+          <span style="color:var(--gris);">${e.fecha}${e.producto?' · '+e.producto:''}</span>
+          <span style="color:var(--texto);">$${e.montoEsperado.toFixed(0)}</span>
+          <span onclick="event.stopPropagation();eliminarCuentaPlat(${e.id})" style="color:var(--perdida);cursor:pointer;padding-left:10px;">🗑️</span>
+        </div>`).join('')}
+      </div>`;
+    // Últimos cobros ya liquidados de esta plataforma
+    const histPlat = cuentasPlat.filter(x => x.cobrado && x.metodo === metodo && x.montoReal !== undefined).slice(-3).reverse();
     const histHtml = histPlat.length ? `
       <div style="margin-bottom:12px;background:var(--oscuro);border-radius:10px;padding:10px;">
         <div style="font-size:10px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Últimos cobros</div>
@@ -4638,56 +4657,62 @@
       </div>` : '';
     document.getElementById('modal-plat-content').innerHTML = `
       <h2 style="color:${info.color};">${info.nombre}</h2>
-      <div style="font-size:12px;color:var(--gris);margin-bottom:10px;">Venta registrada el ${p.fecha} a las ${p.hora}${p.producto?' · '+p.producto:''}</div>
+      <div style="font-size:12px;color:var(--gris);margin-bottom:10px;">Total acumulado pendiente de pago</div>
+      ${detalleHtml}
       ${promHtml}
       ${histHtml}
-      <div style="font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Monto real recibido (ajusta si hubo descuento)</div>
-      <div id="plat-monto-display" style="background:var(--oscuro);border:2px solid ${info.color};border-radius:14px;padding:16px;text-align:center;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:44px;color:${info.color};letter-spacing:2px;margin-bottom:10px;">$${p.montoEsperado.toFixed(2)}</div>
+      <div style="font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Monto TOTAL real recibido (ajusta si hubo descuento)</div>
+      <div id="plat-monto-display" style="background:var(--oscuro);border:2px solid ${info.color};border-radius:14px;padding:16px;text-align:center;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:44px;color:${info.color};letter-spacing:2px;margin-bottom:10px;">$${totalEsperado.toFixed(2)}</div>
       <div id="plat-descuento-info" style="margin-bottom:10px;"></div>
       <div class="numpad" style="margin-bottom:14px;">
-        ${'7 8 9 4 5 6 1 2 3 . 0 DEL'.split(' ').map(k=>`<div class="numpad-btn${k==='DEL'?' btn-borrar':''}" onclick="platNumpad(${id},'${k}')">${k==='DEL'?'⌫':k}</div>`).join('')}
+        ${'7 8 9 4 5 6 1 2 3 . 0 DEL'.split(' ').map(k=>`<div class="numpad-btn${k==='DEL'?' btn-borrar':''}" onclick="platNumpad('${metodo}','${k}')">${k==='DEL'?'⌫':k}</div>`).join('')}
       </div>
       <div class="modal-btns">
         <button class="btn-cancelar" onclick="document.getElementById('overlay-plat').classList.remove('visible')">Cancelar</button>
-        <button class="btn-confirmar" style="background:${info.color};" onclick="cobrarPlat(${id})">💰 Registrar cobro</button>
-      </div>
-      <button onclick="eliminarCuentaPlat(${id})" style="width:100%;margin-top:10px;background:transparent;border:1px solid #444;border-radius:10px;padding:12px;color:var(--gris);font-size:13px;cursor:pointer;">🗑️ Eliminar (no se cobró)</button>`;
+        <button class="btn-confirmar" style="background:${info.color};" onclick="cobrarPlat('${metodo}')">💰 Registrar cobro total</button>
+      </div>`;
     document.getElementById('overlay-plat').classList.add('visible');
   }
 
-  function platNumpad(id, key) {
-    const p = cuentasPlat.find(x => x.id === id);
+  function platNumpad(metodo, key) {
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado);
+    const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
     if (key === 'DEL') _platMontoStr = _platMontoStr.length > 1 ? _platMontoStr.slice(0,-1) : '';
     else if (key === '.') { if (!_platMontoStr.includes('.')) _platMontoStr += '.'; }
     else { if (_platMontoStr === '0' || _platMontoStr === '') _platMontoStr = key; else _platMontoStr += key; }
     const d = document.getElementById('plat-monto-display');
     if (d) d.textContent = '$' + (_platMontoStr || '0');
-    if (p) actualizarInfoDescuento(p.montoEsperado);
+    actualizarInfoDescuento(totalEsperado);
   }
 
-  function cobrarPlat(id) {
+  function cobrarPlat(metodo) {
     const monto = parseFloat(_platMontoStr);
     if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa un monto válido'); return; }
-    const idx = cuentasPlat.findIndex(p => p.id === id);
-    if (idx === -1) return;
-    const p = cuentasPlat[idx];
-    const info = PLAT_INFO[p.metodo] || { nombre: p.metodo };
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado);
+    if (!entries.length) return;
+    const info = PLAT_INFO[metodo] || { nombre: metodo };
+    const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
     const hora = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});
     const fechaCobro = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
-    // Guardar monto real y fecha de cobro para historial de descuentos
-    p.montoReal = monto;
-    p.fechaCobro = fechaCobro;
-    p.pctDescuento = p.montoEsperado > 0 ? ((p.montoEsperado - monto) / p.montoEsperado) * 100 : 0;
-    p.cobrado = true;
-    // Registrar como venta efectivo hoy
-    const diff = p.montoEsperado - monto;
-    const descLabel = Math.abs(diff) > 0.01 ? ` (−${p.pctDescuento.toFixed(1)}% desc.)` : '';
-    movimientos.push({ id: Date.now(), producto: info.nombre + ' cobro' + descLabel, precio: monto, metodo: 'efectivo', hora });
+    const pctDescuentoGlobal = totalEsperado > 0 ? ((totalEsperado - monto) / totalEsperado) * 100 : 0;
+    // Se reparte el monto real proporcionalmente entre cada venta acumulada,
+    // así se conserva el historial de descuento por venta sin perder el detalle.
+    entries.forEach(e => {
+      const proporcion = totalEsperado > 0 ? (e.montoEsperado / totalEsperado) : 0;
+      e.montoReal = monto * proporcion;
+      e.fechaCobro = fechaCobro;
+      e.pctDescuento = pctDescuentoGlobal;
+      e.cobrado = true;
+    });
+    // Se registra como una sola entrada de efectivo (el pago semanal completo)
+    const diff = totalEsperado - monto;
+    const descLabel = Math.abs(diff) > 0.01 ? ` (−${pctDescuentoGlobal.toFixed(1)}% desc.)` : '';
+    movimientos.push({ id: Date.now(), producto: info.nombre + ` cobro semanal (${entries.length} venta${entries.length>1?'s':''})` + descLabel, precio: monto, metodo: 'efectivo', hora });
     guardarCuentasPlat(); guardarMov();
     actualizarTotalesRapidos(); actualizarHeaderTotal();
     document.getElementById('overlay-plat').classList.remove('visible');
     renderPlats();
-    const msg = diff > 0.01 ? `✅ $${monto.toFixed(0)} · Te descontaron ${p.pctDescuento.toFixed(1)}%` : `✅ Cobro registrado: $${monto.toFixed(0)}`;
+    const msg = diff > 0.01 ? `✅ $${monto.toFixed(0)} · Te descontaron ${pctDescuentoGlobal.toFixed(1)}%` : `✅ Cobro registrado: $${monto.toFixed(0)}`;
     mostrarToast(msg);
   }
 
