@@ -785,6 +785,12 @@
     <div class="resumen-box"><h3>📦 Inversión esta semana</h3><p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-inv-semana"></p><canvas id="chart-inversion-semana-actual" height="240"></canvas><div id="resumen-inversion-semana-actual" style="margin-top:14px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div></div>
     <div class="resumen-box"><h3>💵 Sueldo esta semana</h3><p style="font-size:11px;color:var(--gris);margin-bottom:10px;" id="label-sueldo-semana"></p><canvas id="chart-sueldo-semana-actual" height="240"></canvas><div id="resumen-sueldo-semana-actual" style="margin-top:14px;background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;"></div></div>
   </div>
+  <!-- HISTORIAL DE COBROS DE APPS -->
+  <div id="subtab-plataformas" style="display:none;">
+    <div class="dist-header">🚗 Historial de cobros — Apps</div>
+    <div class="dist-sub">Rappi, Uber y DiDi Tarjeta — cuenten o no en la venta del día</div>
+    <div id="plats-hist-content"></div>
+  </div>
   <!-- HISTÓRICO -->
   <div id="subtab-historico" style="display:none;">
     <div class="dist-header">📊 Histórico General</div>
@@ -1435,6 +1441,7 @@
       { key:'graficas', label:'📈 Gráficas' },
       { key:'historico', label:'📊 Histórico' },
       { key:'negocio', label:'🏗️ Negocio' },
+      { key:'plataformas', label:'🚗 Apps' },
     ],
     ajustes: [
       { key:'productos', label:'🍔 Productos & Precios' },
@@ -1512,12 +1519,13 @@
   }
 
   function mostrarSubtabAnalisis(key) {
-    ['graficas','historico','negocio'].forEach(k => {
+    ['graficas','historico','negocio','plataformas'].forEach(k => {
       document.getElementById('subtab-' + k).style.display = k === key ? 'block' : 'none';
     });
     if (key === 'graficas') renderGraficas();
     if (key === 'historico') renderGraficasHistoricas();
     if (key === 'negocio') renderTabCompromisos('negocio');
+    if (key === 'plataformas') renderHistorialPlats();
   }
 
   // ── DINERO: disponible hoy + resumen + estado + distribución + compromisos + ahorros, todo en una pantalla ──
@@ -4599,6 +4607,50 @@
   function formatWeekLabel(key) {
     const [y,m,d] = key.split('-').map(Number);
     return new Date(y, m-1, d).toLocaleDateString('es-MX',{day:'numeric',month:'short'});
+  }
+
+  function renderHistorialPlats() {
+    const cont = document.getElementById('plats-hist-content');
+    if (!cont) return;
+    const bloques = METODOS_PLAT.map(metodo => {
+      const info = PLAT_INFO[metodo] || { nombre: metodo, color: 'var(--amarillo)' };
+      const cobradas = cuentasPlat.filter(p => p.cobrado && p.metodo === metodo && p.montoReal !== undefined)
+        .sort((a,b) => b.id - a.id);
+      if (!cobradas.length) {
+        return `<div class="resumen-box" style="border-color:${info.color};">
+          <h3 style="color:${info.color};">${info.nombre}</h3>
+          <p style="font-size:12px;color:var(--gris);">Todavía no tienes cobros registrados de esta plataforma.</p>
+        </div>`;
+      }
+      const totalReal = cobradas.reduce((s,p) => s + p.montoReal, 0);
+      const validas = cobradas.filter(p => p.montoEsperado > 0);
+      const promDesc = validas.length ? validas.reduce((s,p) => s + ((p.montoEsperado - p.montoReal) / p.montoEsperado) * 100, 0) / validas.length : null;
+      const filas = cobradas.map(p => {
+        const esAjuste = p.montoEsperado < 0;
+        if (esAjuste) {
+          return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2a2a2a;font-size:12px;">
+            <span style="color:var(--gris);">${p.fechaCobro || p.fecha} · ${p.producto}</span>
+            <span style="color:var(--perdida);">$${p.montoReal.toFixed(0)}</span>
+          </div>`;
+        }
+        const d = p.montoEsperado - p.montoReal;
+        const dpct = p.montoEsperado ? (d / p.montoEsperado * 100).toFixed(1) : '0.0';
+        return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2a2a2a;font-size:12px;">
+          <span style="color:var(--gris);">${p.fechaCobro || p.fecha}</span>
+          <span style="color:var(--texto);">Esperado $${p.montoEsperado.toFixed(0)} → Recibido $${p.montoReal.toFixed(0)}</span>
+          <span style="color:${d>0?'var(--perdida)':'var(--verde)'};font-weight:700;">${d>0?'-':'+'}${Math.abs(dpct)}%</span>
+        </div>`;
+      }).join('');
+      return `<div class="resumen-box" style="border-color:${info.color};">
+        <h3 style="color:${info.color};">${info.nombre}</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div class="total-card" style="border-color:${info.color};"><div class="label">💰 Total cobrado</div><div class="valor" style="color:${info.color};font-size:18px;">$${totalReal.toFixed(0)}</div></div>
+          <div class="total-card" style="border-color:${info.color};"><div class="label">📉 Desc. promedio</div><div class="valor" style="color:${promDesc>0?'var(--perdida)':'var(--verde)'};font-size:18px;">${promDesc!==null?promDesc.toFixed(1)+'%':'—'}</div></div>
+        </div>
+        ${filas}
+      </div>`;
+    }).join('');
+    cont.innerHTML = bloques;
   }
 
   function registrarCuentaPlat(metodo, precio, producto) {
