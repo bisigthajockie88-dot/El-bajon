@@ -48,7 +48,7 @@
   .gasto-numpad-display{font-family:'Baloo 2',sans-serif;font-weight:800 !important;}
   .ticket-total span, .total-card .valor, .movimiento .monto-mov,
   .dia-card .dia-total, .fiado-chip .fc-total, .mesa-chip .mc-total,
-  .plat-chip .pc-monto, .resumen-fila.total-final .monto{
+  .resumen-fila.total-final .monto{
     -webkit-text-stroke:1.2px rgba(0,0,0,0.55);
     paint-order:stroke fill;
     text-shadow:
@@ -4726,6 +4726,10 @@
       <div style="font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Monto TOTAL real recibido (ajusta si hubo descuento)</div>
       <div id="plat-monto-display" style="background:var(--oscuro);border:2px solid ${info.color};border-radius:14px;padding:16px;text-align:center;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:44px;color:${info.color};letter-spacing:2px;margin-bottom:10px;">$${totalEsperado.toFixed(2)}</div>
       <div id="plat-descuento-info" style="margin-bottom:10px;"></div>
+      <label style="display:flex;align-items:center;gap:8px;background:var(--oscuro);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:13px;color:var(--texto);cursor:pointer;">
+        <input type="checkbox" id="plat-registrar-venta" checked style="width:18px;height:18px;accent-color:${info.color};">
+        Contar este cobro en la venta de hoy
+      </label>
       <div class="numpad" style="margin-bottom:14px;">
         ${'7 8 9 4 5 6 1 2 3 . 0 DEL'.split(' ').map(k=>`<div class="numpad-btn${k==='DEL'?' btn-borrar':''}" onclick="platNumpad('${metodo}','${semana}','${k}')">${k==='DEL'?'⌫':k}</div>`).join('')}
       </div>
@@ -4766,15 +4770,22 @@
       e.pctDescuento = pctDescuentoGlobal;
       e.cobrado = true;
     });
-    // Se registra como una sola entrada de efectivo (el pago semanal completo)
+    // Se registra como una sola entrada de efectivo (el pago semanal completo),
+    // solo si el usuario quiere que cuente en la venta de hoy — a veces el dinero
+    // se lo queda para uso personal y solo quiere el registro histórico del cobro.
+    const contarEnVenta = document.getElementById('plat-registrar-venta')?.checked !== false;
     const diff = totalEsperado - monto;
     const descLabel = Math.abs(diff) > 0.01 ? ` (−${pctDescuentoGlobal.toFixed(1)}% desc.)` : '';
-    movimientos.push({ id: Date.now(), producto: info.nombre + ` cobro semanal (${entries.length} venta${entries.length>1?'s':''})` + descLabel, precio: monto, metodo: 'efectivo', hora });
-    guardarCuentasPlat(); guardarMov();
+    if (contarEnVenta) {
+      movimientos.push({ id: Date.now(), producto: info.nombre + ` cobro semanal (${entries.length} venta${entries.length>1?'s':''})` + descLabel, precio: monto, metodo: 'efectivo', hora });
+      guardarMov();
+    }
+    guardarCuentasPlat();
     actualizarTotalesRapidos(); actualizarHeaderTotal();
     document.getElementById('overlay-plat').classList.remove('visible');
     renderPlats();
-    const msg = diff > 0.01 ? `✅ $${monto.toFixed(0)} · Te descontaron ${pctDescuentoGlobal.toFixed(1)}%` : `✅ Cobro registrado: $${monto.toFixed(0)}`;
+    const nota = contarEnVenta ? '' : ' (no contado en venta de hoy)';
+    const msg = diff > 0.01 ? `✅ $${monto.toFixed(0)} · Te descontaron ${pctDescuentoGlobal.toFixed(1)}%${nota}` : `✅ Cobro registrado: $${monto.toFixed(0)}${nota}`;
     mostrarToast(msg);
   }
 
