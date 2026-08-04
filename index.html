@@ -1846,6 +1846,33 @@
     }
   }
 
+  // Cuando se cobra una venta en Didi Efectivo, el excedente sobre el precio normal
+  // (el "extra" que se le agregó al precio para cubrir la comisión de Didi) se le
+  // descuenta a la cuenta pendiente de Didi Tarjeta, porque así es como Didi lo cobra
+  // en la práctica: resta esa comisión de lo que te va a depositar de las ventas con tarjeta.
+  // Esto SOLO aplica a Didi (efectivo vs tarjeta); Rappi y Uber no manejan efectivo.
+  function registrarAjusteDidiEfectivo(items) {
+    const extra = items.reduce((s, it) => {
+      const base = getPrecio(it.producto) || 0;
+      const cant = it.cant || 1;
+      return s + Math.max(0, (it.precio - base) * cant);
+    }, 0);
+    if (extra <= 0.01) return;
+    const fecha = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
+    const hora = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});
+    const semana = getWeekEndKey(Date.now());
+    cuentasPlat.push({
+      id: Date.now() + Math.random(),
+      metodo: 'didi_tarjeta',
+      montoEsperado: -extra,
+      producto: 'Ajuste por venta Didi Ef. (−$' + extra.toFixed(0) + ')',
+      fecha, hora, semana,
+      cobrado: false
+    });
+    guardarCuentasPlat();
+    renderPlats();
+  }
+
   function confirmarVentaDirecta() {
     if (!metodoSeleccionado) { mostrarToast('⚠️ Selecciona forma de pago'); return; }
     if (['facebook','whatsapp'].includes(metodoSeleccionado)) { mostrarToast('⚠️ Elige si paga en Efectivo o Tarjeta'); return; }
@@ -1867,6 +1894,9 @@
     // Si viene de red social, agregar tag al label
     const labelFinal = _redCanalProd ? `${label} [${_redCanalProd==='facebook'?'FB':'WA'}]` : label;
     movimientos.push({ id: Date.now(), producto: labelFinal, precio: totalPrecio, metodo: metodoSeleccionado, hora, canal: _redCanalProd || null });
+    if (metodoSeleccionado === 'didi_efectivo') {
+      registrarAjusteDidiEfectivo([{ producto: productoActual, precio, cant: cantidadActual }]);
+    }
     guardarMov();
     actualizarTotalesRapidos();
     actualizarHeaderTotal();
@@ -2032,6 +2062,9 @@
       const labelFinal = _redCanalCobro ? `${item.producto} [${_redCanalCobro==='facebook'?'FB':'WA'}]` : item.producto;
       movimientos.push({ id: ticketId + idx, producto: labelFinal, precio: item.precio * item.cant, metodo: metodoCobro, hora, ticketId, canal: _redCanalCobro || null });
     });
+    if (metodoCobro === 'didi_efectivo') {
+      registrarAjusteDidiEfectivo(ticketItems);
+    }
     if (mesaActiva !== null) { mesas = mesas.filter(m => m.id !== mesaActiva); guardarMesas(); mesaActiva = null; }
     guardarMov();
     actualizarTotalesRapidos();
@@ -4551,10 +4584,28 @@
   // Interceptar confirmarVentaDirecta para capturar ventas de plataforma
   const _confirmarVentaDirecta_orig = window.confirmarVentaDirecta;
 
+  // Las plataformas cortan la semana el domingo a las 23:59. Esto calcula a qué
+  // "semana" (identificada por la fecha del domingo en que cierra) pertenece una venta,
+  // para que el lunes a las 00:00 las ventas nuevas empiecen a acumularse en una
+  // tarjetita distinta, sin mezclarse con lo que quedó pendiente de la semana pasada
+  // aunque el usuario no haya registrado ni eliminado esa tarjeta a tiempo.
+  function getWeekEndKey(ts) {
+    const d = new Date(ts);
+    const day = d.getDay(); // 0=domingo
+    const diff = day === 0 ? 0 : (7 - day);
+    const domingo = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
+    return domingo.getFullYear() + '-' + String(domingo.getMonth()+1).padStart(2,'0') + '-' + String(domingo.getDate()).padStart(2,'0');
+  }
+  function formatWeekLabel(key) {
+    const [y,m,d] = key.split('-').map(Number);
+    return new Date(y, m-1, d).toLocaleDateString('es-MX',{day:'numeric',month:'short'});
+  }
+
   function registrarCuentaPlat(metodo, precio, producto) {
     const fecha = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
     const hora  = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});
-    cuentasPlat.push({ id: Date.now(), metodo, montoEsperado: precio, producto: producto || '', fecha, hora, cobrado: false });
+    const semana = getWeekEndKey(Date.now());
+    cuentasPlat.push({ id: Date.now(), metodo, montoEsperado: precio, producto: producto || '', fecha, hora, cobrado: false, semana });
     guardarCuentasPlat();
     renderPlats();
   }
@@ -4566,23 +4617,31 @@
     const pendientes = cuentasPlat.filter(p => !p.cobrado);
     if (!pendientes.length) { bar.classList.remove('visible'); return; }
     bar.classList.add('visible');
-    // Se agrupan todas las ventas pendientes de la misma plataforma en una sola tarjeta,
-    // así se acumulan varios días hasta que llega el pago semanal de esa plataforma.
+    const semanaActual = getWeekEndKey(Date.now());
+    // Se agrupan las ventas pendientes por plataforma Y por semana (corte domingo 23:59).
+    // Así, si no cobras/eliminas la tarjeta a tiempo, el lunes las ventas nuevas caen en
+    // una tarjeta aparte en vez de seguir sumándose a la de la semana pasada.
     const grupos = {};
     pendientes.forEach(p => {
-      if (!grupos[p.metodo]) grupos[p.metodo] = { metodo: p.metodo, total: 0, count: 0 };
-      grupos[p.metodo].total += p.montoEsperado;
-      grupos[p.metodo].count += 1;
+      const semana = p.semana || getWeekEndKey(p.id);
+      const key = p.metodo + '|' + semana;
+      if (!grupos[key]) grupos[key] = { metodo: p.metodo, semana, total: 0, count: 0 };
+      grupos[key].total += p.montoEsperado;
+      grupos[key].count += 1;
     });
     scroll.innerHTML = Object.values(grupos).map(g => {
       const info = PLAT_INFO[g.metodo] || { nombre: g.metodo, cls: 'rappi' };
       const prom = calcularPromedioDescuento(g.metodo);
       const promTxt = prom !== null ? `<div class="pc-fecha" style="color:${prom>0?'var(--perdida)':'var(--verde)'};">~${prom.toFixed(1)}% desc.</div>` : '';
-      return `<div class="plat-chip ${info.cls}" onclick="abrirModalPlat('${g.metodo}')">
+      const esAtrasada = g.semana < semanaActual;
+      const semanaTxt = esAtrasada
+        ? `<div class="pc-fecha" style="color:var(--perdida);font-weight:700;">⚠️ semana pasada (${formatWeekLabel(g.semana)})</div>`
+        : '';
+      return `<div class="plat-chip ${info.cls}" onclick="abrirModalPlat('${g.metodo}','${g.semana}')">
         <div class="pc-plat">${info.nombre}</div>
         <div class="pc-monto">$${g.total.toFixed(0)}</div>
         <div class="pc-fecha">${g.count} venta${g.count>1?'s':''}</div>
-        ${promTxt}
+        ${semanaTxt}${promTxt}
       </div>`;
     }).join('');
   }
@@ -4619,10 +4678,10 @@
     }
   }
 
-  function abrirModalPlat(metodo) {
-    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado);
+  function abrirModalPlat(metodo, semana) {
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id)) === semana);
     if (!entries.length) return;
-    _platIdActual = metodo;
+    _platIdActual = metodo + '|' + semana;
     const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
     _platMontoStr = String(totalEsperado);
     const info = PLAT_INFO[metodo] || { nombre: metodo, color:'var(--amarillo)' };
@@ -4630,6 +4689,8 @@
     const promHtml = promDesc !== null
       ? `<div style="font-size:11px;color:var(--gris);text-align:center;margin-bottom:10px;">📊 Promedio histórico de descuento en ${info.nombre}: <b style="color:${promDesc > 0 ? 'var(--perdida)' : 'var(--verde)'};">${promDesc.toFixed(1)}%</b></div>`
       : '';
+    const esAtrasada = semana < getWeekEndKey(Date.now());
+    const semanaHtml = `<div style="font-size:12px;color:${esAtrasada?'var(--perdida)':'var(--gris)'};margin-bottom:10px;">${esAtrasada ? '⚠️ Semana pasada — cerró el domingo ' : 'Semana en curso — cierra el domingo '}${formatWeekLabel(semana)}</div>`;
     // Detalle de las ventas que se están acumulando en esta cuenta pendiente
     const detalleHtml = `
       <div style="margin-bottom:12px;background:var(--oscuro);border-radius:10px;padding:10px;">
@@ -4657,7 +4718,8 @@
       </div>` : '';
     document.getElementById('modal-plat-content').innerHTML = `
       <h2 style="color:${info.color};">${info.nombre}</h2>
-      <div style="font-size:12px;color:var(--gris);margin-bottom:10px;">Total acumulado pendiente de pago</div>
+      <div style="font-size:12px;color:var(--gris);margin-bottom:4px;">Total acumulado pendiente de pago</div>
+      ${semanaHtml}
       ${detalleHtml}
       ${promHtml}
       ${histHtml}
@@ -4665,17 +4727,17 @@
       <div id="plat-monto-display" style="background:var(--oscuro);border:2px solid ${info.color};border-radius:14px;padding:16px;text-align:center;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:44px;color:${info.color};letter-spacing:2px;margin-bottom:10px;">$${totalEsperado.toFixed(2)}</div>
       <div id="plat-descuento-info" style="margin-bottom:10px;"></div>
       <div class="numpad" style="margin-bottom:14px;">
-        ${'7 8 9 4 5 6 1 2 3 . 0 DEL'.split(' ').map(k=>`<div class="numpad-btn${k==='DEL'?' btn-borrar':''}" onclick="platNumpad('${metodo}','${k}')">${k==='DEL'?'⌫':k}</div>`).join('')}
+        ${'7 8 9 4 5 6 1 2 3 . 0 DEL'.split(' ').map(k=>`<div class="numpad-btn${k==='DEL'?' btn-borrar':''}" onclick="platNumpad('${metodo}','${semana}','${k}')">${k==='DEL'?'⌫':k}</div>`).join('')}
       </div>
       <div class="modal-btns">
         <button class="btn-cancelar" onclick="document.getElementById('overlay-plat').classList.remove('visible')">Cancelar</button>
-        <button class="btn-confirmar" style="background:${info.color};" onclick="cobrarPlat('${metodo}')">💰 Registrar cobro total</button>
+        <button class="btn-confirmar" style="background:${info.color};" onclick="cobrarPlat('${metodo}','${semana}')">💰 Registrar cobro total</button>
       </div>`;
     document.getElementById('overlay-plat').classList.add('visible');
   }
 
-  function platNumpad(metodo, key) {
-    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado);
+  function platNumpad(metodo, semana, key) {
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id)) === semana);
     const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
     if (key === 'DEL') _platMontoStr = _platMontoStr.length > 1 ? _platMontoStr.slice(0,-1) : '';
     else if (key === '.') { if (!_platMontoStr.includes('.')) _platMontoStr += '.'; }
@@ -4685,10 +4747,10 @@
     actualizarInfoDescuento(totalEsperado);
   }
 
-  function cobrarPlat(metodo) {
+  function cobrarPlat(metodo, semana) {
     const monto = parseFloat(_platMontoStr);
     if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa un monto válido'); return; }
-    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado);
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id)) === semana);
     if (!entries.length) return;
     const info = PLAT_INFO[metodo] || { nombre: metodo };
     const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
