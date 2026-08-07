@@ -4268,7 +4268,9 @@
     const totV=semanas.reduce((s,w)=>s+w.ventas,0);const totS=semanas.reduce((s,w)=>s+Math.max(0,w.sueldoAsig-w.sueldoGast),0);const totI=semanas.reduce((s,w)=>s+Math.max(0,w.invAsig-w.invGast),0);
     document.getElementById('hist-total-ventas').textContent='$'+totV.toFixed(0);document.getElementById('hist-total-semanas').textContent=semanas.length;document.getElementById('hist-total-sueldo').textContent='$'+totS.toFixed(0);document.getElementById('hist-total-inv').textContent='$'+totI.toFixed(0);
     document.getElementById('hist-banner-monto').textContent='$'+totV.toLocaleString('es-MX',{maximumFractionDigits:0});
-    const semanasConVenta=semanas.filter(s=>s.ventas>0);
+    let semanasElegibles=semanas.slice(1,-1); // excluye la 1ª semana (probablemente incompleta, cuando empezaste a registrar) y la semana actual (aún en curso)
+    if(!semanasElegibles.length)semanasElegibles=semanas;
+    const semanasConVenta=semanasElegibles.filter(s=>s.ventas>0);
     const elMejorSem=document.getElementById('hist-mejor-semana');const elPeorSem=document.getElementById('hist-peor-semana');
     if(semanasConVenta.length){
       const mejorSem=semanasConVenta.reduce((a,b)=>b.ventas>a.ventas?b:a);
