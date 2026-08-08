@@ -1183,8 +1183,9 @@
       </div>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:14px;">
-      <button id="grb-negocio" onclick="selTipoGastoRapido('negocio')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">📦 Negocio</button>
-      <button id="grb-personal" onclick="selTipoGastoRapido('personal')" style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;">🧍 Personal</button>
+      <button id="grb-negocio" onclick="selTipoGastoRapido('negocio')" style="flex:1;padding:10px 4px;border-radius:10px;border:2px solid var(--amarillo);background:rgba(245,200,66,0.15);color:var(--amarillo);font-size:11px;font-weight:700;cursor:pointer;">📦 Negocio</button>
+      <button id="grb-personal" onclick="selTipoGastoRapido('personal')" style="flex:1;padding:10px 4px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:11px;font-weight:700;cursor:pointer;">🧍 Personal</button>
+      <button id="grb-colchon" onclick="selTipoGastoRapido('colchon')" style="flex:1;padding:10px 4px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:11px;font-weight:700;cursor:pointer;">🛡️ Colchón</button>
     </div>
     <div class="modal-btns">
       <button class="btn-cancelar" onclick="document.getElementById('overlay-gasto-rapido').classList.remove('visible')">Cancelar</button>
@@ -1264,6 +1265,21 @@
   let fiados = JSON.parse(localStorage.getItem('bajon_fiados') || '[]');
   let cuentasPlat = JSON.parse(localStorage.getItem('bajon_cuentas_plat') || '[]');
   function guardarCuentasPlat() { localStorage.setItem('bajon_cuentas_plat', JSON.stringify(cuentasPlat)); }
+  // Migración única: el corte de semana de las plataformas cambió de domingo a jueves
+  // (ciclo viernes–jueves). Las cuentas pendientes que ya estaban registradas se
+  // reclasifican con el nuevo corte para que se separen en la tarjetita del ciclo que
+  // realmente les corresponde, en vez de quedar mezcladas en una sola.
+  if (!localStorage.getItem('bajon_migracion_semana_rappi_v2')) {
+    let migro = false;
+    cuentasPlat.forEach(p => {
+      if (!p.cobrado && p.metodo === 'rappi') {
+        const nuevaSemana = getWeekEndKey(p.id, 'rappi');
+        if (p.semana !== nuevaSemana) { p.semana = nuevaSemana; migro = true; }
+      }
+    });
+    if (migro) guardarCuentasPlat();
+    localStorage.setItem('bajon_migracion_semana_rappi_v2', '1');
+  }
 
   // Plataformas que pagan por semana (pendientes)
   const METODOS_PLAT = ['rappi','uber','didi_tarjeta'];
@@ -1874,7 +1890,7 @@
     if (extra <= 0.01) return;
     const fecha = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
     const hora = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});
-    const semana = getWeekEndKey(Date.now());
+    const semana = getWeekEndKey(Date.now(), 'didi_tarjeta');
     cuentasPlat.push({
       id: Date.now() + Math.random(),
       metodo: 'didi_tarjeta',
@@ -2309,6 +2325,12 @@
     if (badge) { badge.textContent = movimientos.length; badge.classList.toggle('visible', movimientos.length > 0); }
   }
 
+  function badgeTipoGasto(tipo) {
+    if (tipo === 'personal') return { txt: '🧍 Personal', css: 'background:rgba(245,200,66,0.2);color:#f5c842;' };
+    if (tipo === 'colchon') return { txt: '🛡️ Colchón', css: 'background:rgba(230,57,70,0.2);color:var(--rojo);' };
+    return { txt: '📦 Negocio', css: 'background:rgba(245,200,66,0.2);color:#f5c842;' };
+  }
+
   function renderGastos() {
     const cont = document.getElementById('lista-gastos');
     if (!gastos.length) { cont.innerHTML='<div class="empty-state"><div class="icon">💸</div>Sin gastos registrados</div>'; return; }
@@ -2317,8 +2339,8 @@
         <div class="gasto-check"><input type="checkbox" id="chk-gasto-${g.id}" value="${g.id}"></div>
         <div class="info" style="margin-left:4px;">
           <div class="nombre-mov">${g.concepto}
-            <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin-left:6px;${g.tipo==='personal'?'background:rgba(245,200,66,0.2);color:#f5c842;':'background:rgba(245,200,66,0.2);color:#f5c842;'}">
-              ${g.tipo==='personal'?'🧍 Personal':'📦 Negocio'}
+            <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin-left:6px;${badgeTipoGasto(g.tipo).css}">
+              ${badgeTipoGasto(g.tipo).txt}
             </span>
           </div>
           <div class="detalle-mov">${g.hora}</div>
@@ -2454,7 +2476,8 @@
     dia.movimientos.forEach(m=>{ tots[m.metodo]=(tots[m.metodo]||0)+m.precio; });
     const neg=(dia.gastos||[]).filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
     const per=(dia.gastos||[]).filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
-    dia.totales={...tots,totalGastos:neg+per,totalGastosNegocio:neg,totalGastosPersonal:per,totalVenta:dia.movimientos.reduce((s,m)=>s+m.precio,0)};
+    const col=(dia.gastos||[]).filter(g=>g.tipo==='colchon').reduce((s,g)=>s+g.monto,0);
+    dia.totales={...tots,totalGastos:neg+per+col,totalGastosNegocio:neg,totalGastosPersonal:per,totalGastosColchon:col,totalVenta:dia.movimientos.reduce((s,m)=>s+m.precio,0)};
   }
 
   function renderModalDetalleDia(dia) {
@@ -2469,7 +2492,7 @@
 
     const gasHtml = (dia.gastos||[]).map(g=>`
       <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #2a2a3e;font-size:13px">
-        <span style="color:var(--gris);flex:1">${g.concepto} <span style="font-size:10px;padding:1px 6px;border-radius:8px;${g.tipo==='personal'?'background:rgba(245,200,66,0.2);color:#f5c842':'background:rgba(245,200,66,0.2);color:#f5c842'}">${g.tipo==='personal'?'Personal':'Negocio'}</span></span>
+        <span style="color:var(--gris);flex:1">${g.concepto} <span style="font-size:10px;padding:1px 6px;border-radius:8px;${badgeTipoGasto(g.tipo).css}">${badgeTipoGasto(g.tipo).txt}</span></span>
         <span style="color:var(--perdida);font-weight:700;margin-right:8px">$${g.monto.toFixed(2)}</span>
         <button class="btn-eliminar" onclick="eliminarGastoHist(${dia.id},${g.id})">✕</button>
       </div>`).join('')||'<div style="color:var(--gris);font-size:13px">Sin gastos</div>';
@@ -4623,17 +4646,24 @@
   // Interceptar confirmarVentaDirecta para capturar ventas de plataforma
   const _confirmarVentaDirecta_orig = window.confirmarVentaDirecta;
 
-  // Las plataformas cortan la semana el domingo a las 23:59. Esto calcula a qué
-  // "semana" (identificada por la fecha del domingo en que cierra) pertenece una venta,
-  // para que el lunes a las 00:00 las ventas nuevas empiecen a acumularse en una
-  // tarjetita distinta, sin mezclarse con lo que quedó pendiente de la semana pasada
+  // Rappi corta la semana de viernes a jueves (el corte de caja es el jueves a las
+  // 23:59 y el viernes se vuelve a abrir un ciclo nuevo). Uber y Didi Tarjeta cortan
+  // domingo a las 23:59 (ciclo lunes–domingo), como siempre. Esto calcula a qué
+  // "semana" (identificada por la fecha de cierre de ese ciclo) pertenece una venta,
+  // para que al abrir el nuevo ciclo las ventas nuevas empiecen a acumularse en una
+  // tarjetita distinta, sin mezclarse con lo que quedó pendiente del ciclo anterior
   // aunque el usuario no haya registrado ni eliminado esa tarjeta a tiempo.
-  function getWeekEndKey(ts) {
+  function getWeekEndKey(ts, metodo) {
     const d = new Date(ts);
-    const day = d.getDay(); // 0=domingo
-    const diff = day === 0 ? 0 : (7 - day);
-    const domingo = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
-    return domingo.getFullYear() + '-' + String(domingo.getMonth()+1).padStart(2,'0') + '-' + String(domingo.getDate()).padStart(2,'0');
+    const day = d.getDay(); // 0=domingo … 4=jueves … 5=viernes … 6=sábado
+    let diff;
+    if (metodo === 'rappi') {
+      diff = (4 - day + 7) % 7; // días que faltan hasta el jueves de cierre (ciclo viernes–jueves)
+    } else {
+      diff = day === 0 ? 0 : (7 - day); // días que faltan hasta el domingo de cierre (ciclo lunes–domingo)
+    }
+    const cierre = new Date(d.getFullYear(), d.getMonth(), d.getDate() + diff);
+    return cierre.getFullYear() + '-' + String(cierre.getMonth()+1).padStart(2,'0') + '-' + String(cierre.getDate()).padStart(2,'0');
   }
   function formatWeekLabel(key) {
     const [y,m,d] = key.split('-').map(Number);
@@ -4687,7 +4717,7 @@
   function registrarCuentaPlat(metodo, precio, producto) {
     const fecha = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
     const hora  = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});
-    const semana = getWeekEndKey(Date.now());
+    const semana = getWeekEndKey(Date.now(), metodo);
     cuentasPlat.push({ id: Date.now(), metodo, montoEsperado: precio, producto: producto || '', fecha, hora, cobrado: false, semana });
     guardarCuentasPlat();
     renderPlats();
@@ -4700,13 +4730,14 @@
     const pendientes = cuentasPlat.filter(p => !p.cobrado);
     if (!pendientes.length) { bar.classList.remove('visible'); return; }
     bar.classList.add('visible');
-    const semanaActual = getWeekEndKey(Date.now());
-    // Se agrupan las ventas pendientes por plataforma Y por semana (corte domingo 23:59).
-    // Así, si no cobras/eliminas la tarjeta a tiempo, el lunes las ventas nuevas caen en
-    // una tarjeta aparte en vez de seguir sumándose a la de la semana pasada.
+    // Se agrupan las ventas pendientes por plataforma Y por semana. Rappi usa corte
+    // jueves 23:59 (ciclo viernes–jueves); Uber y Didi Tarjeta usan corte domingo 23:59
+    // (ciclo lunes–domingo). Así, si no cobras/eliminas la tarjeta a tiempo, al abrir el
+    // nuevo ciclo las ventas nuevas caen en una tarjeta aparte en vez de seguir
+    // sumándose a la del ciclo pasado.
     const grupos = {};
     pendientes.forEach(p => {
-      const semana = p.semana || getWeekEndKey(p.id);
+      const semana = p.semana || getWeekEndKey(p.id, p.metodo);
       const key = p.metodo + '|' + semana;
       if (!grupos[key]) grupos[key] = { metodo: p.metodo, semana, total: 0, count: 0 };
       grupos[key].total += p.montoEsperado;
@@ -4716,6 +4747,7 @@
       const info = PLAT_INFO[g.metodo] || { nombre: g.metodo, cls: 'rappi' };
       const prom = calcularPromedioDescuento(g.metodo);
       const promTxt = prom !== null ? `<div class="pc-fecha" style="color:${prom>0?'var(--perdida)':'var(--verde)'};">~${prom.toFixed(1)}% desc.</div>` : '';
+      const semanaActual = getWeekEndKey(Date.now(), g.metodo);
       const esAtrasada = g.semana < semanaActual;
       const semanaTxt = esAtrasada
         ? `<div class="pc-fecha" style="color:var(--perdida);font-weight:700;">⚠️ semana pasada (${formatWeekLabel(g.semana)})</div>`
@@ -4762,7 +4794,7 @@
   }
 
   function abrirModalPlat(metodo, semana) {
-    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id)) === semana);
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id, metodo)) === semana);
     if (!entries.length) return;
     _platIdActual = metodo + '|' + semana;
     const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
@@ -4772,8 +4804,9 @@
     const promHtml = promDesc !== null
       ? `<div style="font-size:11px;color:var(--gris);text-align:center;margin-bottom:10px;">📊 Promedio histórico de descuento en ${info.nombre}: <b style="color:${promDesc > 0 ? 'var(--perdida)' : 'var(--verde)'};">${promDesc.toFixed(1)}%</b></div>`
       : '';
-    const esAtrasada = semana < getWeekEndKey(Date.now());
-    const semanaHtml = `<div style="font-size:12px;color:${esAtrasada?'var(--perdida)':'var(--gris)'};margin-bottom:10px;">${esAtrasada ? '⚠️ Semana pasada — cerró el domingo ' : 'Semana en curso — cierra el domingo '}${formatWeekLabel(semana)}</div>`;
+    const esAtrasada = semana < getWeekEndKey(Date.now(), metodo);
+    const diaCierre = metodo === 'rappi' ? 'jueves' : 'domingo';
+    const semanaHtml = `<div style="font-size:12px;color:${esAtrasada?'var(--perdida)':'var(--gris)'};margin-bottom:10px;">${esAtrasada ? '⚠️ Semana pasada — cerró el ' + diaCierre + ' ' : 'Semana en curso — cierra el ' + diaCierre + ' '}${formatWeekLabel(semana)}</div>`;
     // Detalle de las ventas que se están acumulando en esta cuenta pendiente
     const detalleHtml = `
       <div style="margin-bottom:12px;background:var(--oscuro);border-radius:10px;padding:10px;">
@@ -4824,7 +4857,7 @@
   }
 
   function platNumpad(metodo, semana, key) {
-    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id)) === semana);
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id, metodo)) === semana);
     const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
     if (key === 'DEL') _platMontoStr = _platMontoStr.length > 1 ? _platMontoStr.slice(0,-1) : '';
     else if (key === '.') { if (!_platMontoStr.includes('.')) _platMontoStr += '.'; }
@@ -4837,7 +4870,7 @@
   function cobrarPlat(metodo, semana) {
     const monto = parseFloat(_platMontoStr);
     if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa un monto válido'); return; }
-    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id)) === semana);
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id, metodo)) === semana);
     if (!entries.length) return;
     const info = PLAT_INFO[metodo] || { nombre: metodo };
     const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
@@ -4909,6 +4942,7 @@
     const brutoSem = movsSem.filter(m=>['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
     const gasNegSem = gastosSem.filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
     const gasPerSem = gastosSem.filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
+    const gasColchonSem = gastosSem.filter(g=>g.tipo==='colchon').reduce((s,g)=>s+g.monto,0);
     const sueldoAsig = brutoSem * pctS;
     const invAsig = brutoSem * pctI;
     const colchonAsig = brutoSem * pctC;
@@ -4916,10 +4950,10 @@
     const invNeto = Math.max(0, invAsig - gasNegSem);
     const fiadosPend = fiados.filter(f => f.abonado < f.total).reduce((s,f) => s + (f.total - f.abonado), 0);
 
-    function tarjetaEstado(label, asignado, gastado, tipo) {
+    function tarjetaEstado(label, asignado, gastado, tipo, extraHtml) {
       const neto = asignado - gastado;
       const positivo = neto >= 0;
-      const color = tipo === 'sueldo' ? 'var(--morado)' : tipo === 'inv' ? 'var(--amarillo)' : 'var(--verde)';
+      const color = tipo === 'sueldo' ? 'var(--morado)' : tipo === 'inv' ? 'var(--amarillo)' : tipo === 'colchon' ? 'var(--rojo)' : 'var(--verde)';
       const colorBorde = positivo ? color : 'var(--perdida)';
       return `<div style="background:var(--medio);border:2px solid ${colorBorde};border-radius:14px;padding:16px;margin-bottom:12px;">
         <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px;color:${color};letter-spacing:1px;margin-bottom:10px;">${label}</div>
@@ -4935,14 +4969,19 @@
           <span style="color:var(--texto)">${positivo ? 'Te quedan' : 'Debes'}</span>
           <span style="color:${positivo ? 'var(--verde)' : 'var(--perdida)'};">${positivo ? '' : '-'}$${Math.abs(neto).toFixed(0)} ${positivo ? '✅' : '⚠️'}</span>
         </div>
+        ${extraHtml || ''}
       </div>`;
     }
+
+    const colchonExtraHtml = `
+        <button onclick="abrirGastoRapido('colchon')" style="width:100%;margin-top:10px;background:transparent;border:1px solid var(--rojo);border-radius:8px;padding:10px;color:var(--rojo);font-size:12px;font-weight:700;cursor:pointer;">🛡️ Usar colchón</button>
+        <div style="font-size:10px;color:var(--gris);text-align:center;margin-top:6px;">Se acumula lunes a domingo. El lunes se corta y empieza de nuevo, aunque haya sobrado dinero.</div>`;
 
     el.innerHTML = `
       <div style="font-size:11px;color:var(--gris);text-align:center;margin-bottom:12px;">${fmtFecha(lunes)} al ${fmtFecha(domingo)}</div>
       ${tarjetaEstado('💵 Tu Sueldo esta semana', sueldoAsig, gasPerSem, 'sueldo')}
       ${tarjetaEstado('📦 Inversión esta semana', invAsig, gasNegSem, 'inv')}
-      ${tarjetaEstado('🛡️ Colchón acumulado', colchonAsig, 0, 'colchon')}
+      ${tarjetaEstado('🛡️ Colchón acumulado', colchonAsig, gasColchonSem, 'colchon', colchonExtraHtml)}
       ${fiadosPend > 0 ? `<div style="background:rgba(245,200,66,0.1);border:2px solid var(--amarillo);border-radius:14px;padding:14px;margin-bottom:12px;text-align:center;"><div style="font-size:11px;color:var(--amarillo);text-transform:uppercase;font-weight:700;margin-bottom:4px;">📒 Fiados pendientes</div><div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:36px;color:var(--amarillo);">$${fiadosPend.toFixed(0)}</div></div>` : ''}
       <div style="background:var(--medio);border:1px solid #333;border-radius:14px;padding:14px;text-align:center;">
         <div style="font-size:11px;color:var(--gris);text-transform:uppercase;margin-bottom:4px;">💰 Venta total semana</div>
@@ -5024,8 +5063,8 @@
     const hoyEnRango=new Date()>=desde&&new Date()<=hasta;const hoyStr=new Date().toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
     let ventas=[];if(hoyEnRango)movimientos.forEach(m=>ventas.push({Fecha:hoyStr,Hora:m.hora||'',Producto:m.producto,'Precio ($)':m.precio,Metodo:nombreMetodo(m.metodo)}));
     historial.forEach(dia=>{if(!fechaEnRango(dia.fecha,desde,hasta))return;dia.movimientos.forEach(m=>ventas.push({Fecha:dia.fecha,Hora:m.hora||'',Producto:m.producto,'Precio ($)':m.precio,Metodo:nombreMetodo(m.metodo)}));});
-    let gastosList=[];if(hoyEnRango)gastos.forEach(g=>gastosList.push({Fecha:hoyStr,Hora:g.hora||'',Concepto:g.concepto,'Monto ($)':g.monto,Tipo:g.tipo==='personal'?'Personal':'Negocio'}));
-    historial.forEach(dia=>{if(!fechaEnRango(dia.fecha,desde,hasta))return;(dia.gastos||[]).forEach(g=>gastosList.push({Fecha:dia.fecha,Hora:g.hora||'',Concepto:g.concepto,'Monto ($)':g.monto,Tipo:g.tipo==='personal'?'Personal':'Negocio'}));});
+    let gastosList=[];if(hoyEnRango)gastos.forEach(g=>gastosList.push({Fecha:hoyStr,Hora:g.hora||'',Concepto:g.concepto,'Monto ($)':g.monto,Tipo:g.tipo==='personal'?'Personal':g.tipo==='colchon'?'Colchón':'Negocio'}));
+    historial.forEach(dia=>{if(!fechaEnRango(dia.fecha,desde,hasta))return;(dia.gastos||[]).forEach(g=>gastosList.push({Fecha:dia.fecha,Hora:g.hora||'',Concepto:g.concepto,'Monto ($)':g.monto,Tipo:g.tipo==='personal'?'Personal':g.tipo==='colchon'?'Colchón':'Negocio'}));});
     if(!ventas.length&&!gastosList.length){mostrarToast('⚠️ No hay datos en ese rango');return;}
     const pref='ElBajon_'+desdeStr+'_'+hastaStr;
     if(ventas.length)descargarArchivo(toCSV(ventas),pref+'_Ventas.csv','text/csv;charset=utf-8;');
@@ -5136,12 +5175,12 @@
   let gastoRapidoMontoStr = '';
   let tipoGastoRapido = 'negocio';
 
-  function abrirGastoRapido() {
+  function abrirGastoRapido(tipoInicial) {
     gastoRapidoMontoStr = '';
-    tipoGastoRapido = 'negocio';
+    tipoGastoRapido = tipoInicial || 'negocio';
     document.getElementById('gasto-rapido-concepto').value = '';
     document.getElementById('gasto-rapido-display').textContent = '$0';
-    selTipoGastoRapido('negocio');
+    selTipoGastoRapido(tipoGastoRapido);
     document.getElementById('overlay-gasto-rapido').classList.add('visible');
   }
 
@@ -5161,13 +5200,11 @@
     tipoGastoRapido = tipo;
     const bN = document.getElementById('grb-negocio');
     const bP = document.getElementById('grb-personal');
-    if (tipo === 'negocio') {
-      bN.style.borderColor='var(--amarillo)'; bN.style.background='rgba(245,200,66,0.15)'; bN.style.color='var(--amarillo)';
-      bP.style.borderColor='#444'; bP.style.background='transparent'; bP.style.color='var(--gris)';
-    } else {
-      bP.style.borderColor='var(--morado)'; bP.style.background='rgba(245,200,66,0.15)'; bP.style.color='var(--morado)';
-      bN.style.borderColor='#444'; bN.style.background='transparent'; bN.style.color='var(--gris)';
-    }
+    const bC = document.getElementById('grb-colchon');
+    [bN,bP,bC].forEach(b=>{ b.style.borderColor='#444'; b.style.background='transparent'; b.style.color='var(--gris)'; });
+    if (tipo === 'negocio') { bN.style.borderColor='var(--amarillo)'; bN.style.background='rgba(245,200,66,0.15)'; bN.style.color='var(--amarillo)'; }
+    else if (tipo === 'colchon') { bC.style.borderColor='var(--rojo)'; bC.style.background='rgba(230,57,70,0.15)'; bC.style.color='var(--rojo)'; }
+    else { bP.style.borderColor='var(--morado)'; bP.style.background='rgba(245,200,66,0.15)'; bP.style.color='var(--morado)'; }
   }
 
   function confirmarGastoRapido() {
@@ -5181,7 +5218,9 @@
     document.getElementById('overlay-gasto-rapido').classList.remove('visible');
     renderGastos();
     actualizarHeaderTotal();
-    mostrarToast('💸 Gasto registrado');
+    if (typeof renderEstadoCuenta === 'function') renderEstadoCuenta();
+    const msgTipo = tipoGastoRapido==='colchon' ? '🛡️ Gasto de colchón registrado' : '💸 Gasto registrado';
+    mostrarToast(msgTipo);
   }
 
   // ════════════════════════════════════════════════════
