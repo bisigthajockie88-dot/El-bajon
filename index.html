@@ -1265,21 +1265,22 @@
   let fiados = JSON.parse(localStorage.getItem('bajon_fiados') || '[]');
   let cuentasPlat = JSON.parse(localStorage.getItem('bajon_cuentas_plat') || '[]');
   function guardarCuentasPlat() { localStorage.setItem('bajon_cuentas_plat', JSON.stringify(cuentasPlat)); }
-  // Migración única: el corte de semana de las plataformas cambió de domingo a jueves
-  // (ciclo viernes–jueves). Las cuentas pendientes que ya estaban registradas se
-  // reclasifican con el nuevo corte para que se separen en la tarjetita del ciclo que
-  // realmente les corresponde, en vez de quedar mezcladas en una sola.
-  if (!localStorage.getItem('bajon_migracion_semana_rappi_v2')) {
-    let migro = false;
+  // Re-sincroniza el "corte de semana" de cada cuenta pendiente cada vez que se abre la
+  // app (no solo una vez), usando su fecha real de registro (p.id). Rappi cierra de
+  // viernes a jueves; Uber y Didi Tarjeta cierran de lunes a domingo. Esto se ejecuta
+  // siempre porque es rápido y no tiene efectos secundarios raros: garantiza que cada
+  // venta quede en la tarjetita del ciclo que realmente le toca, aunque una migración
+  // anterior se haya quedado a medias o mal aplicada.
+  (function resincronizarSemanasCuentasPlat() {
+    let cambio = false;
     cuentasPlat.forEach(p => {
-      if (!p.cobrado && p.metodo === 'rappi') {
-        const nuevaSemana = getWeekEndKey(p.id, 'rappi');
-        if (p.semana !== nuevaSemana) { p.semana = nuevaSemana; migro = true; }
+      if (!p.cobrado) {
+        const semanaCorrecta = getWeekEndKey(p.id, p.metodo);
+        if (p.semana !== semanaCorrecta) { p.semana = semanaCorrecta; cambio = true; }
       }
     });
-    if (migro) guardarCuentasPlat();
-    localStorage.setItem('bajon_migracion_semana_rappi_v2', '1');
-  }
+    if (cambio) guardarCuentasPlat();
+  })();
 
   // Plataformas que pagan por semana (pendientes)
   const METODOS_PLAT = ['rappi','uber','didi_tarjeta'];
