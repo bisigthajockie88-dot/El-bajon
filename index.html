@@ -1267,7 +1267,7 @@
   function guardarCuentasPlat() { localStorage.setItem('bajon_cuentas_plat', JSON.stringify(cuentasPlat)); }
   // Re-sincroniza el "corte de semana" de cada cuenta pendiente cada vez que se abre la
   // app (no solo una vez), usando su fecha real de registro (p.id). Rappi cierra de
-  // viernes a jueves; Uber y Didi Tarjeta cierran de lunes a domingo. Esto se ejecuta
+  // sábado a viernes; Uber y Didi Tarjeta cierran de lunes a domingo. Esto se ejecuta
   // siempre porque es rápido y no tiene efectos secundarios raros: garantiza que cada
   // venta quede en la tarjetita del ciclo que realmente le toca, aunque una migración
   // anterior se haya quedado a medias o mal aplicada.
@@ -1275,7 +1275,9 @@
     let cambio = false;
     cuentasPlat.forEach(p => {
       if (!p.cobrado) {
-        const semanaCorrecta = getWeekEndKey(p.id, p.metodo);
+        const fechaReal = parseFechaCorta(p.fecha);
+        const ts = fechaReal ? fechaReal.getTime() + 43200000 : p.id; // +12h para evitar líos de huso horario en el borde de un día
+        const semanaCorrecta = getWeekEndKey(ts, p.metodo);
         if (p.semana !== semanaCorrecta) { p.semana = semanaCorrecta; cambio = true; }
       }
     });
@@ -4647,19 +4649,32 @@
   // Interceptar confirmarVentaDirecta para capturar ventas de plataforma
   const _confirmarVentaDirecta_orig = window.confirmarVentaDirecta;
 
-  // Rappi corta la semana de viernes a jueves (el corte de caja es el jueves a las
-  // 23:59 y el viernes se vuelve a abrir un ciclo nuevo). Uber y Didi Tarjeta cortan
-  // domingo a las 23:59 (ciclo lunes–domingo), como siempre. Esto calcula a qué
-  // "semana" (identificada por la fecha de cierre de ese ciclo) pertenece una venta,
-  // para que al abrir el nuevo ciclo las ventas nuevas empiecen a acumularse en una
-  // tarjetita distinta, sin mezclarse con lo que quedó pendiente del ciclo anterior
-  // aunque el usuario no haya registrado ni eliminado esa tarjeta a tiempo.
+  // Parsea el formato corto de fecha usado en cuentasPlat, ej. "31 jul 2026" (sin "de").
+  function parseFechaCorta(fechaStr) {
+    if (!fechaStr) return null;
+    const meses = {ene:0,feb:1,mar:2,abr:3,may:4,jun:5,jul:6,ago:7,sep:8,oct:9,nov:10,dic:11};
+    const m = String(fechaStr).match(/(\d+)\s+([a-záéíóú]+)\.?\s+(\d+)/i);
+    if (!m) return null;
+    const mes = meses[m[2].toLowerCase().slice(0,3)];
+    if (mes === undefined) return null;
+    return new Date(parseInt(m[3]), mes, parseInt(m[1]));
+  }
+
+  // Rappi corta la semana de sábado a viernes (el corte de caja es el viernes a las
+  // 23:59 y el sábado se vuelve a abrir un ciclo nuevo) — confirmado directamente por
+  // soporte de Rappi: periodo 25/07–31/07 se paga el 31/07, periodo 01/08–07/08 se paga
+  // el 14/08. Uber y Didi Tarjeta cortan domingo a las 23:59 (ciclo lunes–domingo), como
+  // siempre. Esto calcula a qué "semana" (identificada por la fecha de cierre de ese
+  // ciclo) pertenece una venta, para que al abrir el nuevo ciclo las ventas nuevas
+  // empiecen a acumularse en una tarjetita distinta, sin mezclarse con lo que quedó
+  // pendiente del ciclo anterior aunque el usuario no haya registrado ni eliminado esa
+  // tarjeta a tiempo.
   function getWeekEndKey(ts, metodo) {
     const d = new Date(ts);
     const day = d.getDay(); // 0=domingo … 4=jueves … 5=viernes … 6=sábado
     let diff;
     if (metodo === 'rappi') {
-      diff = (4 - day + 7) % 7; // días que faltan hasta el jueves de cierre (ciclo viernes–jueves)
+      diff = (5 - day + 7) % 7; // días que faltan hasta el viernes de cierre (ciclo sábado–viernes)
     } else {
       diff = day === 0 ? 0 : (7 - day); // días que faltan hasta el domingo de cierre (ciclo lunes–domingo)
     }
@@ -4732,7 +4747,7 @@
     if (!pendientes.length) { bar.classList.remove('visible'); return; }
     bar.classList.add('visible');
     // Se agrupan las ventas pendientes por plataforma Y por semana. Rappi usa corte
-    // jueves 23:59 (ciclo viernes–jueves); Uber y Didi Tarjeta usan corte domingo 23:59
+    // viernes 23:59 (ciclo sábado–viernes); Uber y Didi Tarjeta usan corte domingo 23:59
     // (ciclo lunes–domingo). Así, si no cobras/eliminas la tarjeta a tiempo, al abrir el
     // nuevo ciclo las ventas nuevas caen en una tarjeta aparte en vez de seguir
     // sumándose a la del ciclo pasado.
@@ -4806,7 +4821,7 @@
       ? `<div style="font-size:11px;color:var(--gris);text-align:center;margin-bottom:10px;">📊 Promedio histórico de descuento en ${info.nombre}: <b style="color:${promDesc > 0 ? 'var(--perdida)' : 'var(--verde)'};">${promDesc.toFixed(1)}%</b></div>`
       : '';
     const esAtrasada = semana < getWeekEndKey(Date.now(), metodo);
-    const diaCierre = metodo === 'rappi' ? 'jueves' : 'domingo';
+    const diaCierre = metodo === 'rappi' ? 'viernes' : 'domingo';
     const semanaHtml = `<div style="font-size:12px;color:${esAtrasada?'var(--perdida)':'var(--gris)'};margin-bottom:10px;">${esAtrasada ? '⚠️ Semana pasada — cerró el ' + diaCierre + ' ' : 'Semana en curso — cierra el ' + diaCierre + ' '}${formatWeekLabel(semana)}</div>`;
     // Detalle de las ventas que se están acumulando en esta cuenta pendiente
     const detalleHtml = `
@@ -4943,12 +4958,21 @@
     const brutoSem = movsSem.filter(m=>['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
     const gasNegSem = gastosSem.filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
     const gasPerSem = gastosSem.filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
-    const gasColchonSem = gastosSem.filter(g=>g.tipo==='colchon').reduce((s,g)=>s+g.monto,0);
+    const gasColchonManualSem = gastosSem.filter(g=>g.tipo==='colchon').reduce((s,g)=>s+g.monto,0);
     const sueldoAsig = brutoSem * pctS;
     const invAsig = brutoSem * pctI;
     const colchonAsig = brutoSem * pctC;
-    const sueldoNeto = Math.max(0, sueldoAsig - gasPerSem);
-    const invNeto = Math.max(0, invAsig - gasNegSem);
+    // Cascada: si los gastos de negocio superan la inversión de la semana, ese faltante se
+    // cubre primero con el colchón y, si no alcanza, con el sueldo — igual que en la
+    // Distribución del día. Así el colchón ya refleja lo que realmente le queda disponible,
+    // no solo lo que se sacó a mano con "Usar colchón".
+    const invFaltante = Math.max(0, gasNegSem - invAsig);
+    const colchonUsadoCascada = Math.min(invFaltante, Math.max(0, colchonAsig - gasColchonManualSem));
+    const faltanteTrasColchon = invFaltante - colchonUsadoCascada;
+    const sueldoUsadoCascada = Math.min(faltanteTrasColchon, sueldoAsig);
+    const gastadoInvDisplay = gasNegSem - colchonUsadoCascada - sueldoUsadoCascada;
+    const gastadoColchonDisplay = gasColchonManualSem + colchonUsadoCascada;
+    const gastadoSueldoDisplay = gasPerSem + sueldoUsadoCascada;
     const fiadosPend = fiados.filter(f => f.abonado < f.total).reduce((s,f) => s + (f.total - f.abonado), 0);
 
     function tarjetaEstado(label, asignado, gastado, tipo, extraHtml) {
@@ -4976,13 +5000,14 @@
 
     const colchonExtraHtml = `
         <button onclick="abrirGastoRapido('colchon')" style="width:100%;margin-top:10px;background:transparent;border:1px solid var(--rojo);border-radius:8px;padding:10px;color:var(--rojo);font-size:12px;font-weight:700;cursor:pointer;">🛡️ Usar colchón</button>
+        ${colchonUsadoCascada>0.01 ? `<div style="font-size:10px;color:var(--amarillo);text-align:center;margin-top:8px;">⚠️ $${colchonUsadoCascada.toFixed(0)} de esto ya se usó automáticamente para cubrir el faltante de Inversión</div>` : ''}
         <div style="font-size:10px;color:var(--gris);text-align:center;margin-top:6px;">Se acumula lunes a domingo. El lunes se corta y empieza de nuevo, aunque haya sobrado dinero.</div>`;
 
     el.innerHTML = `
       <div style="font-size:11px;color:var(--gris);text-align:center;margin-bottom:12px;">${fmtFecha(lunes)} al ${fmtFecha(domingo)}</div>
-      ${tarjetaEstado('💵 Tu Sueldo esta semana', sueldoAsig, gasPerSem, 'sueldo')}
-      ${tarjetaEstado('📦 Inversión esta semana', invAsig, gasNegSem, 'inv')}
-      ${tarjetaEstado('🛡️ Colchón acumulado', colchonAsig, gasColchonSem, 'colchon', colchonExtraHtml)}
+      ${tarjetaEstado('💵 Tu Sueldo esta semana', sueldoAsig, gastadoSueldoDisplay, 'sueldo')}
+      ${tarjetaEstado('📦 Inversión esta semana', invAsig, gastadoInvDisplay, 'inv')}
+      ${tarjetaEstado('🛡️ Colchón acumulado', colchonAsig, gastadoColchonDisplay, 'colchon', colchonExtraHtml)}
       ${fiadosPend > 0 ? `<div style="background:rgba(245,200,66,0.1);border:2px solid var(--amarillo);border-radius:14px;padding:14px;margin-bottom:12px;text-align:center;"><div style="font-size:11px;color:var(--amarillo);text-transform:uppercase;font-weight:700;margin-bottom:4px;">📒 Fiados pendientes</div><div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:36px;color:var(--amarillo);">$${fiadosPend.toFixed(0)}</div></div>` : ''}
       <div style="background:var(--medio);border:1px solid #333;border-radius:14px;padding:14px;text-align:center;">
         <div style="font-size:11px;color:var(--gris);text-transform:uppercase;margin-bottom:4px;">💰 Venta total semana</div>
