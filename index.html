@@ -1274,7 +1274,9 @@
   (function resincronizarSemanasCuentasPlat() {
     let cambio = false;
     cuentasPlat.forEach(p => {
-      if (!p.cobrado) {
+      // Si el usuario ya movió esta venta manualmente con las flechitas ◀▶, se respeta
+      // esa decisión y no se vuelve a recalcular desde la fecha de registro.
+      if (!p.cobrado && !p.semanaManual) {
         const fechaReal = parseFechaCorta(p.fecha);
         const ts = fechaReal ? fechaReal.getTime() + 43200000 : p.id; // +12h para evitar líos de huso horario en el borde de un día
         const semanaCorrecta = getWeekEndKey(ts, p.metodo);
@@ -4944,6 +4946,7 @@
     const [y, m, d] = semanaActual.split('-').map(Number);
     const nuevaFecha = new Date(y, m - 1, d + (direccion * 7));
     entry.semana = nuevaFecha.getFullYear() + '-' + String(nuevaFecha.getMonth() + 1).padStart(2, '0') + '-' + String(nuevaFecha.getDate()).padStart(2, '0');
+    entry.semanaManual = true; // marca que fue movida a mano, para que no se resincronice sola al reabrir la app
     guardarCuentasPlat();
     document.getElementById('overlay-plat').classList.remove('visible');
     renderPlats();
