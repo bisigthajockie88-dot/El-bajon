@@ -4828,9 +4828,13 @@
       <div style="margin-bottom:12px;background:var(--oscuro);border-radius:10px;padding:10px;">
         <div style="font-size:10px;color:var(--gris);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Ventas acumuladas (${entries.length})</div>
         ${entries.map(e => `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #2a2a2a;font-size:12px;">
-          <span style="color:var(--gris);">${e.fecha}${e.producto?' · '+e.producto:''}</span>
+          <span style="color:var(--gris);">${e.fecha} ${e.hora||''}${e.producto?' · '+e.producto:''}</span>
           <span style="color:var(--texto);">$${e.montoEsperado.toFixed(0)}</span>
-          <span onclick="event.stopPropagation();eliminarCuentaPlat(${e.id})" style="color:var(--perdida);cursor:pointer;padding-left:10px;">🗑️</span>
+          <span style="display:flex;align-items:center;gap:8px;padding-left:8px;">
+            <span onclick="event.stopPropagation();moverSemanaCuentaPlat(${e.id},-1)" title="Mover a la semana pasada" style="color:var(--gris);cursor:pointer;">◀</span>
+            <span onclick="event.stopPropagation();moverSemanaCuentaPlat(${e.id},1)" title="Mover a la semana siguiente" style="color:var(--gris);cursor:pointer;">▶</span>
+            <span onclick="event.stopPropagation();eliminarCuentaPlat(${e.id})" style="color:var(--perdida);cursor:pointer;">🗑️</span>
+          </span>
         </div>`).join('')}
       </div>`;
     // Últimos cobros ya liquidados de esta plataforma
@@ -4927,6 +4931,23 @@
     document.getElementById('overlay-plat').classList.remove('visible');
     renderPlats();
     mostrarToast('✓ Cuenta eliminada');
+  }
+
+  // Mueve una venta pendiente a la semana anterior o siguiente sin tocar su hora/fecha
+  // de registro. Sirve para cuando la venta ocurrió cerca del corte (ej. domingo tarde)
+  // pero se registró ya entrada la nueva semana: así se puede reasignar manualmente a la
+  // tarjetita semanal a la que en realidad pertenece. direccion: -1 = semana pasada, +1 = semana siguiente.
+  function moverSemanaCuentaPlat(id, direccion) {
+    const entry = cuentasPlat.find(p => p.id === id);
+    if (!entry) return;
+    const semanaActual = entry.semana || getWeekEndKey(entry.id, entry.metodo);
+    const [y, m, d] = semanaActual.split('-').map(Number);
+    const nuevaFecha = new Date(y, m - 1, d + (direccion * 7));
+    entry.semana = nuevaFecha.getFullYear() + '-' + String(nuevaFecha.getMonth() + 1).padStart(2, '0') + '-' + String(nuevaFecha.getDate()).padStart(2, '0');
+    guardarCuentasPlat();
+    document.getElementById('overlay-plat').classList.remove('visible');
+    renderPlats();
+    mostrarToast(direccion < 0 ? '◀ Movida a la semana pasada' : '▶ Movida a la semana siguiente');
   }
 
   // ════════════════════════════════════════════════════
