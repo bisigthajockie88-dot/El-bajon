@@ -2502,9 +2502,9 @@
         <button class="btn-eliminar" onclick="eliminarGastoHist(${dia.id},${g.id})">✕</button>
       </div>`).join('')||'<div style="color:var(--gris);font-size:13px">Sin gastos</div>';
 
-    const pctS=(parseFloat(document.getElementById('pct-sueldo').value)||40)/100;
-    const pctI=(parseFloat(document.getElementById('pct-inv').value)||45)/100;
-    const pctC=(parseFloat(document.getElementById('pct-colchon').value)||15)/100;
+    const pctS=(pctVal('pct-sueldo', 40))/100;
+    const pctI=(pctVal('pct-inv', 45))/100;
+    const pctC=(pctVal('pct-colchon', 15))/100;
     const t=dia.totales; const bruto=(t.efectivo||0)+(t.tarjeta||0)+(t.didi_efectivo||0)+(t.facebook||0)+(t.whatsapp||0);
     const tGasNeg=t.totalGastosNegocio||0,tGasPer=t.totalGastosPersonal||0;
     const sueldoBase=bruto*pctS; let invFinal=bruto*pctI-tGasNeg; let desCC=0;
@@ -2629,8 +2629,8 @@
   // ════════════════════════════════════════════════════
   // Calcula el colchón disponible de días anteriores de la misma semana
   function colchonDiasAnterioresSemana() {
-    const pctI = (parseFloat(document.getElementById('pct-inv').value) || 0) / 100;
-    const pctC = (parseFloat(document.getElementById('pct-colchon').value) || 0) / 100;
+    const pctI = (pctVal('pct-inv', 0)) / 100;
+    const pctC = (pctVal('pct-colchon', 0)) / 100;
     const hoy = new Date(); hoy.setHours(0,0,0,0);
     const dia = hoy.getDay();
     const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - (dia === 0 ? 6 : dia - 1));
@@ -2665,9 +2665,9 @@
   // Aplica la cascada del día: inv hoy → colchón hoy → sueldo hoy.
   // (Ya NO se toma colchón de días anteriores para cubrir compras del día — cada día se cubre con lo suyo.)
   function calcularCascada(bruto, totalGasNeg, totalGasPer) {
-    const pctS = (parseFloat(document.getElementById('pct-sueldo').value) || 0) / 100;
-    const pctI = (parseFloat(document.getElementById('pct-inv').value) || 0) / 100;
-    const pctC = (parseFloat(document.getElementById('pct-colchon').value) || 0) / 100;
+    const pctS = (pctVal('pct-sueldo', 0)) / 100;
+    const pctI = (pctVal('pct-inv', 0)) / 100;
+    const pctC = (pctVal('pct-colchon', 0)) / 100;
     const sueldoBase  = bruto * pctS;
     const invBase     = bruto * pctI;
     const colchonBase = bruto * pctC;
@@ -2692,9 +2692,9 @@
   function renderDistribucion() {
     const t=calcularTotales();
     const bruto=t.efectivo+t.tarjeta+t.didi_efectivo+(t.facebook||0)+(t.whatsapp||0);
-    const pctS=(parseFloat(document.getElementById('pct-sueldo').value)||0)/100;
-    const pctI=(parseFloat(document.getElementById('pct-inv').value)||0)/100;
-    const pctC=(parseFloat(document.getElementById('pct-colchon').value)||0)/100;
+    const pctS=(pctVal('pct-sueldo', 0))/100;
+    const pctI=(pctVal('pct-inv', 0))/100;
+    const pctC=(pctVal('pct-colchon', 0))/100;
     document.getElementById('lbl-sueldo').textContent=Math.round(pctS*100)+'%';
     document.getElementById('lbl-inv').textContent=Math.round(pctI*100)+'%';
     document.getElementById('lbl-colchon').textContent=Math.round(pctC*100)+'%';
@@ -3880,7 +3880,7 @@
   function cerrarAhorroMov(e){if(e.target===document.getElementById('overlay-ahorro-mov'))document.getElementById('overlay-ahorro-mov').classList.remove('visible');}
   function selDepOrigen(origen){_ahorroDepOrigen=origen;_ahorroSueldoForzar=false;renderAhorroMovModal();}
   function sueldoDisponibleHoy(){
-    const pctS=(parseFloat(document.getElementById('pct-sueldo').value)||40)/100;
+    const pctS=(pctVal('pct-sueldo', 40))/100;
     const movReal=movimientos.filter(m=>!m.esPlatPendiente);
     const bruto=movReal.filter(m=>['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
     const gasP=gastos.filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
@@ -4094,7 +4094,7 @@
     document.getElementById('graf-total-semana').textContent='$'+totalSem.toFixed(0);
     const gasTotal=gastosSem.reduce((s,g)=>s+g.monto,0);
     document.getElementById('graf-gastos-semana-top').textContent='$'+gasTotal.toFixed(0);
-    const pctS=(parseFloat(document.getElementById('pct-sueldo').value)||40)/100;
+    const pctS=(pctVal('pct-sueldo', 40))/100;
     const brutoSem=movs.filter(m=>['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
     document.getElementById('graf-sueldo-semana').textContent='$'+(brutoSem*pctS).toFixed(0);
     const cf={color:'#c0c0d8',gridColor:'rgba(255,255,255,0.025)'};
@@ -4169,7 +4169,7 @@
     const colGasPer=coloresBarrasDestacadas(gasPerDia,{hoyIdx:hoyIdxSemana});
     destroyChart('gastos-semana');grafCharts['gastos-semana']=new Chart(document.getElementById('chart-gastos-semana'),{type:'bar',data:{labels:diasNom,datasets:[{label:'📦 Negocio',data:gasNegDia,backgroundColor:colGasNeg.bg,borderColor:colGasNeg.bc,borderWidth:2,borderRadius:5},{label:'🧍 Personal',data:gasPerDia,backgroundColor:colGasPer.bg,borderColor:colGasPer.bc,borderWidth:2,borderRadius:5}]},options:{responsive:true,layout:{padding:{top:16}},plugins:{legend:{display:true,position:'top',labels:{color:cf.color,font:{size:11},padding:10}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': $'+ctx.raw.toFixed(2)}},valorBarra:{enabled:true,font:'bold 9px sans-serif'}},scales:{x:{ticks:{color:cf.color},grid:{display:false}},y:{ticks:{color:cf.color,callback:v=>'$'+v},grid:{color:cf.gridColor}}}}});
     const resGasSem=document.getElementById('resumen-gastos-semana');const totNeg=gasNegDia.reduce((s,v)=>s+v,0);const totPer=gasPerDia.reduce((s,v)=>s+v,0);if(resGasSem)resGasSem.innerHTML=`<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding:4px 0;font-size:12px;"><span style="color:#f5c842">📦 Negocio: <b>$${totNeg.toFixed(0)}</b></span><span style="color:#f5c842">🧍 Personal: <b>$${totPer.toFixed(0)}</b></span><span style="color:#991b1b">💸 Total: <b>$${(totNeg+totPer).toFixed(0)}</b></span></div>`;
-    const pctI=(parseFloat(document.getElementById('pct-inv').value)||45)/100;
+    const pctI=(pctVal('pct-inv', 45))/100;
     const invPorDia=diasFechas.map(d=>{const bruto=movs.filter(m=>m._fecha.toDateString()===d.toDateString()&&['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);return bruto*pctI;});
     document.getElementById('label-inv-semana').textContent='Semana: '+semLabel;
     const invAsigSem=invPorDia.reduce((s,v)=>s+v,0);
@@ -4202,14 +4202,14 @@
     const sueldoUsadoPorDia=diasFechas.map((d,i)=>{
       const bruto=movs.filter(m=>m._fecha.toDateString()===d.toDateString()&&['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
       const gasNegDiaLocal=gastosSem.filter(g=>g._fecha.toDateString()===d.toDateString()&&(!g.tipo||g.tipo==='negocio')).reduce((s,g)=>s+g.monto,0);
-      const invBase=bruto*pctI; const colchonBase=bruto*(parseFloat(document.getElementById('pct-colchon').value)||15)/100;
+      const invBase=bruto*pctI; const colchonBase=bruto*(pctVal('pct-colchon', 15))/100;
       let faltante=Math.max(0,gasNegDiaLocal-invBase);
       // Colchón de días anteriores de la semana (solo los días anteriores a este día en la semana)
       const diasAntDIndex=diasFechas.slice(0,i);
       let colchonAntDisp=diasAntDIndex.reduce((sum,da)=>{
         const bDA=movs.filter(m=>m._fecha.toDateString()===da.toDateString()&&['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
         const gDA=gastosSem.filter(g=>g._fecha.toDateString()===da.toDateString()&&(!g.tipo||g.tipo==='negocio')).reduce((s,g)=>s+g.monto,0);
-        const invDA=bDA*pctI; const colDA=bDA*(parseFloat(document.getElementById('pct-colchon').value)||15)/100;
+        const invDA=bDA*pctI; const colDA=bDA*(pctVal('pct-colchon', 15))/100;
         return sum+Math.max(0,colDA-Math.max(0,gDA-invDA));
       },0);
       let colchonAntUsado=Math.min(faltante,colchonAntDisp); faltante-=colchonAntUsado;
@@ -4263,8 +4263,8 @@
   let histVerTodo=false;
   function toggleHistVerTodo(){histVerTodo=!histVerTodo;renderGraficasHistoricas();}
   function calcularSemanasHistoricas(){
-    const pctS=(parseFloat(document.getElementById('pct-sueldo').value)||40)/100;
-    const pctI=(parseFloat(document.getElementById('pct-inv').value)||45)/100;
+    const pctS=(pctVal('pct-sueldo', 40))/100;
+    const pctI=(pctVal('pct-inv', 45))/100;
     const semanasMap={};const hoyLunes=lunesDe(new Date());const keyHoy=hoyLunes.getTime();
     const tHoy=calcularTotales();const brutoHoy=tHoy.efectivo+tHoy.tarjeta+tHoy.didi_efectivo+(tHoy.facebook||0)+(tHoy.whatsapp||0);
     if(!semanasMap[keyHoy])semanasMap[keyHoy]={lunes:hoyLunes,ventas:0,invAsig:0,invGast:0,sueldoAsig:0,sueldoGast:0};
@@ -4959,9 +4959,9 @@
   function renderEstadoCuenta() {
     const el = document.getElementById('estado-cuenta-contenido');
     if (!el) return;
-    const pctS = (parseFloat(document.getElementById('pct-sueldo').value) || 40) / 100;
-    const pctI = (parseFloat(document.getElementById('pct-inv').value) || 45) / 100;
-    const pctC = (parseFloat(document.getElementById('pct-colchon').value) || 15) / 100;
+    const pctS = (pctVal('pct-sueldo', 40)) / 100;
+    const pctI = (pctVal('pct-inv', 45)) / 100;
+    const pctC = (pctVal('pct-colchon', 15)) / 100;
     // Calcular semana actual
     const hoy = new Date(); const dia = hoy.getDay();
     const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - (dia === 0 ? 6 : dia - 1)); lunes.setHours(0,0,0,0);
@@ -5072,9 +5072,9 @@
     (diaData.gastos || []).forEach(g => gastosCSV.push([diaData.fecha, g.hora||'', g.concepto, g.monto, g.tipo === 'personal' ? 'Personal' : 'Negocio']));
     const t = diaData.totales;
     const bruto = (t.efectivo||0)+(t.tarjeta||0)+(t.didi_efectivo||0)+(t.facebook||0)+(t.whatsapp||0);
-    const pctS = (parseFloat(document.getElementById('pct-sueldo').value)||40)/100;
-    const pctI = (parseFloat(document.getElementById('pct-inv').value)||45)/100;
-    const pctC = (parseFloat(document.getElementById('pct-colchon').value)||15)/100;
+    const pctS = (pctVal('pct-sueldo', 40))/100;
+    const pctI = (pctVal('pct-inv', 45))/100;
+    const pctC = (pctVal('pct-colchon', 15))/100;
     const resumenCSV = [
       ['Concepto','Monto'],
       ['Venta total', t.totalVenta],
@@ -5149,10 +5149,17 @@
   // ════════════════════════════════════════════════════
   // MEJORA 1 — GUARDAR PORCENTAJES EN LOCALSTORAGE
   // ════════════════════════════════════════════════════
+  // Lee un porcentaje del input; si el campo está vacío/no es número usa el default.
+  // OJO: NO usar "|| default" aquí porque 0 es un valor válido y falsy en JS
+  // (eso causaba que el % de Colchón no se pudiera dejar en 0).
+  function pctVal(id, def) {
+    const v = parseFloat(document.getElementById(id).value);
+    return isNaN(v) ? def : v;
+  }
   function guardarPcts() {
-    const s = parseFloat(document.getElementById('pct-sueldo').value) || 40;
-    const i = parseFloat(document.getElementById('pct-inv').value) || 45;
-    const c = parseFloat(document.getElementById('pct-colchon').value) || 15;
+    const s = pctVal('pct-sueldo', 40);
+    const i = pctVal('pct-inv', 45);
+    const c = pctVal('pct-colchon', 15);
     localStorage.setItem('bajon_dist_pcts', JSON.stringify({s,i,c}));
   }
   function cargarPcts() {
