@@ -1591,18 +1591,37 @@
     renderCostosHoy();
   }
 
+  function normNom(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim(); }
+  const GRUPOS_NOMBRES=[
+    ['ham sola','hamburguesa sola','hamburguesa','la bajonera','bajonera'],
+    ['ham c papas','ham con papas','hamburguesa c papas','hamburguesa con papas','la bajonera c papas','la bajonera con papas','bajonera c papas'],
+    ['hd sencillo','hd sencillos','hotdog sencillo','hotdogs sencillos','hot dog sencillo','hot dogs sencillos'],
+    ['hd preparado','hd preparados','hotdog preparado','hotdogs preparados','hot dog preparado','hot dogs preparados'],
+    ['ord sencilla','ord sencillas','orden sencilla','orden hotdogs sencillos','orden hotdog sencillo','orden hot dogs sencillos','orden de hotdogs sencillos','orden hotdogs sencilla'],
+    ['ord preparada','ord preparadas','orden preparada','orden hotdogs preparados','orden hotdog preparado','orden hot dogs preparados','orden de hotdogs preparados','orden hotdogs preparada'],
+    ['ord papas','orden papas','orden de papas','papas','papas solas']
+  ];
+  function grupoNom(n){ for(let i=0;i<GRUPOS_NOMBRES.length;i++){ if(GRUPOS_NOMBRES[i].indexOf(n)>=0) return i; } return -1; }
+  function buscarProdCosto(prods,nom){
+    let p=prods.find(x=>x.nombre===nom||x.id===nom); if(p) return p;
+    const n=normNom(nom); if(!n) return null;
+    p=prods.find(x=>normNom(x.nombre)===n||normNom(x.id)===n); if(p) return p;
+    const g=grupoNom(n); if(g<0) return null;
+    const cand=prods.filter(x=>grupoNom(normNom(x.nombre))===g||grupoNom(normNom(x.id))===g);
+    return cand.find(x=>{const l=costosData.lineas[x.id]; return l&&l.length;})||cand[0]||null;
+  }
   function renderCostosHoy(){
     const el=document.getElementById('costos-hoy'); if(!el) return;
     const prods=productosEditables.filter(p=>p.id!=='Otro');
-    let venta=0,costo=0,com=0,sinCosto=0,total=0;
+    let venta=0,costo=0,com=0,sinCosto=0,total=0; const faltan={};
     (movimientos||[]).forEach(m=>{
       if(!m||typeof m.producto!=='string'||/^(Abono|Pago) fiado|cobro semanal/.test(m.producto)) return;
       const mm=m.producto.match(/^(\d+)x\s+(.*)$/), cant=mm?+mm[1]:1;
       const nom=(mm?mm[2]:m.producto).replace(/\s*\[(FB|WA)\]$/,'').trim();
-      const p=prods.find(x=>x.nombre===nom||x.id===nom);
+      const p=buscarProdCosto(prods,nom);
       total+=m.precio;
       const c=p?costoProducto(p):null;
-      if(c===null){ sinCosto+=m.precio; return; }
+      if(c===null){ sinCosto+=m.precio; (faltan[nom]=faltan[nom]||{n:0,p:!!p}); faltan[nom].n++; return; }
       venta+=m.precio; costo+=c*cant;
       if(/didi|rappi|uber/.test(m.metodo||'')) com+=m.precio*(costosData.comision||0)/100;
     });
@@ -1620,7 +1639,7 @@
       <div style="margin-top:10px;padding-top:8px;border-top:1px solid #444;">Ya compraste hoy para el negocio: <b>$${G.toFixed(0)}</b></div>
       <div>${G>=necesita?`Ya repusiste todo lo de hoy <b style="color:var(--verde);">(+$${(G-necesita).toFixed(0)} de más)</b>`:`Te falta reponer: <b style="color:var(--rojo);">$${faltaRep.toFixed(0)}</b>`} <span style="font-size:10px;color:var(--gris);">(surtido + gastos del día)</span></div>
       <div style="margin-top:10px;font-size:16px;">${falta>0?`Aún faltan <b style="color:var(--rojo);">$${falta.toFixed(0)}</b> de ventas con ganancia para cubrir tus gastos del día`:`Te queda hoy: <b style="color:var(--verde);">$${neto.toFixed(0)}</b>`}</div>
-      ${sinCosto>total*0.1&&total>0?`<div style="margin-top:6px;font-size:10px;color:var(--gris);">$${sinCosto.toFixed(0)} vendidos no tienen costo capturado, así que el número real puede ser distinto.</div>`:''}
+      ${sinCosto>0?`<div style="margin-top:6px;font-size:10px;color:var(--gris);">$${sinCosto.toFixed(0)} vendidos sin costo: ${Object.keys(faltan).map(k=>k+(faltan[k].p?' (producto sin costo capturado)':' (nombre no coincide con tus productos)')).join('; ')}</div>`:''}
       <div style="margin-top:4px;font-size:10px;color:var(--gris);">Antes de sueldo, renta y deudas.</div>`;
   }
 
@@ -1706,7 +1725,7 @@
       if (!m || typeof m.producto!=='string' || m.hora==='(manual)' || /^(Abono|Pago) fiado|cobro semanal/.test(m.producto)) return;
       const mm = m.producto.match(/^(\d+)x\s+(.*)$/), cant = mm?+mm[1]:1;
       const nom = (mm?mm[2]:m.producto).replace(/\s*\[(FB|WA)\]$/,'').trim();
-      const p = prods.find(x=>x.nombre===nom||x.id===nom);
+      const p = buscarProdCosto(prods,nom);
       total += m.precio;
       if (!p) return;
       const c = costoProducto(p); if (c===null) return;
