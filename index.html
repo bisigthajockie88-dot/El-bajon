@@ -1641,7 +1641,7 @@
       const c=p?costoProducto(p):null;
       if(c===null){ sinCosto+=m.precio; (faltan[nom]=faltan[nom]||{n:0,p:!!p}); faltan[nom].n++; return; }
       venta+=m.precio; costo+=c*cant;
-      if(/didi|rappi|uber/.test(m.metodo||'')) com+=m.precio*(costosData.comision||0)/100;
+      // La comisión de las apps ya no se aparta: la descuentan ellas al pagarte por tarjeta
     });
     const gd=(costosData.dia||[]).reduce((t,x)=>t+(parseFloat(x.c)||0),0);
     const gan=venta-costo-com, cubierto=Math.max(0,Math.min(gd,gan)), falta=gd-cubierto, neto=gan-gd;
@@ -2865,7 +2865,7 @@
       const c=p?costoProducto(p):null;
       if(c===null){ sinCosto+=m.precio; return; }
       venta+=m.precio; costo+=c*cant;
-      if(/didi|rappi|uber/.test(m.metodo||'')) com+=m.precio*(costosData.comision||0)/100;
+      // La comisión de las apps ya no se aparta: la descuentan ellas al pagarte por tarjeta
     });
     const gd=(costosData.dia||[]).reduce((t,x)=>t+(parseFloat(x.c)||0),0);
     const gan=venta-costo-com;
