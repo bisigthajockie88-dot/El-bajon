@@ -562,6 +562,12 @@
 <!-- TAB DINERO (disponible hoy, resumen, estado, distribución, compromisos y ahorros — todo en una sola pantalla con scroll) -->
 <div class="seccion" id="tab-dinero">
 
+  <!-- GANANCIA REAL DE HOY (costos) -->
+  <div class="resumen-box" id="costos-hoy-box" style="border:2px solid var(--amarillo);">
+    <h3>📊 Ganancia real de hoy</h3>
+    <div id="costos-hoy"></div>
+  </div>
+
   <!-- DISPONIBLE PARA GASTAR HOY -->
   <div class="resumen-box" id="dinero-disponible-box" style="border:2px solid var(--verde);text-align:center;">
     <h3 style="text-align:left;">💰 Disponible para gastar hoy</h3>
@@ -934,6 +940,12 @@
         <input id="costos-comision" type="number" inputmode="decimal" min="0" max="100" class="precio-input" oninput="setComisionApps(this.value)">
       </div>
       <div id="costos-resumen" style="background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;margin-bottom:12px;"></div>
+      <div class="producto-edit-item" style="margin-bottom:12px;">
+        <div style="font-weight:700;font-size:13px;">📆 Gastos del día (se gastan aunque vendas poco)</div>
+        <div id="costos-dia"></div>
+        <button onclick="addDia()" style="width:100%;margin-top:8px;background:transparent;border:1px dashed var(--amarillo);border-radius:8px;padding:9px;color:var(--amarillo);font-size:12px;font-weight:700;">+ Agregar gasto del día</button>
+        <div id="costos-dia-total" style="margin-top:8px;font-size:12px;color:var(--gris);"></div>
+      </div>
       <div id="costos-lista"></div>
     </div>
   </div>
@@ -1576,6 +1588,36 @@
     renderTabCompromisos('personal');
     renderTabAhorros();
     renderDisponibleHoy();
+    renderCostosHoy();
+  }
+
+  function renderCostosHoy(){
+    const el=document.getElementById('costos-hoy'); if(!el) return;
+    const prods=productosEditables.filter(p=>p.id!=='Otro');
+    let venta=0,costo=0,com=0,sinCosto=0,total=0;
+    (movimientos||[]).forEach(m=>{
+      if(!m||typeof m.producto!=='string'||/^(Abono|Pago) fiado|cobro semanal/.test(m.producto)) return;
+      const mm=m.producto.match(/^(\d+)x\s+(.*)$/), cant=mm?+mm[1]:1;
+      const nom=(mm?mm[2]:m.producto).replace(/\s*\[(FB|WA)\]$/,'').trim();
+      const p=prods.find(x=>x.nombre===nom||x.id===nom);
+      total+=m.precio;
+      const c=p?costoProducto(p):null;
+      if(c===null){ sinCosto+=m.precio; return; }
+      venta+=m.precio; costo+=c*cant;
+      if(/didi|rappi|uber/.test(m.metodo||'')) com+=m.precio*(costosData.comision||0)/100;
+    });
+    const gd=(costosData.dia||[]).reduce((t,x)=>t+(parseFloat(x.c)||0),0);
+    const gan=venta-costo-com, cubierto=Math.max(0,Math.min(gd,gan)), falta=gd-cubierto, neto=gan-gd;
+    const pct=gd>0?Math.round(cubierto/gd*100):100;
+    el.innerHTML=`
+      <div>Llevas vendido: <b>$${total.toFixed(0)}</b></div>
+      <div>Separa para resurtir: <b style="color:var(--rojo);">$${(costo+com).toFixed(0)}</b> <span style="font-size:10px;color:var(--gris);">(lo que costó lo vendido${com?' + comisión apps':''})</span></div>
+      <div>Ganancia de lo vendido: <b style="color:var(--verde);">$${gan.toFixed(0)}</b></div>
+      <div style="margin:8px 0 4px;">Gastos del día cubiertos: <b>$${cubierto.toFixed(0)}</b> de $${gd.toFixed(0)}</div>
+      <div style="height:8px;background:var(--oscuro);border-radius:6px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${pct>=100?'var(--verde)':'var(--amarillo)'};"></div></div>
+      <div style="margin-top:10px;font-size:16px;">${falta>0?`Aún faltan <b style="color:var(--rojo);">$${falta.toFixed(0)}</b> de ventas con ganancia para cubrir tus gastos del día`:`Te queda hoy: <b style="color:var(--verde);">$${neto.toFixed(0)}</b>`}</div>
+      ${sinCosto>total*0.1&&total>0?`<div style="margin-top:6px;font-size:10px;color:var(--gris);">$${sinCosto.toFixed(0)} vendidos no tienen costo capturado, así que el número real puede ser distinto.</div>`:''}
+      <div style="margin-top:4px;font-size:10px;color:var(--gris);">Antes de sueldo, renta y deudas.</div>`;
   }
 
   function ahorradoHoyDesdeSueldo() {
@@ -1602,6 +1644,7 @@
   // COSTOS Y MARGEN (por producto: lista de gastos)
   // ════════════════════════════════════════════════════
   let costosData = JSON.parse(localStorage.getItem('bajon_costos_v1') || 'null') || { lineas:{}, comision:0 };
+  if (!costosData.dia) costosData.dia = [{n:'Chicharrón',c:20},{n:'Piña',c:6},{n:'Chiles asados',c:4},{n:'Cebolla morada y habanero',c:4},{n:'Servitoallas',c:6.7},{n:'Gas de la estufa',c:6.7}];
   function guardarCostosData(){ localStorage.setItem('bajon_costos_v1', JSON.stringify(costosData)); }
   function costoProducto(p){
     const l = costosData.lineas[p.id];
@@ -1624,6 +1667,7 @@
   }
   function renderCostos(){
     document.getElementById('costos-comision').value = costosData.comision||'';
+    renderGastosDia();
     document.getElementById('costos-lista').innerHTML = productosEditables.filter(p=>p.id!=='Otro').map(p=>{
       const ls = costosData.lineas[p.id]||[], pid = p.id.replace(/\W/g,'_'), ide = p.id.replace(/'/g,"\\'");
       return `<div class="producto-edit-item" style="margin-bottom:10px;">
@@ -1637,6 +1681,17 @@
     }).join('');
     productosEditables.forEach(p=>actualizarMargenProd(p.id));
     renderCostosResumen();
+  }
+  function addDia(){ costosData.dia.push({n:'',c:0}); guardarCostosData(); renderGastosDia(); }
+  function delDia(i){ costosData.dia.splice(i,1); guardarCostosData(); renderGastosDia(); renderCostosResumen(); }
+  function setDia(i,campo,v){ costosData.dia[i][campo] = campo==='c' ? (parseFloat(v)||0) : v; guardarCostosData(); totalDiaTxt(); renderCostosResumen(); }
+  function totalDiaTxt(){ const t=costosData.dia.reduce((a,x)=>a+(parseFloat(x.c)||0),0); const el=document.getElementById('costos-dia-total'); if(el) el.innerHTML='Total al día: <b style="color:var(--rojo);">$'+t.toFixed(1)+'</b>'; }
+  function renderGastosDia(){
+    document.getElementById('costos-dia').innerHTML = costosData.dia.map((x,i)=>`<div style="display:flex;gap:6px;margin-top:6px;">
+      <input class="prod-input-nombre" style="flex:2;" value="${(x.n||'').replace(/"/g,'&quot;')}" placeholder="Ej: chicharrón" oninput="setDia(${i},'n',this.value)">
+      <input class="prod-input-precio" style="flex:1;color:var(--rojo);" type="number" inputmode="decimal" value="${x.c||''}" placeholder="$/día" oninput="setDia(${i},'c',this.value)">
+      <button class="btn-prod-del" onclick="delDia(${i})">✕</button></div>`).join('');
+    totalDiaTxt();
   }
   function renderCostosResumen(){
     const el = document.getElementById('costos-resumen'); if(!el) return;
@@ -1655,11 +1710,13 @@
       if (/didi|rappi|uber/.test(m.metodo||'')) com += m.precio*(costosData.comision||0)/100;
     });
     if (!cubierta){ el.innerHTML='Agrega los gastos de tu producto más vendido y aquí verás tu margen real.'; return; }
-    const g = venta-costo-com;
+    const g = venta-costo-com; const dias=(historial||[]).filter(d=>(d.movimientos||[]).length).length+((movimientos||[]).length?1:0); const gd=(costosData.dia||[]).reduce((t,x)=>t+(parseFloat(x.c)||0),0)*dias; const neto=g-gd;
     el.innerHTML = `<div>Ventas con costo capturado: <b>$${venta.toFixed(0)}</b> (${Math.round(cubierta/Math.max(total,1)*100)}% de todo lo vendido)</div>
       <div>Costo de lo vendido: <b style="color:var(--rojo);">$${costo.toFixed(0)}</b>${com?` · Comisión apps: <b style="color:var(--rojo);">$${com.toFixed(0)}</b>`:''}</div>
       <div style="margin-top:4px;font-size:14px;">Te queda: <b style="color:${g>=0?'var(--verde)':'var(--rojo)'};">$${g.toFixed(0)}</b> (${Math.round(g/venta*100)}%)</div>
-      <div style="margin-top:4px;font-size:10px;color:var(--gris);">Antes de sueldo, renta y deudas. Cuenta ventas ya cerradas más las de hoy.</div>`;
+      <div style="margin-top:6px;">Menos gastos del día (${dias} días): <b style="color:var(--rojo);">-$${gd.toFixed(0)}</b></div>
+      <div style="margin-top:4px;font-size:15px;">Te queda de verdad: <b style="color:${neto>=0?'var(--verde)':'var(--rojo)'};">$${neto.toFixed(0)}</b> (${dias?'$'+(neto/dias).toFixed(0)+' al día':''})</div>
+      <div style="margin-top:4px;font-size:10px;color:var(--gris);">Antes de sueldo, renta y deudas.${cubierta<total*0.9?' Faltan costos de algunos productos, así que el número real es mejor o distinto.':''}</div>`;
   }
 
   function mostrarSubtabAjustes(key) {
