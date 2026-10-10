@@ -1609,12 +1609,16 @@
     const gd=(costosData.dia||[]).reduce((t,x)=>t+(parseFloat(x.c)||0),0);
     const gan=venta-costo-com, cubierto=Math.max(0,Math.min(gd,gan)), falta=gd-cubierto, neto=gan-gd;
     const pct=gd>0?Math.round(cubierto/gd*100):100;
+    const G=(gastos||[]).filter(g=>g.tipo==='negocio'&&!['🏗️','📌','💰'].some(e=>(g.concepto||'').startsWith(e))).reduce((t,g)=>t+(parseFloat(g.monto)||0),0);
+    const necesita=costo+com+gd, faltaRep=Math.max(0,necesita-G);
     el.innerHTML=`
       <div>Llevas vendido: <b>$${total.toFixed(0)}</b></div>
       <div>Separa para resurtir: <b style="color:var(--rojo);">$${(costo+com).toFixed(0)}</b> <span style="font-size:10px;color:var(--gris);">(lo que costó lo vendido${com?' + comisión apps':''})</span></div>
       <div>Ganancia de lo vendido: <b style="color:var(--verde);">$${gan.toFixed(0)}</b></div>
       <div style="margin:8px 0 4px;">Gastos del día cubiertos: <b>$${cubierto.toFixed(0)}</b> de $${gd.toFixed(0)}</div>
       <div style="height:8px;background:var(--oscuro);border-radius:6px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${pct>=100?'var(--verde)':'var(--amarillo)'};"></div></div>
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid #444;">Ya compraste hoy para el negocio: <b>$${G.toFixed(0)}</b></div>
+      <div>${G>=necesita?`Ya repusiste todo lo de hoy <b style="color:var(--verde);">(+$${(G-necesita).toFixed(0)} de más)</b>`:`Te falta reponer: <b style="color:var(--rojo);">$${faltaRep.toFixed(0)}</b>`} <span style="font-size:10px;color:var(--gris);">(surtido + gastos del día)</span></div>
       <div style="margin-top:10px;font-size:16px;">${falta>0?`Aún faltan <b style="color:var(--rojo);">$${falta.toFixed(0)}</b> de ventas con ganancia para cubrir tus gastos del día`:`Te queda hoy: <b style="color:var(--verde);">$${neto.toFixed(0)}</b>`}</div>
       ${sinCosto>total*0.1&&total>0?`<div style="margin-top:6px;font-size:10px;color:var(--gris);">$${sinCosto.toFixed(0)} vendidos no tienen costo capturado, así que el número real puede ser distinto.</div>`:''}
       <div style="margin-top:4px;font-size:10px;color:var(--gris);">Antes de sueldo, renta y deudas.</div>`;
