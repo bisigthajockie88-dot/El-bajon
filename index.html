@@ -1641,7 +1641,7 @@
       const c=p?costoProducto(p):null;
       if(c===null){ sinCosto+=m.precio; (faltan[nom]=faltan[nom]||{n:0,p:!!p}); faltan[nom].n++; return; }
       venta+=m.precio; costo+=c*cant;
-      // La comisión de las apps ya no se aparta: la descuentan ellas al pagarte por tarjeta
+      if(/didi|rappi|uber/.test(m.metodo||'')) com+=m.precio*(costosData.comision||0)/100;
     });
     const gd=(costosData.dia||[]).reduce((t,x)=>t+(parseFloat(x.c)||0),0);
     const gan=venta-costo-com, cubierto=Math.max(0,Math.min(gd,gan)), falta=gd-cubierto, neto=gan-gd;
@@ -2865,7 +2865,7 @@
       const c=p?costoProducto(p):null;
       if(c===null){ sinCosto+=m.precio; return; }
       venta+=m.precio; costo+=c*cant;
-      // La comisión de las apps ya no se aparta: la descuentan ellas al pagarte por tarjeta
+      if(/didi|rappi|uber/.test(m.metodo||'')) com+=m.precio*(costosData.comision||0)/100;
     });
     const gd=(costosData.dia||[]).reduce((t,x)=>t+(parseFloat(x.c)||0),0);
     const gan=venta-costo-com;
@@ -2952,9 +2952,10 @@
     document.getElementById('dist-sueldo').textContent='$'+a.rest.gan.toFixed(2);
     document.getElementById('dist-inv').textContent='$'+a.rest.inv.toFixed(2);
     document.getElementById('dist-dia').textContent='$'+a.rest.dia.toFixed(2);
-    document.getElementById('dist-sueldo-det').textContent='Ganancia $'+a.ganBase.toFixed(2)+' (lo vendido − costo − gastos del día)';
-    document.getElementById('dist-inv-det').textContent='Resurtir $'+a.invBase.toFixed(2)+' (costo de lo vendido'+(a.com?' + comisión apps':'')+')';
-    document.getElementById('dist-dia-det').textContent='Gastos del día $'+a.diaBase.toFixed(2)+' de $'+a.gd.toFixed(2);
+    const lin=(base,rest)=>'Tenías $'+base.toFixed(2)+' · gastaste $'+Math.max(0,base-rest).toFixed(2)+' · te queda $'+rest.toFixed(2);
+    document.getElementById('dist-sueldo-det').textContent=lin(a.ganBase,a.rest.gan);
+    document.getElementById('dist-inv-det').textContent=lin(a.invBase,a.rest.inv);
+    document.getElementById('dist-dia-det').textContent=lin(a.diaBase,a.rest.dia);
     const lineas=(k)=>a.detalle.filter(d=>d.partes[k]>0.005).map(d=>{
       const nativo = (k==='gan'&&d.g.tipo==='personal')||(k==='inv'&&d.g.tipo!=='personal');
       return `<div>· ${d.g.concepto}: <b>-$${d.partes[k].toFixed(2)}</b>${nativo?'':' <span style="color:var(--amarillo);">(cubrió faltante)</span>'}</div>`;
