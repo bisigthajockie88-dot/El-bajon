@@ -562,6 +562,12 @@
 <!-- TAB DINERO (disponible hoy, resumen, estado, distribución, compromisos y ahorros — todo en una sola pantalla con scroll) -->
 <div class="seccion" id="tab-dinero">
 
+  <!-- INTERRUPTOR: REPARTO NUEVO / PORCENTAJES -->
+  <div id="modo-dist-switch" style="display:flex;gap:4px;margin-bottom:12px;background:var(--oscuro);border:1px solid #444;border-radius:12px;padding:4px;">
+    <button id="md-nuevo" onclick="setModoDist('nuevo')" style="flex:1;padding:10px 4px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;">✨ Reparto nuevo</button>
+    <button id="md-pct" onclick="setModoDist('pct')" style="flex:1;padding:10px 4px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;">% Por porcentajes</button>
+  </div>
+
   <!-- GANANCIA REAL DE HOY (costos) -->
   <div class="resumen-box" id="costos-hoy-box" style="border:2px solid var(--amarillo);">
     <h3>📊 Ganancia real de hoy</h3>
@@ -605,8 +611,8 @@
 <!-- DISTRIBUCIÓN -->
 <div id="tab-distribucion" style="margin-top:22px;">
   <div class="dist-header">💰 Distribución del Día</div>
-  <div class="dist-sub">Solo efectivo en mano · Tarjeta · Didi Efectivo</div>
-  <div class="dist-config">
+  <div class="dist-sub" id="dist-sub-txt">Solo efectivo en mano · Tarjeta · Didi Efectivo</div>
+  <div class="dist-config" id="dist-config-box">
     <h3>⚙️ Porcentajes (editables)</h3>
     <div class="dist-row">
       <label>🧍 Tu sueldo</label>
@@ -631,22 +637,28 @@
     <div class="dist-detalle">Efectivo + Tarjeta + Didi Efectivo − Gastos del día</div>
   </div>
   <div class="dist-card card-morado">
-    <div class="dist-titulo">🧍 Para ti (sueldo)</div>
+    <div class="dist-titulo" id="dist-titulo-sueldo">🧍 Para ti (sueldo)</div>
     <div class="dist-monto" id="dist-sueldo">$0</div>
     <div class="dist-detalle" id="dist-sueldo-det"></div>
     <div id="dist-sueldo-gastos" style="margin-top:8px;font-size:10px;color:rgba(245,200,66,0.85);text-align:left;padding:0 4px;"></div>
   </div>
   <div class="dist-card card-amarillo">
-    <div class="dist-titulo">📦 Para inversión del negocio</div>
+    <div class="dist-titulo" id="dist-titulo-inv">📦 Para inversión del negocio</div>
     <div class="dist-monto" id="dist-inv">$0</div>
     <div class="dist-detalle" id="dist-inv-det"></div>
     <div id="dist-inv-gastos" style="margin-top:8px;font-size:10px;color:rgba(245,200,66,0.85);text-align:left;padding:0 4px;"></div>
   </div>
-  <div class="dist-card card-rojo">
+  <div class="dist-card card-rojo" id="dist-card-colchon">
     <div class="dist-titulo">🛡️ Colchón del negocio</div>
     <div class="dist-monto" id="dist-colchon">$0</div>
     <div class="dist-detalle" id="dist-colchon-det"></div>
     <div id="dist-colchon-gastos" style="margin-top:8px;font-size:10px;color:rgba(230,57,70,0.85);text-align:left;padding:0 4px;"></div>
+  </div>
+  <div class="dist-card card-rojo" id="dist-card-dia" style="display:none;">
+    <div class="dist-titulo">🔒 Gastos del día (intocable)</div>
+    <div class="dist-monto" id="dist-dia">$0</div>
+    <div class="dist-detalle" id="dist-dia-det"></div>
+    <div id="dist-dia-gastos" style="margin-top:8px;font-size:10px;color:rgba(230,57,70,0.85);text-align:left;padding:0 4px;"></div>
   </div>
   <div class="dist-nota">* Las ventas de Didi TAR, Rappi y Uber no se incluyen — ese dinero aún no está en tu mano</div>
 </div>
@@ -1211,6 +1223,7 @@
       <button id="grb-personal" onclick="selTipoGastoRapido('personal')" style="flex:1;padding:10px 4px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:11px;font-weight:700;cursor:pointer;">🧍 Personal</button>
       <button id="grb-colchon" onclick="selTipoGastoRapido('colchon')" style="flex:1;padding:10px 4px;border-radius:10px;border:2px solid #444;background:transparent;color:var(--gris);font-size:11px;font-weight:700;cursor:pointer;">🛡️ Colchón</button>
     </div>
+    <div id="grb-aviso" style="display:none;font-size:11px;color:var(--amarillo);text-align:center;margin:-6px 0 12px;">🛡️ En el reparto nuevo, el colchón se resta de la inversión.</div>
     <div class="modal-btns">
       <button class="btn-cancelar" onclick="document.getElementById('overlay-gasto-rapido').classList.remove('visible')">Cancelar</button>
       <button class="btn-confirmar" style="background:var(--rojo);" onclick="confirmarGastoRapido()">+ Agregar Gasto</button>
@@ -1321,6 +1334,9 @@
   let metodoCobro = '';
   let ticketItems = [];
   let tipoGastoSeleccionado = 'negocio';
+  // Modo de distribución: 'nuevo' (Inversión / Ganancia / Gastos del día) o 'pct' (porcentajes + colchón)
+  let modoDist = (localStorage.getItem('bajon_modo_dist') === 'pct') ? 'pct' : 'nuevo';
+  function esModoNuevo(){ return modoDist === 'nuevo'; }
   let mesaActiva = null;
 
   // ── PRODUCTOS EDITABLES (con categoría) ──
@@ -1616,6 +1632,8 @@
     let venta=0,costo=0,com=0,sinCosto=0,total=0; const faltan={};
     (movimientos||[]).forEach(m=>{
       if(!m||typeof m.producto!=='string'||/^(Abono|Pago) fiado|cobro semanal/.test(m.producto)) return;
+      // Solo dinero que ya está en mano (Didi Tarjeta, Rappi y Uber no cuentan hasta que lo recibes)
+      if(m.esPlatPendiente||!['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)) return;
       const mm=m.producto.match(/^(\d+)x\s+(.*)$/), cant=mm?+mm[1]:1;
       const nom=(mm?mm[2]:m.producto).replace(/\s*\[(FB|WA)\]$/,'').trim();
       const p=buscarProdCosto(prods,nom);
@@ -2431,8 +2449,11 @@
     const monto = parseFloat(gastoMontoStr);
     if (!concepto) { mostrarToast('⚠️ Escribe el concepto'); return; }
     if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa el monto'); return; }
+    const cabe = gastoCabeEnReparto(monto);
+    if (!cabe.ok) { avisoGastoNoCabe(cabe.disponible); return; }
     const hora = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-    gastos.push({id:Date.now(), concepto, monto, hora, tipo:tipoGastoSeleccionado});
+    const nuevoId = Date.now();
+    gastos.push({id:nuevoId, concepto, monto, hora, tipo:tipoGastoSeleccionado});
     guardarGastos();
     document.getElementById('gasto-concepto').value = '';
     gastoMontoStr = '';
@@ -2440,7 +2461,7 @@
     document.getElementById('gasto-monto-display').style.borderColor = 'var(--perdida)';
     renderGastos();
     actualizarHeaderTotal();
-    mostrarToast('💸 Gasto registrado');
+    mostrarToast(msgOrigenGasto(nuevoId,'💸 Gasto registrado'),3200);
   }
   function selTipoGasto(tipo) {
     tipoGastoSeleccionado = tipo;
@@ -2455,7 +2476,7 @@
     }
   }
   function eliminarMov(id){ movimientos=movimientos.filter(m=>m.id!==id); guardarMov(); renderMovimientos(); actualizarTotalesRapidos(); actualizarHeaderTotal(); }
-  function eliminarGasto(id){ gastos=gastos.filter(g=>g.id!==id); guardarGastos(); renderGastos(); actualizarHeaderTotal(); }
+  function eliminarGasto(id){ gastos=gastos.filter(g=>g.id!==id); guardarGastos(); renderGastos(); actualizarHeaderTotal(); if(typeof renderDinero==='function') renderDinero(); }
 
   function nombreMetodo(m){
     return{efectivo:'💵 Efectivo',tarjeta:'💳 Tarjeta',didi_efectivo:'🚗 Didi Efectivo',didi_tarjeta:'🚗 Didi Tarjeta',rappi:'🛵 Rappi Tarjeta',uber:'🚙 Uber Tarjeta',facebook:'📘 Facebook',whatsapp:'💬 WhatsApp'}[m]||m;
@@ -2497,6 +2518,8 @@
   function renderGastos() {
     const cont = document.getElementById('lista-gastos');
     if (!gastos.length) { cont.innerHTML='<div class="empty-state"><div class="icon">💸</div>Sin gastos registrados</div>'; return; }
+    const _orig = {};
+    if (esModoNuevo()) asignarGastosNuevo().detalle.forEach(d=>{ _orig[d.g.id]=textoPartesGasto(d.partes); });
     cont.innerHTML = [...gastos].reverse().map(g=>`
       <div class="movimiento gasto">
         <div class="gasto-check"><input type="checkbox" id="chk-gasto-${g.id}" value="${g.id}"></div>
@@ -2506,7 +2529,7 @@
               ${badgeTipoGasto(g.tipo).txt}
             </span>
           </div>
-          <div class="detalle-mov">${g.hora}</div>
+          <div class="detalle-mov">${g.hora}${_orig[g.id]?` · <span style="color:var(--amarillo);">${_orig[g.id]}</span>`:''}</div>
         </div>
         <div class="monto-mov">$${g.monto.toFixed(2)}</div>
         <button class="btn-eliminar" onclick="eliminarGasto(${g.id})">✕</button>
@@ -2528,7 +2551,8 @@
     movimientos.forEach(m=>{ tots[m.metodo]=(tots[m.metodo]||0)+m.precio; });
     const totalGasNeg=gastos.filter(g=>!g.tipo||g.tipo==='negocio').reduce((s,g)=>s+g.monto,0);
     const totalGasPer=gastos.filter(g=>g.tipo==='personal').reduce((s,g)=>s+g.monto,0);
-    return{...tots,totalGastos:totalGasNeg+totalGasPer,totalGastosNegocio:totalGasNeg,totalGastosPersonal:totalGasPer,totalVenta:movimientos.reduce((s,m)=>s+m.precio,0)};
+    const totalGasCol=esModoNuevo()?gastos.filter(g=>g.tipo==='colchon').reduce((s,g)=>s+g.monto,0):0;
+    return{...tots,totalGastos:totalGasNeg+totalGasPer+totalGasCol,totalGastosNegocio:totalGasNeg,totalGastosPersonal:totalGasPer,totalVenta:movimientos.reduce((s,m)=>s+m.precio,0)};
   }
 
   function renderResumen() {
@@ -2761,10 +2785,11 @@
   // ════════════════════════════════════════════════════
   // TOAST
   // ════════════════════════════════════════════════════
-  function mostrarToast(msg) {
+  function mostrarToast(msg, ms) {
     const t=document.getElementById('toast');
     t.textContent=msg; t.classList.add('show');
-    setTimeout(()=>t.classList.remove('show'),2200);
+    clearTimeout(mostrarToast._t);
+    mostrarToast._t=setTimeout(()=>t.classList.remove('show'),ms||2200);
   }
 
   // ════════════════════════════════════════════════════
@@ -2820,6 +2845,125 @@
     return Math.max(0, colchonAcum);
   }
 
+
+  // ════════════════════════════════════════════════════
+  // REPARTO NUEVO: Inversión (resurtir) · Ganancia · Gastos del día
+  // ════════════════════════════════════════════════════
+  const NOM_BOLSA = { inv:'Inversión', gan:'Ganancia', dia:'Gastos del día' };
+
+  // Bolsas del día a partir de lo vendido en mano (misma lógica que "Ganancia real de hoy")
+  function calcBolsasNuevo(){
+    const prods = productosEditables.filter(p=>p.id!=='Otro');
+    const MANO = ['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'];
+    let venta=0, costo=0, com=0, sinCosto=0;
+    (movimientos||[]).forEach(m=>{
+      if(!m||typeof m.producto!=='string'||m.esPlatPendiente||!MANO.includes(m.metodo)) return;
+      if(/^(Abono|Pago) fiado|cobro semanal/.test(m.producto)) return;
+      const mm=m.producto.match(/^(\d+)x\s+(.*)$/), cant=mm?+mm[1]:1;
+      const nom=(mm?mm[2]:m.producto).replace(/\s*\[(FB|WA)\]$/,'').trim();
+      const p=buscarProdCosto(prods,nom);
+      const c=p?costoProducto(p):null;
+      if(c===null){ sinCosto+=m.precio; return; }
+      venta+=m.precio; costo+=c*cant;
+      if(/didi|rappi|uber/.test(m.metodo||'')) com+=m.precio*(costosData.comision||0)/100;
+    });
+    const gd=(costosData.dia||[]).reduce((t,x)=>t+(parseFloat(x.c)||0),0);
+    const gan=venta-costo-com;
+    return {
+      venta, costo, com, gd, sinCosto,
+      invBase: Math.max(0,costo+com),
+      diaBase: Math.max(0,Math.min(gd,gan)),
+      ganBase: Math.max(0,gan-gd)
+    };
+  }
+
+  // Cascada por gasto, en el orden en que se registraron:
+  //  negocio / colchón → Inversión, luego Ganancia, último recurso Gastos del día
+  //  personal          → Ganancia, luego Inversión, último recurso Gastos del día
+  function asignarGastosNuevo(){
+    const b=calcBolsasNuevo();
+    const rest={inv:b.invBase,gan:b.ganBase,dia:b.diaBase};
+    const detalle=[];
+    gastos.forEach(g=>{
+      const orden = g.tipo==='personal' ? ['gan','inv','dia'] : ['inv','gan','dia'];
+      let falta=parseFloat(g.monto)||0; const partes={inv:0,gan:0,dia:0};
+      orden.forEach(k=>{ const t=Math.max(0,Math.min(falta,rest[k])); partes[k]=t; rest[k]=Math.max(0,rest[k]-t); falta-=t; });
+      detalle.push({g,partes,sinFondos:Math.max(0,falta)});
+    });
+    return {...b, rest, detalle, totalRest:rest.inv+rest.gan+rest.dia};
+  }
+
+  function textoPartesGasto(partes){
+    const r=['inv','gan','dia'].filter(k=>partes[k]>0.005).map(k=>'$'+partes[k].toFixed(0)+' '+NOM_BOLSA[k]);
+    return r.join(' + ');
+  }
+
+  // Revisa si un gasto nuevo cabe en las tres bolsas. Devuelve {ok, disponible}
+  function gastoCabeEnReparto(monto){
+    if(!esModoNuevo()) return {ok:true};
+    const a=asignarGastosNuevo();
+    return { ok: monto <= a.totalRest + 0.005, disponible: a.totalRest };
+  }
+  function avisoGastoNoCabe(disp){
+    mostrarToast('⚠️ Solo hay $'+disp.toFixed(0)+' en mano. Registra únicamente lo que sale de aquí.',3800);
+  }
+  // Mensaje de dónde salió el último gasto registrado
+  function msgOrigenGasto(id,base){
+    if(!esModoNuevo()) return base;
+    const d=asignarGastosNuevo().detalle.find(x=>x.g.id===id);
+    const t=d?textoPartesGasto(d.partes):'';
+    return t?base+' · '+t:base;
+  }
+
+  function setModoDist(m){
+    modoDist = (m==='pct')?'pct':'nuevo';
+    localStorage.setItem('bajon_modo_dist', modoDist);
+    aplicarModoDistUI();
+    actualizarHeaderTotal();
+    renderDinero();
+    renderGastos();
+    mostrarToast(modoDist==='nuevo'?'✨ Reparto nuevo activado':'% Modo porcentajes activado');
+  }
+
+  function aplicarModoDistUI(){
+    const nuevo=esModoNuevo();
+    const on='background:var(--amarillo);color:var(--oscuro);', off='background:transparent;color:var(--gris);';
+    const bN=document.getElementById('md-nuevo'), bP=document.getElementById('md-pct');
+    if(bN) bN.style.cssText='flex:1;padding:10px 4px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;'+(nuevo?on:off);
+    if(bP) bP.style.cssText='flex:1;padding:10px 4px;border-radius:9px;border:none;font-size:12px;font-weight:700;cursor:pointer;'+(nuevo?off:on);
+    const show=(id,v)=>{const e=document.getElementById(id); if(e) e.style.display=v?'':'none';};
+    show('dist-config-box',!nuevo);
+    show('dist-card-colchon',!nuevo);
+    show('dist-card-dia',nuevo);
+    const set=(id,t)=>{const e=document.getElementById(id); if(e) e.textContent=t;};
+    set('dist-titulo-sueldo', nuevo?'🧍 Para ti (ganancia)':'🧍 Para ti (sueldo)');
+    set('dist-titulo-inv', nuevo?'📦 Inversión (resurtir)':'📦 Para inversión del negocio');
+    set('dist-sub-txt', nuevo?'Lo vendido en mano · se reparte según lo que costó y lo que ganaste':'Solo efectivo en mano · Tarjeta · Didi Efectivo');
+    const av=document.getElementById('grb-aviso');
+    if(av) av.style.display=(nuevo&&tipoGastoRapido==='colchon')?'block':'none';
+  }
+
+  function renderDistribucionNueva(){
+    const a=asignarGastosNuevo();
+    const t=calcularTotales();
+    const bruto=t.efectivo+t.tarjeta+t.didi_efectivo+(t.facebook||0)+(t.whatsapp||0);
+    document.getElementById('dist-alerta').style.display='none';
+    document.getElementById('dist-en-mano').textContent='$'+Math.max(0,bruto-t.totalGastos).toFixed(2);
+    document.getElementById('dist-sueldo').textContent='$'+a.rest.gan.toFixed(2);
+    document.getElementById('dist-inv').textContent='$'+a.rest.inv.toFixed(2);
+    document.getElementById('dist-dia').textContent='$'+a.rest.dia.toFixed(2);
+    document.getElementById('dist-sueldo-det').textContent='Ganancia $'+a.ganBase.toFixed(2)+' (lo vendido − costo − gastos del día)';
+    document.getElementById('dist-inv-det').textContent='Resurtir $'+a.invBase.toFixed(2)+' (costo de lo vendido'+(a.com?' + comisión apps':'')+')';
+    document.getElementById('dist-dia-det').textContent='Gastos del día $'+a.diaBase.toFixed(2)+' de $'+a.gd.toFixed(2);
+    const lineas=(k)=>a.detalle.filter(d=>d.partes[k]>0.005).map(d=>{
+      const nativo = (k==='gan'&&d.g.tipo==='personal')||(k==='inv'&&d.g.tipo!=='personal');
+      return `<div>· ${d.g.concepto}: <b>-$${d.partes[k].toFixed(2)}</b>${nativo?'':' <span style="color:var(--amarillo);">(cubrió faltante)</span>'}</div>`;
+    }).join('');
+    const eG=document.getElementById('dist-sueldo-gastos'); if(eG) eG.innerHTML=lineas('gan');
+    const eI=document.getElementById('dist-inv-gastos'); if(eI) eI.innerHTML=lineas('inv');
+    const eD=document.getElementById('dist-dia-gastos'); if(eD) eD.innerHTML=lineas('dia')+(a.sinCosto>0?`<div style="color:var(--gris);margin-top:4px;">$${a.sinCosto.toFixed(0)} vendidos sin costo capturado, no se cuentan aquí.</div>`:'');
+  }
+
   // Aplica la cascada del día: inv hoy → colchón hoy → sueldo hoy.
   // (Ya NO se toma colchón de días anteriores para cubrir compras del día — cada día se cubre con lo suyo.)
   function calcularCascada(bruto, totalGasNeg, totalGasPer) {
@@ -2848,6 +2992,8 @@
   }
 
   function renderDistribucion() {
+    aplicarModoDistUI();
+    if(esModoNuevo()){ renderDistribucionNueva(); return; }
     const t=calcularTotales();
     const bruto=t.efectivo+t.tarjeta+t.didi_efectivo+(t.facebook||0)+(t.whatsapp||0);
     const pctS=(pctVal('pct-sueldo', 0))/100;
@@ -3737,6 +3883,7 @@
   // Cuánto hay disponible HOY en Inversión + Colchón (después de la cascada de gastos de negocio),
   // según se calcula en Distribución. Sirve solo como SUGERENCIA — el usuario decide cuánto mandar.
   function disponibleNegocioHoy() {
+    if (esModoNuevo()) return Math.max(0, asignarGastosNuevo().rest.inv);
     const t = calcularTotales();
     const bruto = t.efectivo + t.tarjeta + t.didi_efectivo + (t.facebook||0) + (t.whatsapp||0);
     const gasN = gastos.filter(g => !g.tipo || g.tipo === 'negocio');
@@ -4038,6 +4185,7 @@
   function cerrarAhorroMov(e){if(e.target===document.getElementById('overlay-ahorro-mov'))document.getElementById('overlay-ahorro-mov').classList.remove('visible');}
   function selDepOrigen(origen){_ahorroDepOrigen=origen;_ahorroSueldoForzar=false;renderAhorroMovModal();}
   function sueldoDisponibleHoy(){
+    if(esModoNuevo()) return Math.max(0, asignarGastosNuevo().rest.gan);
     const pctS=(pctVal('pct-sueldo', 40))/100;
     const movReal=movimientos.filter(m=>!m.esPlatPendiente);
     const bruto=movReal.filter(m=>['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'].includes(m.metodo)).reduce((s,m)=>s+m.precio,0);
@@ -5117,6 +5265,7 @@
   function renderEstadoCuenta() {
     const el = document.getElementById('estado-cuenta-contenido');
     if (!el) return;
+    if (esModoNuevo()) { el.innerHTML = '<div style="font-size:12px;color:var(--gris);text-align:center;padding:14px;border:1px dashed #444;border-radius:10px;">El estado de cuenta semanal usa porcentajes. Cambia a “% Por porcentajes” arriba para verlo.</div>'; return; }
     const pctS = (pctVal('pct-sueldo', 40)) / 100;
     const pctI = (pctVal('pct-inv', 45)) / 100;
     const pctC = (pctVal('pct-colchon', 15)) / 100;
@@ -5416,6 +5565,7 @@
     const bN = document.getElementById('grb-negocio');
     const bP = document.getElementById('grb-personal');
     const bC = document.getElementById('grb-colchon');
+    const _av = document.getElementById('grb-aviso'); if (_av) _av.style.display = (esModoNuevo() && tipo==='colchon') ? 'block' : 'none';
     [bN,bP,bC].forEach(b=>{ b.style.borderColor='#444'; b.style.background='transparent'; b.style.color='var(--gris)'; });
     if (tipo === 'negocio') { bN.style.borderColor='var(--amarillo)'; bN.style.background='rgba(245,200,66,0.15)'; bN.style.color='var(--amarillo)'; }
     else if (tipo === 'colchon') { bC.style.borderColor='var(--rojo)'; bC.style.background='rgba(230,57,70,0.15)'; bC.style.color='var(--rojo)'; }
@@ -5427,15 +5577,19 @@
     const monto = parseFloat(gastoRapidoMontoStr);
     if (!concepto) { mostrarToast('⚠️ Escribe el concepto'); return; }
     if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa el monto'); return; }
+    const cabe = gastoCabeEnReparto(monto);
+    if (!cabe.ok) { avisoGastoNoCabe(cabe.disponible); return; }
     const hora = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-    gastos.push({id:Date.now(), concepto, monto, hora, tipo:tipoGastoRapido});
+    const nuevoId = Date.now();
+    gastos.push({id:nuevoId, concepto, monto, hora, tipo:tipoGastoRapido});
     guardarGastos();
     document.getElementById('overlay-gasto-rapido').classList.remove('visible');
     renderGastos();
     actualizarHeaderTotal();
     if (typeof renderEstadoCuenta === 'function') renderEstadoCuenta();
     const msgTipo = tipoGastoRapido==='colchon' ? '🛡️ Gasto de colchón registrado' : '💸 Gasto registrado';
-    mostrarToast(msgTipo);
+    mostrarToast(msgOrigenGasto(nuevoId,msgTipo),3200);
+    if (typeof renderDinero === 'function') renderDinero();
   }
 
   // ════════════════════════════════════════════════════
@@ -5652,6 +5806,7 @@
   renderPlats();
   initBackupFechas();
   cargarPcts();
+  aplicarModoDistUI();
   actualizarBadgeVenta();
   initSeguridad();
   // Auto-backup al arrancar si corresponde
