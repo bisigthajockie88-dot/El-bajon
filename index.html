@@ -925,6 +925,18 @@
     </div>
   </div>
   <!-- BACKUP -->
+  <div id="subtab-costos" style="display:none;">
+    <div class="resumen-box">
+      <h3>💲 Costo y margen real</h3>
+      <p style="font-size:12px;color:var(--gris);margin-bottom:10px;">Por cada producto agrega lo que gastas en él (salchicha, pan, carne, papas, gas, empaque). Aproximado está bien.</p>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:12px;flex:1;">Comisión de apps (Didi/Rappi/Uber) %</span>
+        <input id="costos-comision" type="number" inputmode="decimal" min="0" max="100" class="precio-input" oninput="setComisionApps(this.value)">
+      </div>
+      <div id="costos-resumen" style="background:var(--oscuro);border-radius:10px;padding:12px;font-size:12px;margin-bottom:12px;"></div>
+      <div id="costos-lista"></div>
+    </div>
+  </div>
   <div id="subtab-backup" style="display:none;">
     <div class="dist-header">💾 Respaldo de Datos</div>
     <div class="dist-sub">Exporta e importa tus datos para no perderlos</div>
@@ -1472,6 +1484,7 @@
     ],
     ajustes: [
       { key:'productos', label:'🍔 Productos & Precios' },
+      { key:'costos', label:'💲 Costos' },
       { key:'backup', label:'💾 Backup' },
       { key:'seguridad', label:'🔒 Seguridad' },
     ],
@@ -1585,12 +1598,77 @@
     if (detEl) detEl.textContent = `Sueldo hoy $${sueldoDisponible.toFixed(0)} − compromisos y ahorrado hoy $${(sueldoDisponible - disponible).toFixed(0)}`;
   }
 
+  // ════════════════════════════════════════════════════
+  // COSTOS Y MARGEN (por producto: lista de gastos)
+  // ════════════════════════════════════════════════════
+  let costosData = JSON.parse(localStorage.getItem('bajon_costos_v1') || 'null') || { lineas:{}, comision:0 };
+  function guardarCostosData(){ localStorage.setItem('bajon_costos_v1', JSON.stringify(costosData)); }
+  function costoProducto(p){
+    const l = costosData.lineas[p.id];
+    if (l && l.length) return l.reduce((t,x)=>t+(parseFloat(x.c)||0),0);
+    const c = getCosto(p.nombre);
+    return c === null ? null : c;
+  }
+  function setComisionApps(v){ costosData.comision = Math.min(100,Math.max(0,parseFloat(v)||0)); guardarCostosData(); renderCostosResumen(); }
+  function addLineaCosto(id){ (costosData.lineas[id] = costosData.lineas[id]||[]).push({n:'',c:0}); guardarCostosData(); renderCostos(); }
+  function delLineaCosto(id,i){ costosData.lineas[id].splice(i,1); guardarCostosData(); renderCostos(); }
+  function setLineaCosto(id,i,campo,v){
+    costosData.lineas[id][i][campo] = campo==='c' ? (parseFloat(v)||0) : v;
+    guardarCostosData(); renderCostosResumen(); actualizarMargenProd(id);
+  }
+  function actualizarMargenProd(id){
+    const p = productosEditables.find(x=>x.id===id), el = document.getElementById('cmargen-'+id.replace(/\W/g,'_'));
+    if (!p||!el) return;
+    const c = costoProducto(p), m = p.precio-c;
+    el.innerHTML = c===null ? '' : `Costo $${c.toFixed(1)} · Ganas <b style="color:${m>=0?'var(--verde)':'var(--rojo)'}">$${m.toFixed(1)}</b> (${p.precio>0?Math.round(m/p.precio*100):0}%)`;
+  }
+  function renderCostos(){
+    document.getElementById('costos-comision').value = costosData.comision||'';
+    document.getElementById('costos-lista').innerHTML = productosEditables.filter(p=>p.id!=='Otro').map(p=>{
+      const ls = costosData.lineas[p.id]||[], pid = p.id.replace(/\W/g,'_'), ide = p.id.replace(/'/g,"\\'");
+      return `<div class="producto-edit-item" style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:13px;"><span>${p.nombre}</span><span style="color:var(--verde);">Venta $${p.precio}</span></div>
+        ${ls.map((x,i)=>`<div style="display:flex;gap:6px;margin-top:6px;">
+          <input class="prod-input-nombre" style="flex:2;" value="${(x.n||'').replace(/"/g,'&quot;')}" placeholder="Ej: salchicha" oninput="setLineaCosto('${ide}',${i},'n',this.value)">
+          <input class="prod-input-precio" style="flex:1;color:var(--rojo);" type="number" inputmode="decimal" value="${x.c||''}" placeholder="$" oninput="setLineaCosto('${ide}',${i},'c',this.value)">
+          <button class="btn-prod-del" onclick="delLineaCosto('${ide}',${i})">✕</button></div>`).join('')}
+        <button onclick="addLineaCosto('${ide}')" style="width:100%;margin-top:8px;background:transparent;border:1px dashed var(--amarillo);border-radius:8px;padding:9px;color:var(--amarillo);font-size:12px;font-weight:700;">+ Agregar gasto</button>
+        <div id="cmargen-${pid}" style="margin-top:8px;font-size:12px;color:var(--gris);"></div></div>`;
+    }).join('');
+    productosEditables.forEach(p=>actualizarMargenProd(p.id));
+    renderCostosResumen();
+  }
+  function renderCostosResumen(){
+    const el = document.getElementById('costos-resumen'); if(!el) return;
+    const todos = (historial||[]).flatMap(d=>d.movimientos||[]).concat(movimientos||[]);
+    const prods = productosEditables.filter(p=>p.id!=='Otro');
+    let venta=0, costo=0, cubierta=0, total=0, com=0;
+    todos.forEach(m=>{
+      if (!m || typeof m.producto!=='string' || m.hora==='(manual)' || /^(Abono|Pago) fiado|cobro semanal/.test(m.producto)) return;
+      const mm = m.producto.match(/^(\d+)x\s+(.*)$/), cant = mm?+mm[1]:1;
+      const nom = (mm?mm[2]:m.producto).replace(/\s*\[(FB|WA)\]$/,'').trim();
+      const p = prods.find(x=>x.nombre===nom||x.id===nom);
+      total += m.precio;
+      if (!p) return;
+      const c = costoProducto(p); if (c===null) return;
+      cubierta += m.precio; venta += m.precio; costo += c*cant;
+      if (/didi|rappi|uber/.test(m.metodo||'')) com += m.precio*(costosData.comision||0)/100;
+    });
+    if (!cubierta){ el.innerHTML='Agrega los gastos de tu producto más vendido y aquí verás tu margen real.'; return; }
+    const g = venta-costo-com;
+    el.innerHTML = `<div>Ventas con costo capturado: <b>$${venta.toFixed(0)}</b> (${Math.round(cubierta/Math.max(total,1)*100)}% de todo lo vendido)</div>
+      <div>Costo de lo vendido: <b style="color:var(--rojo);">$${costo.toFixed(0)}</b>${com?` · Comisión apps: <b style="color:var(--rojo);">$${com.toFixed(0)}</b>`:''}</div>
+      <div style="margin-top:4px;font-size:14px;">Te queda: <b style="color:${g>=0?'var(--verde)':'var(--rojo)'};">$${g.toFixed(0)}</b> (${Math.round(g/venta*100)}%)</div>
+      <div style="margin-top:4px;font-size:10px;color:var(--gris);">Antes de sueldo, renta y deudas. Cuenta ventas ya cerradas más las de hoy.</div>`;
+  }
+
   function mostrarSubtabAjustes(key) {
-    ['productos','backup','seguridad'].forEach(k => {
+    ['productos','costos','backup','seguridad'].forEach(k => {
       const el = document.getElementById('subtab-' + k);
       if (el) el.style.display = k === key ? 'block' : 'none';
     });
     if (key === 'productos') renderProductosEdicion();
+    if (key === 'costos') renderCostos();
     if (key === 'backup') initBackupFechas();
     if (key === 'seguridad') renderSeguridad();
   }
