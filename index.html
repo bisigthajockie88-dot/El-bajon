@@ -1655,7 +1655,7 @@
       <div style="margin:8px 0 4px;">Gastos del día cubiertos: <b>$${cubierto.toFixed(0)}</b> de $${gd.toFixed(0)}</div>
       <div style="height:8px;background:var(--oscuro);border-radius:6px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${pct>=100?'var(--verde)':'var(--amarillo)'};"></div></div>
       <div style="margin-top:10px;padding-top:8px;border-top:1px solid #444;">Ya compraste hoy para el negocio: <b>$${G.toFixed(0)}</b></div>
-      <div>${G>=necesita?`Ya repusiste todo lo de hoy <b style="color:var(--verde);">(+$${(G-necesita).toFixed(0)} de más)</b>`:`Te falta reponer: <b style="color:var(--rojo);">$${faltaRep.toFixed(0)}</b>`} <span style="font-size:10px;color:var(--gris);">(surtido + gastos del día)</span></div>
+      <div>${G>=necesita?`Ya surtiste todo lo de hoy <b style="color:var(--verde);">(+$${(G-necesita).toFixed(0)} de más)</b>`:`Hay para surtir: <b style="color:var(--amarillo);">$${faltaRep.toFixed(0)}</b>`} <span style="font-size:10px;color:var(--gris);">(surtido + gastos del día)</span></div>
       <div style="margin-top:10px;font-size:16px;">${falta>0?`Aún faltan <b style="color:var(--rojo);">$${falta.toFixed(0)}</b> de ventas con ganancia para cubrir tus gastos del día`:`Te queda hoy: <b style="color:var(--verde);">$${neto.toFixed(0)}</b>`}</div>
       ${sinCosto>0?`<div style="margin-top:6px;font-size:10px;color:var(--gris);">$${sinCosto.toFixed(0)} vendidos sin costo: ${Object.keys(faltan).map(k=>k+(faltan[k].p?' (producto sin costo capturado)':' (nombre no coincide con tus productos)')).join('; ')}</div>`:''}
       <div style="margin-top:4px;font-size:10px;color:var(--gris);">Antes de sueldo, renta y deudas.</div>`;
