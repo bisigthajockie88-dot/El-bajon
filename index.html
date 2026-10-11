@@ -667,6 +667,11 @@
 
 <!-- COMPROMISOS -->
 <div id="subtab-compromisos" style="margin-top:22px;">
+    <div class="dist-header">💬 Mi dinero de hoy</div>
+    <div class="dist-sub">Tu asistente reparte lo que ganas entre tus compromisos y tu ahorro</div>
+    <div id="asistente-box"></div>
+    <details id="comp-avanzado" style="margin-top:18px;">
+      <summary style="cursor:pointer;font-size:12px;color:var(--gris);padding:10px 4px;">⚙️ Vista detallada (la sección anterior — tus datos son los mismos)</summary>
     <div class="dist-header">📌 Compromisos Fijos</div>
     <div class="dist-sub">El sistema reparte tu sueldo solo — tú solo defines qué es y cuánto</div>
 
@@ -756,6 +761,7 @@
 
       <button onclick="agregarCompromiso('personal')" style="width:100%;background:var(--verde);border:none;border-radius:8px;padding:13px;color:var(--oscuro);font-size:14px;font-weight:700;cursor:pointer;">+ Agregar Compromiso</button>
     </div>
+  </details>
   </div>
 
 
@@ -5812,6 +5818,377 @@
   initSeguridad();
   // Auto-backup al arrancar si corresponde
   setTimeout(autoBackupSiCorresponde, 5000);
+</script>
+<style>
+#asistente-box .as-card{background:var(--medio);border:1px solid var(--claro);border-radius:16px;padding:14px;margin-bottom:12px;}
+#asistente-box .as-big{text-align:center;padding:16px 10px;border:2px solid var(--verde);border-radius:16px;margin-bottom:12px;background:rgba(45,212,160,0.07);}
+#asistente-box .as-big .n{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:42px;color:var(--verde);line-height:1.1;}
+#asistente-box .as-big .l{font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:.5px;}
+#asistente-box .as-msg{font-size:14px;line-height:1.45;color:var(--texto);margin-bottom:10px;}
+#asistente-box .as-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--claro);}
+#asistente-box .as-row:first-of-type{border-top:none;}
+#asistente-box .as-row .nm{flex:1;font-size:14px;font-weight:600;color:var(--texto);}
+#asistente-box .as-row .nm small{display:block;font-weight:400;font-size:11px;color:var(--gris);}
+#asistente-box .as-row .mt{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:18px;color:var(--amarillo);}
+#asistente-box .as-row input{width:90px;background:var(--oscuro);border:1px solid var(--amarillo);border-radius:8px;padding:8px;color:var(--amarillo);font-size:16px;font-weight:700;text-align:center;outline:none;}
+#asistente-box .as-btn{width:100%;min-height:48px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;}
+#asistente-box .as-ok{background:var(--verde);color:#08150f;}
+#asistente-box .as-sec{background:transparent;border:1px solid var(--gris);color:var(--gris);}
+#asistente-box .as-btns{display:flex;gap:8px;}
+#asistente-box .as-btns .as-btn{flex:1;}
+#asistente-box .as-chip{flex:1;min-height:44px;border-radius:10px;border:2px solid #555;background:transparent;color:var(--gris);font-size:12px;font-weight:700;cursor:pointer;padding:6px 4px;}
+#asistente-box .as-chip.on{border-color:var(--amarillo);color:var(--amarillo);background:rgba(245,200,66,0.12);}
+#asistente-box .as-bar{height:8px;background:var(--oscuro);border-radius:6px;overflow:hidden;margin:8px 0 4px;}
+#asistente-box .as-bar>div{height:100%;background:var(--verde);border-radius:6px;transition:width .4s;}
+#asistente-box .as-sobre{cursor:pointer;}
+#asistente-box .as-h{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px;color:var(--amarillo);margin:16px 2px 8px;}
+#asistente-box .as-inp{width:100%;background:var(--oscuro);border:1px solid #555;border-radius:10px;padding:12px;color:var(--texto);font-size:16px;outline:none;margin-bottom:8px;}
+#asistente-box .as-mini{font-size:11px;color:var(--gris);}
+</style>
+<script>
+/* ═══ ASISTENTE "MI DINERO DE HOY" — capa nueva sobre tus compromisos y ahorros existentes.
+   No cambia el formato de tus datos: solo agrega un campo opcional "urgencia" a cada compromiso. ═══ */
+(function(){
+  const URG = { ya:{e:'🔴',t:'Ya me urge',b:4}, calma:{e:'🟡',t:'Con calma',b:2}, sin:{e:'🟢',t:'Sin prisa',b:1} };
+  const st = { editando:false, montos:{}, sobMode:'auto', abierto:null, add:null };
+  const $ = id => document.getElementById(id);
+  const fm = n => '$' + Math.round(n).toLocaleString('es-MX');
+  const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const hoyLabel = () => new Date().toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'});
+  const r5 = (x, max) => Math.min(max, Math.ceil(x/5)*5);
+  const HECHO_KEY = 'bajon_asistente_hecho';
+
+  // Dinero para repartir = SOLO tu sueldo/ganancia del día, tal como lo calcula tu pantalla de Distribución:
+  // la inversión y los gastos del día quedan apartados y NO se tocan; tus gastos ya vienen descontados.
+  // Se basa en efectivo + tarjeta + Didi efectivo + Facebook + WhatsApp (Didi tarjeta, Rappi y Uber no entran).
+  function dineroHoy(){ return Math.max(0, sueldoDisponibleHoy()); }
+  function cobradoHoy(){ const t = calcularTotales(); return t.efectivo + t.tarjeta + t.didi_efectivo + (t.facebook||0) + (t.whatsapp||0); }
+  function desgloseHtml(){
+    if(esModoNuevo()){
+      const r = asignarGastosNuevo().rest;
+      return `💰 Cobrado ${fm(cobradoHoy())} · 🔒 Inversión ${fm(r.inv)} · 🔒 Gastos del día ${fm(r.dia)} · 🧍 Tu ganancia ${fm(r.gan)}<br>(tus gastos ya están descontados; lo apartado no se toca)`;
+    }
+    const pct = pctVal('pct-sueldo', 40);
+    return `💰 Cobrado ${fm(cobradoHoy())} · 🧍 Tu sueldo (${pct}%) menos tus gastos personales<br>(el resto es inversión y no se toca)`;
+  }
+
+  function hechoHoy(){
+    try{ const h = JSON.parse(localStorage.getItem(HECHO_KEY)||'null'); if(h && h.fecha === fechaHoyISO()) return h; }catch(e){}
+    const l = hoyLabel();
+    if(compromisos.some(c => (c.historial||[]).some(h => h.fecha === l))) return { fecha: fechaHoyISO(), lineas: null };
+    return null;
+  }
+
+  function info(c){
+    const falta = faltaTotalCompromiso(c), conf = compromisoConfigurado(c);
+    let dias = null, atraso = 0;
+    if(c.tipo === 'meta' && c.fechaLimite) dias = diffDias(hoySoloDia(), fechaSoloDia(c.fechaLimite + 'T12:00:00'));
+    if(c.tipo !== 'meta' && conf) atraso = atrasoRecurrente(c);
+    let score = c.urgencia ? URG[c.urgencia].b : 2;
+    const razones = [];
+    if(c.urgencia === 'ya') razones.push('te urge');
+    if(c.urgencia === 'sin') razones.push('sin prisa');
+    if(dias !== null && conf && falta > 0){
+      if(dias < 0){ score += 3; razones.push('ya venció'); }
+      else if(dias <= 7){ score += 2; razones.push(dias === 0 ? 'vence hoy' : 'vence en ' + dias + (dias===1?' día':' días')); }
+      else if(dias <= 30) score += 1;
+    }
+    if(atraso > 0.5){ score += 2; razones.push('va atrasado ' + fm(atraso)); }
+    return { falta, conf, dias, atraso, score, razones };
+  }
+  function luz(c, i){ if(!c.urgencia && i.score <= 2) return '⚪'; return i.score >= 4 ? '🔴' : (i.score >= 2.5 ? '🟡' : '🟢'); }
+
+  function necesidad(c, i){
+    if(!i.conf || i.falta <= 0.005) return 0;
+    let n = c.tipo === 'meta' ? calcularMontoHoyMeta(c) : calcularMontoHoyRecurrente(c);
+    if(c.montoFijo > 0) return Math.min(n, i.falta);
+    if(c.tipo === 'meta' && n <= 0 && hoyCuentaParaCompromiso(c) && !c.fechaLimite){
+      const div = { ya:15, calma:45, sin:90 }[c.urgencia || 'calma'];
+      n = Math.max(compromisosMinimoGarantizado || 0, i.falta / div);
+    }
+    return n > 0 ? r5(n, i.falta) : 0;
+  }
+
+  function plan(){
+    const disp = dineroHoy();
+    const todos = compromisos.map(c => ({ c, i: info(c) }));
+    const activos = todos.filter(x => !estaExcluidoHoy(x.c) && x.i.conf && x.i.falta > 0.005);
+    const list = activos.map(x => ({ ...x, need: necesidad(x.c, x.i), asig: 0, final: 0 }));
+    list.sort((a,b) => b.i.score - a.i.score || (a.c.orden||0) - (b.c.orden||0));
+    let rest = disp;
+    // Paso 1: un mínimo a cada uno (ninguno se queda en $0), en orden de prioridad
+    const minimo = Math.max(0, compromisosMinimoGarantizado || 0);
+    list.forEach(x => { const m = Math.min(minimo, x.need, rest); x.asig = m; rest -= m; });
+    // Paso 2: completar lo que le toca hoy a cada uno, urgentes primero
+    list.forEach(x => { const extra = Math.min(x.need - x.asig, rest); if(extra > 0){ x.asig += extra; rest -= extra; } });
+    let suma = 0;
+    list.forEach(x => {
+      const m = st.montos[x.c.id];
+      x.final = (st.editando && m !== undefined && !isNaN(m)) ? Math.max(0, Math.min(m, x.i.falta)) : x.asig;
+      suma += x.final;
+    });
+    const sobrante = Math.max(0, disp - suma);
+    const items = [];
+    let resto = sobrante;
+    if(sobrante >= 5 && st.sobMode !== 'quedar'){
+      if(st.sobMode === 'auto'){
+        const cand = list.filter(x => x.c.urgencia === 'ya' || x.i.score >= 4).map(x => ({ x, m: x.i.falta - x.final })).find(o => o.m > 0.5);
+        if(cand){
+          let ad = ahorros.length ? Math.floor(sobrante * 0.5 / 5) * 5 : Math.floor(sobrante);
+          ad = Math.floor(Math.min(ad, cand.m));
+          if(ad >= 5){ items.push({ tipo:'adelanto', comp:cand.x.c, monto:ad }); resto -= ad; }
+        }
+      }
+      if(ahorros.length && resto >= 1){ const a = Math.floor(resto); items.push({ tipo:'ahorro', monto:a }); resto -= a; }
+    }
+    const sinDefinir = todos.filter(x => !x.i.conf && !estaExcluidoHoy(x.c));
+    return { disp, list, sobrante, items, libre: Math.max(0, resto), sinDefinir, todos };
+  }
+
+  function barra(c, i){
+    let pct = 0;
+    if(c.tipo === 'meta') pct = c.total > 0 ? (c.pagado||0) / c.total : 0;
+    else { const inf = infoCicloRecurrente(c); pct = c.montoCiclo > 0 ? inf.acumuladoCiclo / c.montoCiclo : 0; }
+    return Math.max(0, Math.min(100, pct * 100));
+  }
+
+  function chipsUrg(c){
+    return '<div class="as-btns" style="margin:8px 0;">' + Object.keys(URG).map(k =>
+      `<button class="as-chip ${c.urgencia===k?'on':''}" onclick="event.stopPropagation();asSetUrg(${c.id},'${k}')">${URG[k].e}<br>${URG[k].t}</button>`).join('') + '</div>';
+  }
+
+  function sobreHtml(x){
+    const c = x.c, i = x.i, ab = st.abierto === c.id, ex = estaExcluidoHoy(c);
+    let sub = '';
+    if(!i.conf) sub = 'Falta definir cuánto es';
+    else if(c.tipo === 'meta'){
+      sub = 'Llevas ' + fm(c.pagado||0) + ' de ' + fm(c.total) + ' · faltan ' + fm(i.falta);
+      if(i.dias !== null) sub += i.dias < 0 ? ' · venció' : ' · quedan ' + i.dias + ' d';
+    } else {
+      const inf = infoCicloRecurrente(c);
+      sub = fm(inf.acumuladoCiclo) + ' de ' + fm(c.montoCiclo) + ' este ciclo · quedan ' + inf.diasRestantesCiclo + ' d';
+      if(i.atraso > 0.5) sub += ' · atraso ' + fm(i.atraso);
+    }
+    let det = '';
+    if(ab){
+      det += '<div class="as-mini" style="margin-top:6px;">¿Qué tan urgente es?</div>' + chipsUrg(c);
+      if(!i.conf){
+        if(c.tipo === 'meta'){
+          det += `<div class="as-mini">¿Cuánto debes en total?</div><input class="as-inp" id="as-cf-total-${c.id}" type="number" inputmode="decimal" placeholder="Ej. 14000" onclick="event.stopPropagation()">
+          <div class="as-mini">¿Cuánto llevas pagado? (opcional)</div><input class="as-inp" id="as-cf-pag-${c.id}" type="number" inputmode="decimal" placeholder="0" onclick="event.stopPropagation()">
+          <div class="as-mini">¿Para cuándo quieres terminarlo? (opcional)</div><input class="as-inp" id="as-cf-fec-${c.id}" type="date" onclick="event.stopPropagation()">
+          <button class="as-btn as-ok" onclick="event.stopPropagation();asConfigMeta(${c.id})">Guardar</button>`;
+        } else {
+          det += `<div class="as-mini">¿Cuánto es cada vez?</div><input class="as-inp" id="as-cf-monto-${c.id}" type="number" inputmode="decimal" placeholder="Ej. 700" onclick="event.stopPropagation()">
+          <div class="as-mini">¿Cada cuántos días?</div><input class="as-inp" id="as-cf-ciclo-${c.id}" type="number" inputmode="numeric" placeholder="7" onclick="event.stopPropagation()">
+          <button class="as-btn as-ok" onclick="event.stopPropagation();asConfigRec(${c.id})">Guardar</button>`;
+        }
+      } else {
+        det += `<div class="as-mini" style="margin-top:6px;">Meterle más (sale de tu sueldo de hoy)</div>
+        <div style="display:flex;gap:8px;"><input class="as-inp" id="as-mas-${c.id}" type="number" inputmode="decimal" placeholder="$0" style="margin:0;" onclick="event.stopPropagation()">
+        <button class="as-btn as-ok" style="width:auto;padding:0 18px;margin:0;" onclick="event.stopPropagation();asMeterMas(${c.id})">Abonar</button></div>`;
+      }
+      det += `<button class="as-btn as-sec" style="min-height:42px;font-size:13px;" onclick="event.stopPropagation();asSaltar(${c.id})">${ex?'↩ Volver a incluirlo hoy':'⏸ Saltar este hoy'}</button>
+      <div class="as-mini" style="text-align:center;margin-top:8px;"><a href="#" style="color:var(--gris);" onclick="event.stopPropagation();asAvanzado();return false;">Más opciones (editar, borrar, historial)</a></div>`;
+    }
+    return `<div class="as-card as-sobre" onclick="asToggle(${c.id})" style="${ex?'opacity:.55;':''}">
+      <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:18px;">${luz(c,i)}</span>
+      <div style="flex:1;font-weight:700;font-size:15px;color:var(--texto);">${esc(c.nombre)}${ex?' <span class="as-mini">(hoy saltado)</span>':''}</div>
+      <span class="as-mini">${ab?'▲':'▼'}</span></div>
+      ${i.conf ? `<div class="as-bar"><div style="width:${barra(c,i).toFixed(0)}%"></div></div>` : ''}
+      <div class="as-mini">${sub}</div>${det}</div>`;
+  }
+
+  function addHtml(){
+    const a = st.add;
+    if(!a) return `<button class="as-btn as-sec" onclick="asAddIni()">➕ Agregar un compromiso</button>`;
+    let h = '<div class="as-card">';
+    if(a.paso === 1){
+      h += `<div class="as-msg">1/3 · ¿Qué es lo que tienes que pagar?</div><input class="as-inp" id="as-add-nombre" type="text" placeholder="Ej. Moto, Mamá, Lavadora…" value="${esc(a.nombre||'')}">
+      <div class="as-btns"><button class="as-btn as-sec" onclick="asAddCancel()">Cancelar</button><button class="as-btn as-ok" onclick="asAddP1()">Siguiente</button></div>`;
+    } else if(a.paso === 2){
+      h += `<div class="as-msg">2/3 · ¿Qué tan urgente es <b>${esc(a.nombre)}</b>?</div><div class="as-btns">` +
+        Object.keys(URG).map(k => `<button class="as-chip" style="min-height:64px;font-size:13px;" onclick="asAddP2('${k}')">${URG[k].e}<br>${URG[k].t}</button>`).join('') + '</div>';
+    } else {
+      h += `<div class="as-msg">3/3 · ¿Cómo es <b>${esc(a.nombre)}</b>?</div>
+      <div class="as-btns" style="margin-bottom:8px;"><button class="as-chip ${a.tipo==='meta'?'on':''}" onclick="asAddTipo('meta')">Debo un total<br><span style="font-weight:400">(ej. la moto)</span></button>
+      <button class="as-chip ${a.tipo==='rec'?'on':''}" onclick="asAddTipo('rec')">Se repite<br><span style="font-weight:400">(ej. $700 a la semana)</span></button></div>`;
+      if(a.tipo === 'meta') h += `<input class="as-inp" id="as-add-total" type="number" inputmode="decimal" placeholder="¿Cuánto debes en total? (opcional)"><input class="as-inp" id="as-add-fecha" type="date"><div class="as-mini" style="margin:-4px 0 6px;">Fecha para terminar (opcional)</div>`;
+      if(a.tipo === 'rec') h += `<input class="as-inp" id="as-add-monto" type="number" inputmode="decimal" placeholder="¿Cuánto es cada vez?"><input class="as-inp" id="as-add-ciclo" type="number" inputmode="numeric" placeholder="¿Cada cuántos días? (7 = semanal)">`;
+      h += `<div class="as-btns"><button class="as-btn as-sec" onclick="asAddCancel()">Cancelar</button><button class="as-btn as-ok" onclick="asAddGuardar()">${a.tipo?'Guardar':'Lo defino después'}</button></div>`;
+    }
+    return h + '</div>';
+  }
+
+  function propuestaHtml(p){
+    const h = hechoHoy();
+    if(h){
+      let t = '<div class="as-card"><div class="as-msg">✅ <b>Hoy ya repartiste tu dinero.</b></div>';
+      if(h.lineas && h.lineas.length) t += h.lineas.map(l => `<div class="as-mini" style="padding:2px 0;">${esc(l)}</div>`).join('');
+      t += `<div class="as-msg" style="margin-top:8px;">Te quedan <b>${fm(p.disp)}</b> libres para ti.</div><div class="as-mini">Si te entra más dinero, puedes meterle extra a cualquier compromiso desde sus tarjetas de abajo.</div></div>`;
+      return t;
+    }
+    if(!compromisos.length) return `<div class="as-card"><div class="as-msg">Todavía no tienes compromisos. Agrega el primero abajo (toma 3 toques) y yo te propongo cómo repartir tu dinero cada día. 👇</div></div>`;
+    if(p.disp < 1) return `<div class="as-card"><div class="as-msg">Por ahora no hay dinero disponible para repartir. Cuando entren ventas, aquí te propongo el reparto. 💪</div></div>`;
+    if(!p.list.length) return `<div class="as-card"><div class="as-msg">No tienes compromisos con monto definido para hoy. Toca uno abajo y dime cuánto es para poder ayudarte.</div></div>`;
+
+    let t = `<div class="as-card"><div class="as-msg">${st.editando ? '✏️ Cambia lo que quieras:' : 'Te propongo esto para hoy:'}</div>`;
+    p.list.forEach(x => {
+      const razon = x.i.razones.length ? x.i.razones.join(' · ') : (x.c.urgencia ? '' : 'sin clasificar');
+      if(st.editando) t += `<div class="as-row"><span>${luz(x.c,x.i)}</span><div class="nm">${esc(x.c.nombre)}<small>${razon}</small></div><input type="number" inputmode="decimal" value="${Math.round(x.final)}" onchange="asEditMonto(${x.c.id},this.value)"></div>`;
+      else if(x.final > 0.005) t += `<div class="as-row"><span>${luz(x.c,x.i)}</span><div class="nm">${esc(x.c.nombre)}<small>${razon}</small></div><div class="mt">${fm(x.final)}</div></div>`;
+      else if(x.need > 0) t += `<div class="as-row" style="opacity:.6;"><span>${luz(x.c,x.i)}</span><div class="nm">${esc(x.c.nombre)}<small>hoy no alcanza (le tocaban ${fm(x.need)})</small></div><div class="mt">$0</div></div>`;
+    });
+    t += '</div>';
+
+    // Sobrante
+    if(p.sobrante >= 1){
+      t += `<div class="as-card"><div class="as-msg">`;
+      if(st.sobMode === 'quedar' || (!p.items.length)) t += `Te sobran <b>${fm(p.sobrante)}</b>${ahorros.length?'':' (aún no tienes metas de ahorro, créalas en la sección de Ahorros)'} y se quedan libres para ti.`;
+      else {
+        t += `Te sobran <b>${fm(p.sobrante)}</b>: `;
+        t += p.items.map(it => it.tipo === 'adelanto' ? `<b>${fm(it.monto)}</b> para adelantar <b>${esc(it.comp.nombre)}</b> (te urge)` : `<b>${fm(it.monto)}</b> a tus ahorros`).join(' y ') + '.';
+        if(p.libre >= 1) t += ` Quedan ${fm(p.libre)} libres.`;
+      }
+      t += '</div>';
+      if(st.editando) t += `<div class="as-btns">${[['auto','Como sugieres'],['ahorro','Todo a ahorro'],['quedar','Me lo quedo']].map(o => `<button class="as-chip ${st.sobMode===o[0]?'on':''}" onclick="asSobMode('${o[0]}')">${o[1]}</button>`).join('')}</div>`;
+      t += '</div>';
+    } else if(p.disp - 0 > 0 && !p.list.some(x => x.final > 0)) { /* nada */ }
+
+    const sinClas = compromisos.filter(c => !c.urgencia).length;
+    if(sinClas && !st.editando) t += `<div class="as-mini" style="margin:0 4px 8px;">💡 Tienes ${sinClas} sin clasificar. Toca uno abajo y dime qué tan urgente es; así te sugiero mejor.</div>`;
+    if(p.sinDefinir.length && !st.editando) t += `<div class="as-mini" style="margin:0 4px 8px;">⏳ ${p.sinDefinir.map(x => esc(x.c.nombre)).join(', ')} espera${p.sinDefinir.length>1?'n':''} a que definas cuánto es.</div>`;
+
+    if(st.editando) t += `<div class="as-btns"><button class="as-btn as-sec" onclick="asEditar(false)">↩ Volver</button><button class="as-btn as-ok" onclick="asAplicar()">✅ Hazlo así</button></div>`;
+    else t += `<div class="as-btns"><button class="as-btn as-sec" onclick="asEditar(true)">✏️ Cambiar algo</button><button class="as-btn as-ok" onclick="asAplicar()">✅ Sí, hazlo</button></div>`;
+    return t;
+  }
+
+  function render(){
+    const box = $('asistente-box'); if(!box) return;
+    const p = plan();
+    let h = `<div class="as-big"><div class="l">Tu sueldo disponible para repartir</div><div class="n">${fm(p.disp)}</div><div class="as-mini" style="margin-top:6px;line-height:1.5;">${desgloseHtml()}</div></div>`;
+    h += propuestaHtml(p);
+    h += '<div class="as-h">📂 Mis compromisos</div>';
+    const orden = p.todos.slice().sort((a,b) => (b.i.conf?1:0) - (a.i.conf?1:0) || b.i.score - a.i.score || (a.c.orden||0) - (b.c.orden||0));
+    h += orden.length ? orden.map(sobreHtml).join('') : '<div class="as-mini" style="margin:4px;">Aún no hay ninguno.</div>';
+    h += addHtml();
+    box.innerHTML = h;
+  }
+  window.asRender = render;
+
+  function refrescar(){ if(typeof renderDinero === 'function') renderDinero(); else render(); }
+
+  // ── Acciones ──
+  window.asToggle = id => { st.abierto = st.abierto === id ? null : id; render(); };
+  window.asEditar = v => { st.editando = v; if(!v) st.montos = {}; render(); };
+  window.asEditMonto = (id, v) => { st.montos[id] = parseFloat(v) || 0; render(); };
+  window.asSobMode = m => { st.sobMode = m; render(); };
+  window.asAvanzado = () => { const d = $('comp-avanzado'); if(d){ d.open = true; d.scrollIntoView({behavior:'smooth'}); } };
+  window.asSetUrg = (id, k) => { const c = compromisos.find(x => x.id === id); if(!c) return; c.urgencia = k; guardarCompromisos(); render(); };
+  window.asSaltar = id => { const c = compromisos.find(x => x.id === id); if(!c) return; c.excluidoFecha = estaExcluidoHoy(c) ? null : fechaHoyISO(); guardarCompromisos(); refrescar(); };
+
+  window.asConfigMeta = id => {
+    const c = compromisos.find(x => x.id === id); if(!c) return;
+    const total = parseFloat($('as-cf-total-'+id).value), pag = parseFloat($('as-cf-pag-'+id).value) || 0, fec = $('as-cf-fec-'+id).value;
+    if(!total || total <= 0){ mostrarToast('⚠️ Dime cuánto debes en total'); return; }
+    if(pag < 0 || pag > total){ mostrarToast('⚠️ Lo pagado no es válido'); return; }
+    c.total = total; c.pagado = pag; c.fechaLimite = fec || ''; c.diasCuenta = c.diasCuenta || 'todos';
+    guardarCompromisos(); st.abierto = null; refrescar(); mostrarToast('✅ ' + c.nombre + ' listo');
+  };
+  window.asConfigRec = id => {
+    const c = compromisos.find(x => x.id === id); if(!c) return;
+    const m = parseFloat($('as-cf-monto-'+id).value), d = parseInt($('as-cf-ciclo-'+id).value);
+    if(!m || m <= 0 || !d || d <= 0){ mostrarToast('⚠️ Pon el monto y cada cuántos días'); return; }
+    c.tipo = 'recurrente'; c.montoCiclo = m; c.cicloDias = d; c.fechaInicioCiclo = new Date().toISOString().split('T')[0]; c.acumuladoCiclo = 0;
+    guardarCompromisos(); st.abierto = null; refrescar(); mostrarToast('✅ ' + c.nombre + ' listo');
+  };
+
+  function pagar(c, monto, concepto, extra){
+    const hora = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});
+    gastos.push({ id: Date.now() + Math.floor(Math.random()*100000), concepto: '📌 ' + c.nombre + (extra||''), monto, hora, tipo:'personal' });
+    registrarMovimientoCompromiso(c, monto, concepto);
+    if(c.tipo === 'meta') c.pagado = (c.pagado||0) + monto;
+    else { c.acumuladoCiclo = (c.acumuladoCiclo||0) + monto; sincronizarCicloRecurrente(c); }
+  }
+  function limpiarCompletadas(nombres){
+    compromisos = compromisos.filter(c => { const done = c.tipo === 'meta' && c.total > 0 && (c.pagado||0) >= c.total - 0.005; if(done) nombres.push(c.nombre); return !done; });
+  }
+
+  window.asMeterMas = id => {
+    const c = compromisos.find(x => x.id === id); if(!c) return;
+    const m = parseFloat($('as-mas-'+id).value);
+    if(!m || m <= 0){ mostrarToast('⚠️ Pon un monto mayor a 0'); return; }
+    const disp = dineroHoy();
+    if(m > disp + 0.5){ mostrarToast('⚠️ Solo tienes ' + fm(disp) + ' disponibles hoy'); return; }
+    pagar(c, m, '💳 Abono desde sueldo', ' (abono directo)');
+    const done = []; limpiarCompletadas(done);
+    guardarGastos(); guardarCompromisos(); actualizarHeaderTotal();
+    st.abierto = null; refrescar();
+    mostrarToast(done.length ? '🎉 ¡' + done[0] + ' completado!' : '✅ Abonado ' + fm(m) + ' a ' + c.nombre);
+  };
+
+  window.asAplicar = () => {
+    if(hechoHoy()){ mostrarToast('⚠️ Ya repartiste hoy'); return; }
+    const p = plan();
+    const aPagar = p.list.filter(x => x.final > 0.005);
+    if(!aPagar.length && !p.items.length){ mostrarToast('⚠️ No hay nada que repartir hoy'); return; }
+    const totalReparto = aPagar.reduce((s,x) => s + x.final, 0) + p.items.reduce((s,i) => s + i.monto, 0);
+    if(totalReparto > p.disp + 0.5){ mostrarToast('⚠️ Repartiste ' + fm(totalReparto) + ', más de lo disponible (' + fm(p.disp) + ')'); return; }
+    const lineas = [];
+    aPagar.forEach(x => { pagar(x.c, x.final, 'Pago del día (asistente)'); lineas.push('• ' + x.c.nombre + ': ' + fm(x.final)); });
+    p.items.forEach(it => {
+      if(it.tipo === 'adelanto'){ pagar(it.comp, it.monto, 'Adelanto (asistente)', ' (adelanto)'); lineas.push('• ' + it.comp.nombre + ' (adelanto): ' + fm(it.monto)); }
+      else {
+        const hora = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',hour12:false});
+        const hoyKey = new Date().toISOString().split('T')[0], lab = hoyLabel();
+        gastos.push({ id: Date.now() + Math.floor(Math.random()*100000), concepto:'💰 Ahorro: Ahorros', monto: it.monto, hora, tipo:'personal' });
+        calcularDistribucionGlobal(it.monto).forEach(d => {
+          d.ahorro.acumulado = (d.ahorro.acumulado||0) + d.monto;
+          if(!d.ahorro.registros) d.ahorro.registros = [];
+          d.ahorro.registros.push({ fecha:hoyKey, label: lab + ' [Sueldo]', monto: d.monto, origen:'sueldo' });
+          registrarMovimientoAhorro(d.ahorro, d.monto, 'deposito', 'Depósito [Sueldo]');
+        });
+        guardarAhorros(); lineas.push('• Ahorros: ' + fm(it.monto));
+      }
+    });
+    const done = []; limpiarCompletadas(done);
+    done.forEach(n => lineas.push('🎉 ' + n + ' completado'));
+    guardarGastos(); guardarCompromisos(); actualizarHeaderTotal();
+    try{ localStorage.setItem(HECHO_KEY, JSON.stringify({ fecha: fechaHoyISO(), lineas })); }catch(e){}
+    st.editando = false; st.montos = {}; st.sobMode = 'auto';
+    if(typeof renderTabAhorros === 'function') try{ renderTabAhorros(); }catch(e){}
+    refrescar(); mostrarToast('✅ Listo, repartí ' + fm(totalReparto));
+  };
+
+  // ── Agregar en 3 pasos ──
+  window.asAddIni = () => { st.add = { paso:1, nombre:'', urg:null, tipo:null }; render(); setTimeout(() => { const i = $('as-add-nombre'); if(i) i.focus(); }, 50); };
+  window.asAddCancel = () => { st.add = null; render(); };
+  window.asAddP1 = () => { const n = $('as-add-nombre').value.trim(); if(!n){ mostrarToast('⚠️ Escribe el nombre'); return; } st.add.nombre = n; st.add.paso = 2; render(); };
+  window.asAddP2 = k => { st.add.urg = k; st.add.paso = 3; render(); };
+  window.asAddTipo = t => { st.add.tipo = t; render(); };
+  window.asAddGuardar = () => {
+    const a = st.add; if(!a) return;
+    const orden = compromisos.reduce((m,c) => Math.max(m, c.orden||0), 0) + 1;
+    let nuevo = { id: Date.now(), nombre: a.nombre, urgencia: a.urg, orden, montoFijo: 0, historial: [] };
+    if(a.tipo === 'rec'){
+      const m = parseFloat($('as-add-monto').value) || 0, d = parseInt($('as-add-ciclo').value) || 0;
+      if(!m || !d){ mostrarToast('⚠️ Pon el monto y cada cuántos días (o elige "Lo defino después")'); return; }
+      Object.assign(nuevo, { tipo:'recurrente', montoCiclo:m, cicloDias:d, fechaInicioCiclo:new Date().toISOString().split('T')[0], acumuladoCiclo:0 });
+    } else {
+      const t = a.tipo === 'meta' ? (parseFloat($('as-add-total').value) || 0) : 0;
+      const f = a.tipo === 'meta' ? ($('as-add-fecha').value || '') : '';
+      Object.assign(nuevo, { tipo:'meta', total:t, pagado:0, fechaLimite:f, diasCuenta:'todos' });
+    }
+    compromisos.push(nuevo); guardarCompromisos();
+    st.add = null; refrescar(); mostrarToast('✅ ' + nuevo.nombre + ' agregado');
+  };
+
+  // Engancha el render nuevo a cada vez que la app refresca compromisos
+  const _rtc = renderTabCompromisos;
+  renderTabCompromisos = function(t){ _rtc.apply(this, arguments); if(t === 'personal'){ try{ render(); }catch(e){ console.error('asistente', e); } } };
+  try{ render(); }catch(e){ console.error('asistente', e); }
+})();
 </script>
 </body>
 </html>
