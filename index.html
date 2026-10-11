@@ -786,6 +786,7 @@
 <!-- TAB ANÁLISIS (submenús: Gráficas, Histórico, Negocio) -->
 <div class="seccion" id="tab-analisis">
   <!-- GRÁFICAS SEMANALES -->
+  <div id="subtab-racha" style="display:none;"></div>
   <div id="subtab-graficas">
     <div class="dist-header">📈 Gráficas Semanales</div>
     <div class="dist-sub" id="graf-semana-label">Semana actual</div>
@@ -1511,6 +1512,7 @@
 
   const SUBMENUS = {
     analisis: [
+      { key:'racha', label:'🔥 Racha' },
       { key:'graficas', label:'📈 Gráficas' },
       { key:'historico', label:'📊 Histórico' },
       { key:'negocio', label:'🏗️ Negocio' },
@@ -1593,9 +1595,10 @@
   }
 
   function mostrarSubtabAnalisis(key) {
-    ['graficas','historico','negocio','plataformas'].forEach(k => {
+    ['racha','graficas','historico','negocio','plataformas'].forEach(k => {
       document.getElementById('subtab-' + k).style.display = k === key ? 'block' : 'none';
     });
+    if (key === 'racha') renderRacha();
     if (key === 'graficas') renderGraficas();
     if (key === 'historico') renderGraficasHistoricas();
     if (key === 'negocio') renderTabCompromisos('negocio');
@@ -2891,7 +2894,7 @@
     const rest={inv:b.invBase,gan:b.ganBase,dia:b.diaBase};
     const detalle=[];
     gastos.forEach(g=>{
-      const orden = g.tipo==='personal' ? ['gan','inv','dia'] : ['inv','gan','dia'];
+      const orden = g.tipo==='personal' ? ['gan','inv','dia'] : ['inv','dia','gan']; // gasto del negocio: 1º inversión, 2º gastos del día, y solo como último recurso tu ganancia
       let falta=parseFloat(g.monto)||0; const partes={inv:0,gan:0,dia:0};
       orden.forEach(k=>{ const t=Math.max(0,Math.min(falta,rest[k])); partes[k]=t; rest[k]=Math.max(0,rest[k]-t); falta-=t; });
       detalle.push({g,partes,sinFondos:Math.max(0,falta)});
@@ -6188,6 +6191,122 @@
   const _rtc = renderTabCompromisos;
   renderTabCompromisos = function(t){ _rtc.apply(this, arguments); if(t === 'personal'){ try{ render(); }catch(e){ console.error('asistente', e); } } };
   try{ render(); }catch(e){ console.error('asistente', e); }
+})();
+</script>
+<style>
+#subtab-racha .rc-card{background:var(--medio);border:1px solid var(--claro);border-radius:16px;padding:14px;margin-bottom:12px;}
+#subtab-racha .rc-banner{text-align:center;border-radius:16px;padding:18px 12px;margin-bottom:12px;border:2px solid var(--amarillo);}
+#subtab-racha .rc-banner .e{font-size:40px;line-height:1.1;}
+#subtab-racha .rc-banner .t{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:22px;margin-top:4px;}
+#subtab-racha .rc-banner .d{font-size:13px;color:var(--texto);margin-top:6px;line-height:1.45;}
+#subtab-racha .rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+#subtab-racha .rc-mini{background:var(--medio);border:1px solid var(--claro);border-radius:14px;padding:12px 10px;text-align:center;}
+#subtab-racha .rc-mini .l{font-size:11px;color:var(--gris);text-transform:uppercase;letter-spacing:.4px;min-height:28px;}
+#subtab-racha .rc-mini .p{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:30px;line-height:1.2;}
+#subtab-racha .rc-mini .s{font-size:11px;color:var(--gris);line-height:1.4;}
+#subtab-racha .rc-h{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:16px;color:var(--amarillo);margin:16px 2px 8px;}
+#subtab-racha .rc-row{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:12px;color:var(--texto);}
+#subtab-racha .rc-row .n{width:84px;color:var(--gris);font-size:11px;flex-shrink:0;}
+#subtab-racha .rc-row .b{flex:1;height:10px;background:var(--oscuro);border-radius:6px;overflow:hidden;}
+#subtab-racha .rc-row .b>div{height:100%;border-radius:6px;background:var(--amarillo);}
+#subtab-racha .rc-row .v{width:58px;text-align:right;font-weight:700;flex-shrink:0;}
+#subtab-racha .rc-row .c{width:52px;text-align:right;font-weight:700;flex-shrink:0;font-size:11px;}
+#subtab-racha .up{color:var(--verde);} #subtab-racha .down{color:var(--rojo);} #subtab-racha .flat{color:var(--gris);}
+</style>
+<script>
+/* ═══ RACHA — cómo van tus ventas vs. la semana y el mes anterior ═══ */
+(function(){
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fm = n => '$' + Math.round(n).toLocaleString('es-MX');
+  const key = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const addD = (d,n) => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); return x; };
+  const diaIni = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const lunesDe = d => { const x = diaIni(d); const w = x.getDay(); return addD(x, w === 0 ? -6 : 1 - w); };
+  const fmtD = d => d.getDate() + ' ' + MESES[d.getMonth()].slice(0,3);
+
+  function serie(){
+    const m = {}; let sinFecha = 0;
+    (historial||[]).forEach(d => {
+      const f = parseFechaHistorial(d.fecha);
+      if(!f){ sinFecha++; return; }
+      const v = (d.totales && typeof d.totales.totalVenta === 'number') ? d.totales.totalVenta : (d.movimientos||[]).reduce((s,x) => s + (x.precio||0), 0);
+      m[key(f)] = (m[key(f)]||0) + v;
+    });
+    const vh = (movimientos||[]).reduce((s,x) => s + (x.precio||0), 0);
+    if(vh > 0){ const f = parseFechaHistorial(fechaApertura) || new Date(); m[key(f)] = (m[key(f)]||0) + vh; }
+    return { m, sinFecha };
+  }
+  function suma(m, a, b){ let t = 0; for(let d = diaIni(a); d <= b; d = addD(d,1)) t += m[key(d)] || 0; return t; }
+  const pct = (a,b) => b > 0 ? (a - b) / b * 100 : null;
+  const cls = p => p === null ? 'flat' : (p > 2 ? 'up' : (p < -2 ? 'down' : 'flat'));
+  const fp = p => p === null ? 'n/d' : (p > 0 ? '▲ +' : (p < 0 ? '▼ −' : '')) + Math.abs(Math.round(p)) + '%';
+
+  function mini(label, p, a, b, nota){
+    return `<div class="rc-mini"><div class="l">${label}</div><div class="p ${cls(p)}">${fp(p)}</div><div class="s">${fm(a)} vs ${fm(b)}${nota?'<br>'+nota:''}</div></div>`;
+  }
+
+  window.renderRacha = function(){
+    const box = document.getElementById('subtab-racha'); if(!box) return;
+    const { m, sinFecha } = serie();
+    const hoy = diaIni(new Date());
+    // Semana
+    const lun = lunesDe(hoy), nSem = Math.round((hoy - lun) / 86400000);
+    const semA = suma(m, lun, hoy), semAp = suma(m, addD(lun,-7), addD(lun,-7+nSem));
+    const semP = suma(m, addD(lun,-7), addD(lun,-1)), semPP = suma(m, addD(lun,-14), addD(lun,-8));
+    // Mes
+    const m1 = new Date(hoy.getFullYear(), hoy.getMonth(), 1), p1 = new Date(hoy.getFullYear(), hoy.getMonth()-1, 1);
+    const pFin = new Date(hoy.getFullYear(), hoy.getMonth(), 0), pp1 = new Date(hoy.getFullYear(), hoy.getMonth()-2, 1), ppFin = new Date(hoy.getFullYear(), hoy.getMonth()-1, 0);
+    const mesA = suma(m, m1, hoy), mesAp = suma(m, p1, addD(p1, Math.min(hoy.getDate(), pFin.getDate()) - 1));
+    const mesP = suma(m, p1, pFin), mesPP = suma(m, pp1, ppFin);
+
+    const pSemA = pct(semA, semAp), pSemP = pct(semP, semPP), pMesA = pct(mesA, mesAp), pMesP = pct(mesP, mesPP);
+    // Veredicto: promedio de lo que va de la semana y del mes (mismo tramo); si falta uno, usa los periodos completos
+    let base = [pSemA, pMesA].filter(x => x !== null);
+    if(!base.length) base = [pSemP, pMesP].filter(x => x !== null);
+    let banner;
+    if(!base.length){
+      banner = `<div class="rc-banner"><div class="e">📊</div><div class="t">Aún no hay con qué comparar</div><div class="d">Necesito ventas de al menos la semana o el mes anterior. Conforme vayas cerrando días, aquí verás cómo van.</div></div>`;
+    } else {
+      const avg = base.reduce((a,b) => a + b, 0) / base.length;
+      let e, t, d, c;
+      if(avg >= 5){ e='🔥'; t='Buena racha'; c='var(--verde)'; d='Tus ventas van arriba del periodo anterior. Buen momento para adelantar deudas o fortalecer tu ahorro.'; }
+      else if(avg > -5){ e='😐'; t='Estable'; c='var(--amarillo)'; d='Tus ventas van parecidas al periodo anterior. Sin sobresaltos.'; }
+      else if(avg > -15){ e='⚠️'; t='Bajando'; c='#f59e0b'; d='Tus ventas están por debajo del periodo anterior. Cuida los gastos y vigila de cerca los próximos días.'; }
+      else { e='🚨'; t='Ojo: racha floja'; c='var(--rojo)'; d='Tus ventas cayeron bastante frente al periodo anterior. Conviene revisar gastos, qué productos se están vendiendo y cuidar tus compromisos más urgentes.'; }
+      banner = `<div class="rc-banner" style="border-color:${c};"><div class="e">${e}</div><div class="t" style="color:${c};">${t}</div><div class="d"><b>${avg>0?'+':(avg<0?'−':'')}${Math.abs(Math.round(avg))}%</b> en promedio vs. el periodo anterior.<br>${d}</div></div>`;
+    }
+
+    let h = banner;
+    h += '<div class="rc-h">📅 Semanas</div><div class="rc-grid">' +
+      mini('Esta semana (lun→hoy)', pSemA, semA, semAp, 'vs mismo tramo sem. pasada') +
+      mini('Semana pasada completa', pSemP, semP, semPP, 'vs la anterior') + '</div>';
+    h += '<div class="rc-h">🗓️ Meses</div><div class="rc-grid">' +
+      mini('Este mes (1→hoy)', pMesA, mesA, mesAp, 'vs mismo tramo mes pasado') +
+      mini('Mes pasado completo', pMesP, mesP, mesPP, 'vs el anterior') + '</div>';
+
+    // Últimas 8 semanas
+    const sem = [];
+    for(let i = 7; i >= 0; i--){ const a = addD(lun, -7*i), b = i === 0 ? hoy : addD(a, 6); sem.push({ a, b, t: suma(m, a, b), cur: i === 0 }); }
+    const maxS = Math.max(1, ...sem.map(x => x.t));
+    h += '<div class="rc-card"><div class="rc-h" style="margin-top:0;">Últimas 8 semanas</div>' + sem.map((x,i) => {
+      let p = null;
+      if(i > 0){ p = x.cur ? pSemA : pct(x.t, sem[i-1].t); }
+      return `<div class="rc-row"><span class="n">${fmtD(x.a)}${x.cur?' · hoy':''}</span><span class="b"><div style="width:${(x.t/maxS*100).toFixed(0)}%"></div></span><span class="v">${x.t?fm(x.t):'—'}</span><span class="c ${cls(p)}">${p===null?'':fp(p)}</span></div>`;
+    }).join('') + '<div class="as-mini" style="font-size:10px;color:var(--gris);margin-top:4px;">La semana en curso se compara contra el mismo tramo de la anterior.</div></div>';
+
+    // Últimos 6 meses
+    const mes = [];
+    for(let i = 5; i >= 0; i--){ const a = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1), fin = new Date(a.getFullYear(), a.getMonth()+1, 0); mes.push({ a, t: suma(m, a, i === 0 ? hoy : fin), cur: i === 0 }); }
+    const maxM = Math.max(1, ...mes.map(x => x.t));
+    h += '<div class="rc-card"><div class="rc-h" style="margin-top:0;">Últimos 6 meses</div>' + mes.map((x,i) => {
+      let p = null;
+      if(i > 0){ p = x.cur ? pMesA : pct(x.t, mes[i-1].t); }
+      return `<div class="rc-row"><span class="n">${MESES[x.a.getMonth()]}${x.cur?' · hoy':''}</span><span class="b"><div style="width:${(x.t/maxM*100).toFixed(0)}%"></div></span><span class="v">${x.t?fm(x.t):'—'}</span><span class="c ${cls(p)}">${p===null?'':fp(p)}</span></div>`;
+    }).join('') + '</div>';
+
+    h += `<div style="font-size:11px;color:var(--gris);line-height:1.5;margin:6px 4px 14px;">Se cuenta la <b>venta total</b> de cada día (incluye el día en curso aunque no lo hayas cerrado). Para ser justo, lo que va de la semana o del mes se compara contra el mismo tramo del periodo anterior.${sinFecha?`<br>⚠️ ${sinFecha} día(s) del historial tienen una fecha que no pude leer y no se contaron.`:''}</div>`;
+    box.innerHTML = h;
+  };
 })();
 </script>
 </body>
