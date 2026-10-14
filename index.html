@@ -2702,6 +2702,35 @@
     if(invFinal<0){desCC=Math.abs(invFinal);invFinal=0;} let colchonFinal=bruto*pctC-desCC; let desCS=0;
     if(colchonFinal<0){desCS=Math.abs(colchonFinal);colchonFinal=0;} const sueldoFinal=Math.max(0,sueldoBase-tGasPer-desCS);
 
+    // Distribución según el modo que tienes activo (Reparto nuevo o porcentajes)
+    let distBlock;
+    if(esModoNuevo()){
+      const an=asignarGastosNuevo(dia.movimientos||[], dia.gastos||[]);
+      const brutoFis=(t.efectivo||0)+(t.didi_efectivo||0)+(t.facebook||0)+(t.whatsapp||0);
+      const enManoDia=Math.max(0,brutoFis-(t.totalGastos||0));
+      const celda=(bg,bor,ttl,val,base)=>`<div style="background:${bg};border:1px solid ${bor};border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:${bor};text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">${ttl}</div><div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:26px;color:${bor};">$${val.toFixed(2)}</div>${base!==null?`<div style="font-size:10px;color:var(--gris);margin-top:2px;">de $${base.toFixed(2)}</div>`:''}</div>`;
+      distBlock=`      <div style="margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid #333;">
+        <div style="background:var(--claro);padding:10px 14px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;letter-spacing:1px;color:var(--amarillo);">💰 Distribución de este día</div>
+        <div style="background:var(--oscuro);padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          ${celda('rgba(34,197,94,0.08)','var(--verde)','💵 En mano',enManoDia,null)}
+          ${celda('rgba(245,200,66,0.1)','var(--morado)','🧍 Para ti (ganancia)',an.rest.gan,an.ganBase)}
+          ${celda('rgba(245,200,66,0.08)','var(--amarillo)','📦 Inversión (resurtir)',an.rest.inv,an.invBase)}
+          ${celda('rgba(230,57,70,0.08)','var(--rojo)','🔒 Gastos del día',an.rest.dia,an.diaBase)}
+        </div>
+        <div style="background:var(--oscuro);padding:0 12px 10px;font-size:10px;color:var(--gris);">Lo que queda en cada bolsa después de los gastos de este día. Usa tus costos y gastos del día actuales.</div>
+      </div>`;
+    } else {
+      distBlock=`      <div style="margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid #333;">
+        <div style="background:var(--claro);padding:10px 14px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;letter-spacing:1px;color:var(--amarillo);">💰 Distribución de este día</div>
+        <div style="background:var(--oscuro);padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="background:rgba(34,197,94,0.08);border:1px solid var(--verde);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--verde);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">💵 En mano</div><div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:26px;color:var(--verde);">$${bruto.toFixed(2)}</div></div>
+          <div style="background:rgba(245,200,66,0.1);border:1px solid var(--morado);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--morado);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">🧍 Sueldo neto</div><div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:26px;color:var(--morado);">$${sueldoFinal.toFixed(2)}</div></div>
+          <div style="background:rgba(245,200,66,0.08);border:1px solid var(--amarillo);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--amarillo);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">📦 Inversión</div><div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:26px;color:var(--amarillo);">$${invFinal.toFixed(2)}</div></div>
+          <div style="background:rgba(230,57,70,0.08);border:1px solid var(--rojo);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--rojo);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">🛡️ Colchón</div><div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:26px;color:var(--rojo);">$${colchonFinal.toFixed(2)}</div></div>
+        </div>
+      </div>`;
+    }
+
     document.getElementById('modal-hist-content').innerHTML=`
       <h2>📅 Detalle del Día</h2>
       <div class="badge-dia">${dia.fecha}</div>
@@ -2738,15 +2767,7 @@
           <button onclick="agregarGastoHist(${dia.id})" style="width:100%;background:var(--rojo);border:none;border-radius:8px;padding:10px;color:white;font-weight:700;font-size:13px;cursor:pointer;">+ Agregar Gasto</button>
         </div>
       </div>
-      <div style="margin-top:14px;border-radius:12px;overflow:hidden;border:1px solid #333;">
-        <div style="background:var(--claro);padding:10px 14px;font-family:'Baloo 2',sans-serif;font-weight:800;font-size:15px;letter-spacing:1px;color:var(--amarillo);">💰 Distribución de este día</div>
-        <div style="background:var(--oscuro);padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div style="background:rgba(34,197,94,0.08);border:1px solid var(--verde);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--verde);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">💵 En mano</div><div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:26px;color:var(--verde);">$${bruto.toFixed(2)}</div></div>
-          <div style="background:rgba(245,200,66,0.1);border:1px solid var(--morado);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--morado);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">🧍 Sueldo neto</div><div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:26px;color:var(--morado);">$${sueldoFinal.toFixed(2)}</div></div>
-          <div style="background:rgba(245,200,66,0.08);border:1px solid var(--amarillo);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--amarillo);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">📦 Inversión</div><div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:26px;color:var(--amarillo);">$${invFinal.toFixed(2)}</div></div>
-          <div style="background:rgba(230,57,70,0.08);border:1px solid var(--rojo);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--rojo);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">🛡️ Colchón</div><div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:26px;color:var(--rojo);">$${colchonFinal.toFixed(2)}</div></div>
-        </div>
-      </div>
+${distBlock}
       <button class="btn-cancelar" onclick="document.getElementById('overlay-hist').classList.remove('visible');renderHistorial();" style="width:100%;margin-top:16px">Cerrar</button>`;
   }
 
@@ -2861,11 +2882,11 @@
   const NOM_BOLSA = { inv:'Inversión', gan:'Ganancia', dia:'Gastos del día' };
 
   // Bolsas del día a partir de lo vendido en mano (misma lógica que "Ganancia real de hoy")
-  function calcBolsasNuevo(){
+  function calcBolsasNuevo(movs){
     const prods = productosEditables.filter(p=>p.id!=='Otro');
     const MANO = ['efectivo','tarjeta','didi_efectivo','facebook','whatsapp'];
     let venta=0, costo=0, com=0, sinCosto=0;
-    (movimientos||[]).forEach(m=>{
+    (movs||movimientos||[]).forEach(m=>{
       if(!m||typeof m.producto!=='string'||m.esPlatPendiente||!MANO.includes(m.metodo)) return;
       if(/^(Abono|Pago) fiado|cobro semanal/.test(m.producto)) return;
       const mm=m.producto.match(/^(\d+)x\s+(.*)$/), cant=mm?+mm[1]:1;
@@ -2887,13 +2908,13 @@
   }
 
   // Cascada por gasto, en el orden en que se registraron:
-  //  negocio / colchón → Inversión, luego Ganancia, último recurso Gastos del día
+  //  negocio / colchón → Inversión, luego Gastos del día, último recurso Ganancia
   //  personal          → Ganancia, luego Inversión, último recurso Gastos del día
-  function asignarGastosNuevo(){
-    const b=calcBolsasNuevo();
+  function asignarGastosNuevo(movs, gs){
+    const b=calcBolsasNuevo(movs);
     const rest={inv:b.invBase,gan:b.ganBase,dia:b.diaBase};
     const detalle=[];
-    gastos.forEach(g=>{
+    (gs||gastos).forEach(g=>{
       const orden = g.tipo==='personal' ? ['gan','inv','dia'] : ['inv','dia','gan']; // gasto del negocio: 1º inversión, 2º gastos del día, y solo como último recurso tu ganancia
       let falta=parseFloat(g.monto)||0; const partes={inv:0,gan:0,dia:0};
       orden.forEach(k=>{ const t=Math.max(0,Math.min(falta,rest[k])); partes[k]=t; rest[k]=Math.max(0,rest[k]-t); falta-=t; });
@@ -5004,6 +5025,14 @@
     return new Date(y, m-1, d).toLocaleDateString('es-MX',{day:'numeric',month:'short'});
   }
 
+  // Las comisiones de Didi Efectivo (ajustes negativos) NO pertenecen a la semana en que se generaron:
+  // Didi las descuenta del siguiente pago con tarjeta que te haga. Por eso se arrastran siempre a la
+  // semana en curso hasta que se cobren. El resto de las ventas pendientes sigue en su propia semana.
+  function semanaEfectivaPlat(p) {
+    if (p.metodo === 'didi_tarjeta' && p.montoEsperado < 0 && !p.cobrado) return getWeekEndKey(Date.now(), 'didi_tarjeta');
+    return p.semana || getWeekEndKey(p.id, p.metodo);
+  }
+
   function renderHistorialPlats() {
     const cont = document.getElementById('plats-hist-content');
     if (!cont) return;
@@ -5071,7 +5100,7 @@
     // sumándose a la del ciclo pasado.
     const grupos = {};
     pendientes.forEach(p => {
-      const semana = p.semana || getWeekEndKey(p.id, p.metodo);
+      const semana = semanaEfectivaPlat(p);
       const key = p.metodo + '|' + semana;
       if (!grupos[key]) grupos[key] = { metodo: p.metodo, semana, total: 0, count: 0 };
       grupos[key].total += p.montoEsperado;
@@ -5090,7 +5119,7 @@
         <div class="pc-plat">${info.nombre}</div>
         <div class="pc-monto">$${g.total.toFixed(0)}</div>
         <div class="pc-fecha">${g.count} venta${g.count>1?'s':''}</div>
-        ${semanaTxt}${promTxt}
+        ${g.total < 0 ? '<div class="pc-fecha" style="color:var(--amarillo);">💸 comisión que Didi te descontará</div>' : ''}${semanaTxt}${promTxt}
       </div>`;
     }).join('');
   }
@@ -5128,7 +5157,7 @@
   }
 
   function abrirModalPlat(metodo, semana) {
-    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id, metodo)) === semana);
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && semanaEfectivaPlat(x) === semana);
     if (!entries.length) return;
     _platIdActual = metodo + '|' + semana;
     const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
@@ -5149,8 +5178,7 @@
           <span style="color:var(--gris);">${e.fecha} ${e.hora||''}${e.producto?' · '+e.producto:''}</span>
           <span style="color:var(--texto);">$${e.montoEsperado.toFixed(0)}</span>
           <span style="display:flex;align-items:center;gap:8px;padding-left:8px;">
-            <span onclick="event.stopPropagation();moverSemanaCuentaPlat(${e.id},-1)" title="Mover a la semana pasada" style="color:var(--gris);cursor:pointer;">◀</span>
-            <span onclick="event.stopPropagation();moverSemanaCuentaPlat(${e.id},1)" title="Mover a la semana siguiente" style="color:var(--gris);cursor:pointer;">▶</span>
+            ${e.montoEsperado < 0 ? '<span style="color:var(--gris);font-size:10px;">se arrastra</span>' : `<span onclick="event.stopPropagation();moverSemanaCuentaPlat(${e.id},-1)" title="Mover a la semana pasada" style="color:var(--gris);cursor:pointer;">◀</span><span onclick="event.stopPropagation();moverSemanaCuentaPlat(${e.id},1)" title="Mover a la semana siguiente" style="color:var(--gris);cursor:pointer;">▶</span>`}
             <span onclick="event.stopPropagation();eliminarCuentaPlat(${e.id})" style="color:var(--perdida);cursor:pointer;">🗑️</span>
           </span>
         </div>`).join('')}
@@ -5195,7 +5223,7 @@
   }
 
   function platNumpad(metodo, semana, key) {
-    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id, metodo)) === semana);
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && semanaEfectivaPlat(x) === semana);
     const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
     if (key === 'DEL') _platMontoStr = _platMontoStr.length > 1 ? _platMontoStr.slice(0,-1) : '';
     else if (key === '.') { if (!_platMontoStr.includes('.')) _platMontoStr += '.'; }
@@ -5208,7 +5236,7 @@
   function cobrarPlat(metodo, semana) {
     const monto = parseFloat(_platMontoStr);
     if (!monto || monto <= 0) { mostrarToast('⚠️ Ingresa un monto válido'); return; }
-    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && (x.semana || getWeekEndKey(x.id, metodo)) === semana);
+    const entries = cuentasPlat.filter(x => x.metodo === metodo && !x.cobrado && semanaEfectivaPlat(x) === semana);
     if (!entries.length) return;
     const info = PLAT_INFO[metodo] || { nombre: metodo };
     const totalEsperado = entries.reduce((s,e)=>s+e.montoEsperado,0);
