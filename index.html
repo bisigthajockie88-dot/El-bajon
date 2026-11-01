@@ -766,6 +766,31 @@
 
 
 
+<!-- COLCHÓN (fondo de liquidez) -->
+<div id="subtab-colchon-fondo" style="margin-top:22px;">
+  <div class="dist-header">🛡️ Mi Colchón</div>
+  <div class="dist-sub">Tu fondo para no quedarte sin dinero. Solo se toca cuando falte venta.</div>
+  <div class="resumen-box" style="border:2px solid var(--rojo);text-align:center;">
+    <div style="font-size:11px;color:var(--gris);">Tienes en el colchón</div>
+    <div style="font-family:'Baloo 2',sans-serif;font-weight:800;font-size:42px;color:var(--rojo);" id="cf-saldo">$0</div>
+    <div style="height:10px;background:var(--oscuro);border-radius:6px;overflow:hidden;margin-top:8px;"><div id="cf-barra" style="height:100%;width:0%;background:var(--verde);transition:width .3s;"></div></div>
+    <div style="font-size:12px;color:var(--gris);margin-top:6px;" id="cf-meta-txt"></div>
+  </div>
+  <div class="resumen-box">
+    <div style="display:flex;gap:4px;margin-bottom:10px;background:var(--oscuro);border:1px solid #444;border-radius:12px;padding:4px;">
+      <button id="cf-b-libre" onclick="cfSelTipo('libre')" style="flex:1;padding:9px 2px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;">➕ Dinero libre</button>
+      <button id="cf-b-sobrante" onclick="cfSelTipo('sobrante')" style="flex:1;padding:9px 2px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;">📈 Sobrante</button>
+      <button id="cf-b-retiro" onclick="cfSelTipo('retiro')" style="flex:1;padding:9px 2px;border-radius:9px;border:none;font-size:11px;font-weight:700;cursor:pointer;">➖ Tomar</button>
+    </div>
+    <div id="cf-ayuda" style="font-size:11px;color:var(--gris);margin-bottom:8px;"></div>
+    <input type="number" id="cf-monto" placeholder="Monto ($)" min="0" inputmode="decimal" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:12px;color:var(--texto);font-size:18px;font-weight:700;text-align:center;outline:none;margin-bottom:8px;">
+    <button id="cf-usar-hoy" onclick="cfUsarDisponible()" style="display:none;width:100%;background:transparent;border:1px dashed var(--amarillo);border-radius:8px;padding:9px;color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;"></button>
+    <input type="text" id="cf-nota" placeholder="Nota (opcional)" maxlength="60" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:10px 12px;color:var(--texto);font-size:13px;outline:none;margin-bottom:10px;">
+    <button id="cf-guardar" onclick="cfGuardar()" style="width:100%;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;">Guardar</button>
+  </div>
+  <div class="resumen-box"><h3>🧾 Movimientos del colchón</h3><div id="cf-lista"></div></div>
+</div>
+
 <!-- AHORROS -->
 <div id="subtab-ahorros" style="margin-top:22px;">
     <div class="dist-header">🏦 Mis Ahorros</div>
@@ -1612,6 +1637,7 @@
     renderDistribucion();
     renderTabCompromisos('personal');
     renderTabAhorros();
+    renderColchonFondo();
     renderDisponibleHoy();
     renderCostosHoy();
   }
@@ -1678,6 +1704,73 @@
     }, 0);
   }
 
+
+  // ════════════════════════════════════════════════════
+  // COLCHÓN (fondo de liquidez): dinero libre, sobrante de la venta, tomar
+  // ════════════════════════════════════════════════════
+  let colchonFondo = JSON.parse(localStorage.getItem('bajon_colchon_fondo') || '[]');
+  function guardarColchonFondo(){ localStorage.setItem('bajon_colchon_fondo', JSON.stringify(colchonFondo)); }
+  const CF_ETAPAS = [1200, 2400, 3600, 5000, 7500, 10000];
+  let cfTipo = 'libre';
+  function cfFechaHoy(){ return new Date().toLocaleDateString('es-MX', {day:'numeric', month:'short', year:'numeric'}); }
+  function cfSaldo(){ return colchonFondo.reduce((t,m)=>t+(m.tipo==='retiro'?-m.monto:m.monto),0); }
+  function cfSobranteHoy(){ const h=cfFechaHoy(); return colchonFondo.filter(m=>m.tipo==='sobrante'&&m.fecha===h).reduce((t,m)=>t+m.monto,0); }
+  function cfEsc(t){ return String(t||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function cfSelTipo(t){ cfTipo=t; renderColchonFondo(); }
+  function cfUsarDisponible(){
+    const el=document.getElementById('dinero-disponible-monto'); if(!el) return;
+    const v=parseFloat(String(el.textContent).replace(/[^0-9.]/g,''))||0;
+    document.getElementById('cf-monto').value=v>0?v:'';
+  }
+  function cfGuardar(){
+    const montoEl=document.getElementById('cf-monto'), notaEl=document.getElementById('cf-nota');
+    const monto=Math.round((parseFloat(montoEl.value)||0)*100)/100;
+    if(!(monto>0)){ mostrarToast('⚠️ Escribe un monto'); return; }
+    if(cfTipo==='retiro' && monto>cfSaldo()+0.001){ mostrarToast('⚠️ El colchón solo tiene $'+cfSaldo().toFixed(2)); return; }
+    colchonFondo.push({id:Date.now(), tipo:cfTipo, monto, nota:(notaEl.value||'').trim(), fecha:cfFechaHoy(), hora:new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})});
+    guardarColchonFondo();
+    montoEl.value=''; notaEl.value='';
+    mostrarToast(cfTipo==='retiro'?'➖ Tomaste $'+monto.toFixed(0)+' del colchón':'🛡️ Agregaste $'+monto.toFixed(0)+' al colchón');
+    renderColchonFondo(); renderDisponibleHoy();
+  }
+  function cfBorrar(id){
+    const m=colchonFondo.find(x=>x.id===id); if(!m) return;
+    if(!confirm('¿Borrar este movimiento de $'+m.monto.toFixed(2)+'?')) return;
+    colchonFondo=colchonFondo.filter(x=>x.id!==id); guardarColchonFondo(); renderColchonFondo(); renderDisponibleHoy();
+  }
+  function renderColchonFondo(){
+    const elSaldo=document.getElementById('cf-saldo'); if(!elSaldo) return;
+    const saldo=cfSaldo();
+    elSaldo.textContent='$'+saldo.toFixed(0);
+    const sig=CF_ETAPAS.find(e=>e>saldo);
+    const ant=[...CF_ETAPAS].reverse().find(e=>e<=saldo)||0;
+    document.getElementById('cf-barra').style.width=(sig?Math.min(100,Math.max(0,(saldo-ant)/(sig-ant)*100)):100)+'%';
+    document.getElementById('cf-meta-txt').innerHTML=sig?`Siguiente meta: <b>$${sig}</b> · te faltan <b>$${(sig-saldo).toFixed(0)}</b>`:'🏆 ¡Llegaste a la meta más alta ($'+CF_ETAPAS[CF_ETAPAS.length-1]+')!';
+    const cfg={
+      libre:{c:'var(--verde)',txt:'Dinero que NO viene de la venta (ahorro, regalo, lo que ya tenías).',btn:'➕ Agregar al colchón'},
+      sobrante:{c:'var(--amarillo)',txt:'Lo que sobró de tu cuenta del día, después de gastos. Se descuenta de "Disponible para gastar hoy".',btn:'📈 Mandar sobrante al colchón'},
+      retiro:{c:'var(--rojo)',txt:'Solo cuando no alcance la venta. Luego repón primero el colchón.',btn:'➖ Tomar del colchón'}
+    };
+    ['libre','sobrante','retiro'].forEach(t=>{
+      const b=document.getElementById('cf-b-'+t); const on=t===cfTipo;
+      b.style.background=on?cfg[t].c:'transparent'; b.style.color=on?'var(--oscuro)':'var(--gris)';
+    });
+    document.getElementById('cf-ayuda').textContent=cfg[cfTipo].txt;
+    const g=document.getElementById('cf-guardar'); g.textContent=cfg[cfTipo].btn; g.style.background=cfg[cfTipo].c; g.style.color='var(--oscuro)';
+    const u=document.getElementById('cf-usar-hoy');
+    if(cfTipo==='sobrante'){
+      const el=document.getElementById('dinero-disponible-monto'); const v=el?(parseFloat(String(el.textContent).replace(/[^0-9.]/g,''))||0):0;
+      u.style.display='block'; u.textContent='Usar lo disponible hoy ($'+v.toFixed(0)+')';
+    } else u.style.display='none';
+    const lista=[...colchonFondo].reverse().slice(0,15);
+    const nombres={libre:'➕ Dinero libre',sobrante:'📈 Sobrante',retiro:'➖ Tomado'};
+    document.getElementById('cf-lista').innerHTML=lista.length?lista.map(m=>`
+      <div class="resumen-fila" style="align-items:center;">
+        <span class="concepto">${nombres[m.tipo]||m.tipo}<br><span style="font-size:10px;color:var(--gris);">${cfEsc(m.fecha)} ${cfEsc(m.hora||'')}${m.nota?' · '+cfEsc(m.nota):''}</span></span>
+        <span class="monto" style="color:${m.tipo==='retiro'?'var(--rojo)':'var(--verde)'};">${m.tipo==='retiro'?'-':'+'}$${m.monto.toFixed(2)} <button onclick="cfBorrar(${m.id})" style="background:none;border:none;color:var(--gris);font-size:14px;cursor:pointer;">🗑️</button></span>
+      </div>`).join(''):'<div class="empty-state" style="padding:12px;">Aún no hay movimientos</div>';
+  }
+
   function renderDisponibleHoy() {
     const montoEl = document.getElementById('dinero-disponible-monto');
     const detEl = document.getElementById('dinero-disponible-det');
@@ -1685,7 +1778,7 @@
     const sueldoDisponible = sueldoDisponibleHoy();
     const { libre } = calcularRepartoCascadaCompromisos(sueldoDisponible);
     const ahorradoHoy = ahorradoHoyDesdeSueldo();
-    const disponible = Math.max(0, libre - ahorradoHoy);
+    const disponible = Math.max(0, libre - ahorradoHoy - cfSobranteHoy());
     montoEl.textContent = '$' + disponible.toFixed(0);
     if (detEl) detEl.textContent = `Sueldo hoy $${sueldoDisponible.toFixed(0)} − compromisos y ahorrado hoy $${(sueldoDisponible - disponible).toFixed(0)}`;
   }
@@ -5464,7 +5557,7 @@ ${distBlock}
     const pref='ElBajon_'+desdeStr+'_'+hastaStr;
     if(ventas.length)descargarArchivo(toCSV(ventas),pref+'_Ventas.csv','text/csv;charset=utf-8;');
     if(gastosList.length)descargarArchivo(toCSV(gastosList),pref+'_Gastos.csv','text/csv;charset=utf-8;');
-    const backup={tipo:'BACKUP_BAJON_V1',fecha_exportacion:new Date().toISOString(),historial,movimientos_hoy:movimientos,gastos_hoy:gastos,mesas,ahorros,costos_refrescos:costosRefrescos,cuentas_plat:cuentasPlat};
+    const backup={tipo:'BACKUP_BAJON_V1',fecha_exportacion:new Date().toISOString(),historial,movimientos_hoy:movimientos,gastos_hoy:gastos,mesas,ahorros,costos_refrescos:costosRefrescos,cuentas_plat:cuentasPlat,colchon_fondo:colchonFondo};
     descargarArchivo(JSON.stringify(backup,null,2),pref+'_BACKUP.json','application/json');
     const info=document.getElementById('backup-export-info');info.textContent='✅ Descargados: '+ventas.length+' ventas, '+gastosList.length+' gastos + backup.json';mostrarToast('📥 Archivos descargados');
   }
@@ -5476,13 +5569,13 @@ ${distBlock}
       try{
         const backup=JSON.parse(e.target.result);
         if(backup.tipo!=='BACKUP_BAJON_V1'){info.innerHTML='<span style="color:var(--rojo)">❌ Formato no reconocido. Usa el archivo _BACKUP.json</span>';return;}
-        const histB=backup.historial||[];const movB=backup.movimientos_hoy||[];const gasB=backup.gastos_hoy||[];const mesasB=backup.mesas||[];const ahorrosB=backup.ahorros||[];const costosB=backup.costos_refrescos||null;const platsB=backup.cuentas_plat||[];
+        const histB=backup.historial||[];const movB=backup.movimientos_hoy||[];const gasB=backup.gastos_hoy||[];const mesasB=backup.mesas||[];const ahorrosB=backup.ahorros||[];const costosB=backup.costos_refrescos||null;const platsB=backup.cuentas_plat||[];const colchonB=backup.colchon_fondo||[];
         const idsH=new Set(historial.map(d=>d.id));let diasAg=0;histB.forEach(d=>{if(!idsH.has(d.id)){historial.unshift(d);diasAg++;}});
         let movAg=0;if(!movimientos.length&&movB.length){movimientos=movB;movAg=movB.length;}
         let gasAg=0;if(!gastos.length&&gasB.length){gastos=gasB;gasAg=gasB.length;}
         const idM=new Set(mesas.map(m=>m.id));let mesasAg=0;mesasB.forEach(m=>{if(!idM.has(m.id)){mesas.push(m);mesasAg++;}});
         if(platsB.length&&!cuentasPlat.length){cuentasPlat=platsB;guardarCuentasPlat();}
-        if(ahorrosB.length&&!ahorros.length){ahorros=ahorrosB;guardarAhorros();}if(costosB){costosRefrescos=costosB;guardarCostosRefrescos();}
+        if(ahorrosB.length&&!ahorros.length){ahorros=ahorrosB;guardarAhorros();}if(colchonB.length&&!colchonFondo.length){colchonFondo=colchonB;guardarColchonFondo();}if(costosB){costosRefrescos=costosB;guardarCostosRefrescos();}
         guardarHistorial();guardarMov();guardarGastos();guardarMesas();actualizarTotalesRapidos();renderMesas();renderPlats();actualizarHeaderTotal();
         info.innerHTML=`<span style="color:var(--verde);">✅ Importación exitosa:<br>📅 ${diasAg} días del historial<br>🧾 ${movAg} ventas del día<br>💸 ${gasAg} gastos del día<br>🪑 ${mesasAg} mesas</span>`;mostrarToast('✅ Datos restaurados');
       }catch(err){info.innerHTML='<span style="color:var(--rojo)">❌ Error: '+err.message+'</span>';}
