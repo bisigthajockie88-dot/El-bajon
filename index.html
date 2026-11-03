@@ -555,6 +555,7 @@
     </div>
     <button class="btn-agregar-gasto" onclick="agregarGasto()">+ Agregar Gasto</button>
   </div>
+  <button onclick="abrirPegarLista()" style="width:100%;background:var(--amarillo);border:none;border-radius:10px;padding:14px;color:#111;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px;letter-spacing:0.5px;">📝 Pegar lista de gastos</button>
   <button class="btn-copiar-gastos" onclick="copiarGastosSeleccionados()">📋 Copiar seleccionados</button>
   <div id="lista-gastos"><div class="empty-state"><div class="icon">💸</div>Sin gastos registrados</div></div>
 </div>
@@ -1226,6 +1227,31 @@
   style="position:fixed;bottom:calc(var(--nav-h) + 14px);left:14px;z-index:190;width:48px;height:48px;border-radius:50%;background:var(--rojo);border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;transition:transform 0.15s;">💸</button>
 
 <!-- MINI-MODAL GASTO RÁPIDO -->
+<div class="overlay" id="overlay-pegar-lista" onclick="if(event.target===this)cerrarPegarLista()">
+  <div class="modal" style="border-top-color:var(--amarillo);max-height:92vh;overflow-y:auto;">
+    <h2 style="color:var(--amarillo);">📝 Pegar lista de gastos</h2>
+    <div id="pg-paso1">
+      <div style="font-size:12px;color:var(--gris);line-height:1.5;margin-bottom:8px;">
+        Pega tu lista de Keep. Pon <b>N</b> o <b>P</b> solo en la primera línea para toda la lista, y una letra al lado de un gasto para cambiarlo.<br>Ej: <span style="color:var(--texto);">tomate $10 · refresco 18 P</span>
+      </div>
+      <textarea id="pg-texto" rows="9" placeholder="N&#10;tomate $10&#10;cebolla 25&#10;refresco 18 P" style="width:100%;background:var(--oscuro);border:1px solid #444;border-radius:8px;padding:12px;color:var(--texto);font-size:14px;outline:none;font-family:inherit;resize:vertical;"></textarea>
+      <button onclick="pegarDesdePortapapeles()" style="width:100%;margin-top:8px;background:transparent;border:1px dashed var(--amarillo);border-radius:8px;padding:10px;color:var(--amarillo);font-size:12px;font-weight:700;cursor:pointer;">📋 Pegar del portapapeles</button>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn-cancelar" onclick="cerrarPegarLista()">Cancelar</button>
+        <button class="btn-siguiente-pago" onclick="analizarListaGastos()" style="flex:2;margin:0;">🔍 Ver vista previa</button>
+      </div>
+    </div>
+    <div id="pg-paso2" style="display:none;">
+      <div id="pg-lista"></div>
+      <div id="pg-total" style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;font-weight:700;font-size:15px;border-top:1px solid #444;margin-top:6px;"></div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button class="btn-cancelar" onclick="pgVolverTexto()">← Texto</button>
+        <button class="btn-siguiente-pago" id="pg-btn-guardar" onclick="guardarListaGastos()" style="flex:2;margin:0;">✅ Guardar todos</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="overlay-gasto-rapido" onclick="cerrarGastoRapido(event)">
   <div class="modal" style="border-top-color:var(--rojo);">
     <h2 style="color:var(--rojo);">💸 Gasto Rápido</h2>
@@ -2565,6 +2591,168 @@
     actualizarHeaderTotal();
     mostrarToast(msgOrigenGasto(nuevoId,'💸 Gasto registrado'),3200);
   }
+  // ════════════════════════════════════════════════════
+  // PEGAR LISTA DE GASTOS (Keep → varios gastos de un jalón)
+  // ════════════════════════════════════════════════════
+  let pgItems = [];
+  const _pgEsc = t => String(t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+
+  function abrirPegarLista(){
+    document.getElementById('pg-texto').value='';
+    document.getElementById('pg-paso1').style.display='block';
+    document.getElementById('pg-paso2').style.display='none';
+    pgItems=[];
+    document.getElementById('overlay-pegar-lista').classList.add('visible');
+  }
+  function cerrarPegarLista(){ document.getElementById('overlay-pegar-lista').classList.remove('visible'); }
+  function pgVolverTexto(){
+    document.getElementById('pg-paso1').style.display='block';
+    document.getElementById('pg-paso2').style.display='none';
+  }
+  async function pegarDesdePortapapeles(){
+    try{
+      const t = await navigator.clipboard.readText();
+      if(t) document.getElementById('pg-texto').value = t;
+      else mostrarToast('📋 El portapapeles está vacío');
+    }catch(e){ mostrarToast('⚠️ Mantén presionado en el cuadro y elige Pegar',3000); }
+  }
+
+  // Convierte "1,200" / "10.50" / "10,5" a número
+  function pgNumero(txt){
+    let t = txt.replace(/\s/g,'');
+    if(/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) t = t.replace(/,/g,'');
+    else t = t.replace(',', '.');
+    const n = parseFloat(t);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function parsearListaGastos(texto){
+    const items=[];
+    let tipoLista = tipoGastoSeleccionado || 'negocio';
+    texto.split(/\r?\n/).forEach(raw=>{
+      let linea = raw.replace(/[☐☑✓✔□■▢]/g,' ').replace(/^\s*(\[[ xX]?\]|[-•*·▪●]+)\s+/,'').trim();
+      if(!linea) return;
+      // Línea que es solo N o P → tipo para esta lista / lo que sigue
+      const solo = linea.match(/^([pPnN])[:.]?$/);
+      if(solo){ tipoLista = solo[1].toLowerCase()==='p' ? 'personal' : 'negocio'; return; }
+      // Letra suelta (separada por espacios) = tipo de este renglón
+      let tipo = tipoLista;
+      linea = linea.replace(/(^|\s)([pPnN])(?=\s|$)/g,(mm,sp,l)=>{ tipo = l.toLowerCase()==='p' ? 'personal' : 'negocio'; return ' '; }).replace(/\s+/g,' ').trim();
+      // Monto: prefiere el que trae $, si no el último número
+      const re=/\$\s*(\d[\d.,]*)|(\d[\d.,]*)\s*\$|(\d[\d.,]*)/g;
+      let found=null, foundDolar=null, mt;
+      while((mt=re.exec(linea))){
+        const num = mt[1]||mt[2]||mt[3];
+        const cand={ini:mt.index, len:mt[0].length, num};
+        if(mt[1]||mt[2]) foundDolar=cand;
+        found=cand;
+      }
+      const f = foundDolar || found;
+      let monto=0, concepto=linea;
+      if(f){
+        monto = pgNumero(f.num.replace(/[.,]+$/,''));
+        concepto = (linea.slice(0,f.ini)+' '+linea.slice(f.ini+f.len)).replace(/\s+/g,' ');
+      }
+      concepto = concepto.replace(/^[\s\-–—:,.$]+|[\s\-–—:,.$]+$/g,'').trim();
+      if(concepto) concepto = concepto.charAt(0).toUpperCase()+concepto.slice(1);
+      items.push({concepto, monto, tipo});
+    });
+    return items;
+  }
+
+  function analizarListaGastos(){
+    const texto = document.getElementById('pg-texto').value;
+    pgItems = parsearListaGastos(texto);
+    if(!pgItems.length){ mostrarToast('⚠️ No encontré nada en la lista'); return; }
+    document.getElementById('pg-paso1').style.display='none';
+    document.getElementById('pg-paso2').style.display='block';
+    renderPegarLista();
+  }
+
+  // ¿Qué renglones caben en el reparto? (en orden, igual que al agregarlos uno por uno)
+  function pgCalcularCabe(){
+    const res = pgItems.map(()=>true);
+    if(!esModoNuevo()) return res;
+    const aceptados=[];
+    pgItems.forEach((it,i)=>{
+      if(!(it.monto>0) || !it.concepto){ res[i]=true; return; }
+      const prueba = {id:-(i+1), concepto:it.concepto, monto:it.monto, tipo:it.tipo};
+      const a = asignarGastosNuevo(undefined, gastos.concat(aceptados,[prueba]));
+      const d = a.detalle[a.detalle.length-1];
+      if(d.sinFondos>0.005) res[i]=false; else aceptados.push(prueba);
+    });
+    return res;
+  }
+
+  function renderPegarLista(){
+    const cabe = pgCalcularCabe();
+    const cont = document.getElementById('pg-lista');
+    cont.innerHTML = pgItems.map((it,i)=>{
+      const falta = !it.concepto || !(it.monto>0);
+      const noCabe = !falta && !cabe[i];
+      const borde = falta ? 'var(--rojo)' : (noCabe ? 'var(--amarillo)' : '#444');
+      const esP = it.tipo==='personal';
+      const aviso = falta ? '<div style="font-size:10px;color:var(--rojo);margin-top:3px;">⚠️ Falta '+(!it.concepto?'concepto':'monto')+' — corrígelo o quítalo</div>'
+                  : noCabe ? '<div style="font-size:10px;color:var(--amarillo);margin-top:3px;">⚠️ No cabe en lo que hay en mano — no se guardará</div>' : '';
+      return `<div style="background:var(--oscuro);border:1px solid ${borde};border-radius:10px;padding:8px;margin-bottom:6px;">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="text" value="${_pgEsc(it.concepto)}" placeholder="Concepto" oninput="pgCambiar(${i},'concepto',this.value)" style="flex:1;min-width:0;background:var(--medio);border:1px solid #444;border-radius:6px;padding:8px;color:var(--texto);font-size:13px;outline:none;">
+          <input type="number" inputmode="decimal" value="${it.monto>0?it.monto:''}" placeholder="$" oninput="pgCambiar(${i},'monto',this.value)" style="width:70px;background:var(--medio);border:1px solid #444;border-radius:6px;padding:8px;color:var(--texto);font-size:13px;font-weight:700;text-align:right;outline:none;">
+          <button onclick="pgQuitar(${i})" style="background:transparent;border:none;color:var(--rojo);font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
+        </div>
+        <button onclick="pgToggleTipo(${i})" style="margin-top:6px;padding:4px 10px;border-radius:12px;border:1px solid ${esP?'var(--morado)':'var(--amarillo)'};background:rgba(245,200,66,0.15);color:${esP?'var(--morado)':'var(--amarillo)'};font-size:11px;font-weight:700;cursor:pointer;">${esP?'🧍 Personal':'📦 Negocio'} ⇄</button>
+        ${aviso}
+      </div>`;
+    }).join('');
+    pgActualizarTotal();
+  }
+
+  function pgActualizarTotal(){
+    const cabe = pgCalcularCabe();
+    const validos = pgItems.filter((it,i)=>it.concepto && it.monto>0 && cabe[i]);
+    const total = validos.reduce((s,it)=>s+it.monto,0);
+    document.getElementById('pg-total').innerHTML = '<span>'+validos.length+' gasto'+(validos.length===1?'':'s')+'</span><span style="color:var(--rojo);">$'+total.toFixed(2)+'</span>';
+    const b=document.getElementById('pg-btn-guardar'); if(b) b.disabled = !validos.length;
+  }
+
+  function pgCambiar(i,campo,val){
+    if(campo==='monto') pgItems[i].monto = parseFloat(val)||0;
+    else pgItems[i].concepto = val;
+    pgActualizarTotal(); // sin re-dibujar para no perder el cursor
+  }
+  function pgToggleTipo(i){ pgItems[i].tipo = pgItems[i].tipo==='personal' ? 'negocio' : 'personal'; renderPegarLista(); }
+  function pgQuitar(i){
+    pgItems.splice(i,1);
+    if(!pgItems.length){ pgVolverTexto(); return; }
+    renderPegarLista();
+  }
+
+  function guardarListaGastos(){
+    const cabe = pgCalcularCabe();
+    const hora = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    const base = Date.now();
+    const quedan=[]; let guardados=0, total=0;
+    pgItems.forEach((it,i)=>{
+      const valido = it.concepto && it.monto>0;
+      if(valido && cabe[i]){
+        gastos.push({id:base+i, concepto:it.concepto.trim(), monto:it.monto, hora, tipo:it.tipo});
+        guardados++; total+=it.monto;
+      } else quedan.push(it);
+    });
+    if(!guardados){ mostrarToast('⚠️ No hay gastos válidos para guardar',3000); return; }
+    guardarGastos();
+    renderGastos();
+    actualizarHeaderTotal();
+    if(typeof renderDinero==='function') renderDinero();
+    if(quedan.length){
+      pgItems=quedan; renderPegarLista();
+      mostrarToast('💸 '+guardados+' guardados ($'+total.toFixed(0)+'). Quedan '+quedan.length+' por revisar',4000);
+    } else {
+      cerrarPegarLista();
+      mostrarToast('💸 '+guardados+' gastos guardados · $'+total.toFixed(0),3200);
+    }
+  }
+
   function selTipoGasto(tipo) {
     tipoGastoSeleccionado = tipo;
     const btnNeg = document.getElementById('btn-tipo-negocio');
